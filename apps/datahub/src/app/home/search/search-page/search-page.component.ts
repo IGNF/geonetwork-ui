@@ -21,7 +21,7 @@ export class SearchPageComponent implements OnInit {
   constructor(
     private searchRouter: RouterFacade,
     private searchFacade: SearchFacade
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.searchFacade.setResultsLayout('ROW')
@@ -45,4 +45,10 @@ export class SearchPageComponent implements OnInit {
   onMetadataSelection(metadata: CatalogRecord): void {
     this.searchRouter.goToMetadata(metadata)
   }
+
+  change(layout: string) {
+    console.log(layout);
+    this.searchFacade.setResultsLayout(layout['value'])
+  }
+
 }

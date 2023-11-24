@@ -3,6 +3,7 @@ body {
   height: 100%;
   color: var(--color-main);
 }
+
 body {
   margin: 0;
 }
@@ -10,9 +11,11 @@ body {
 .container-sm {
   max-width: 640px;
 }
+
 .container-md {
   max-width: 768px;
 }
+
 .container-lg {
   max-width: 1024px;
 }
@@ -20,6 +23,7 @@ body {
 html.record-page-active {
   scroll-padding-top: 220px;
 }
+
 @media only screen and (min-width: 640px) {
   html.record-page-active {
     scroll-padding-top: 80px;
@@ -29,9 +33,11 @@ html.record-page-active {
 .btn-text-white {
   @apply text-white hover:text-primary-lighter;
 }
+
 .badge-btn {
   @apply transition-colors;
 }
+
 .badge-btn.active {
   @apply bg-primary;
 }
@@ -40,6 +46,29 @@ html.record-page-active {
   @apply text-primary-lighter;
   text-decoration: underline;
 }
+
 .tippy-box a:hover {
   @apply text-primary-lightest;
+}
+
+gn-ui-related-record-card>a[href]:hover {
+  background-color: white !important;
+}
+
+gn-ui-navigation-button>button:not(:disabled):hover,
+gn-ui-button>button:hover.bg-secondary {
+
+  background-color: rgba(0, 0, 145, 0.50) !important;
+}
+
+[target="_blank"]::after {
+  content: none;
+}
+
+input {
+  background-color: white;
+}
+
+h2.font-title {
+  color: white;
 }

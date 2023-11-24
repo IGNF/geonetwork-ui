@@ -80,6 +80,9 @@ import { RecordOtherlinksComponent } from './record/record-otherlinks/record-oth
 import { RecordDownloadsComponent } from './record/record-downloads/record-downloads.component'
 import { RecordApisComponent } from './record/record-apis/record-apis.component'
 import { MatTabsModule } from '@angular/material/tabs'
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { DsfrHeaderModule } from "@edugouvfr/ngx-dsfr";
+import { DsfrFooterModule } from "@edugouvfr/ngx-dsfr";
 
 export const metaReducers: MetaReducer[] = !environment.production ? [] : []
 // https://github.com/nrwl/nx/issues/191
@@ -144,6 +147,9 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     UiInputsModule,
     UiCatalogModule,
     MatTabsModule,
+    MatButtonToggleModule,
+    DsfrHeaderModule,
+    DsfrFooterModule,
   ],
   providers: [
     importProvidersFrom(FeatureAuthModule),
@@ -213,7 +219,7 @@ export class AppModule {
       getThemeConfig().MAIN_FONT || "'Rubik', sans-serif",
       getThemeConfig().TITLE_FONT || "'Readex Pro', sans-serif",
       getThemeConfig().FONTS_STYLESHEET_URL ||
-        'https://fonts.googleapis.com/css2?family=Readex+Pro&family=Rubik&display=swap'
+      'https://fonts.googleapis.com/css2?family=Readex+Pro&family=Rubik&display=swap'
     )
     ThemeService.generateBgOpacityClasses(
       'primary',

@@ -5,4 +5,21 @@ import { Component } from '@angular/core'
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
-export class AppComponent {}
+export class AppComponent {
+  // methodes pour le header
+  searchChange(toggled: boolean): void {
+
+  }
+
+  searchSelect(toggled: boolean): void {
+
+  }
+
+  linkSelect(toggled: boolean): void {
+
+  }
+
+  langChange(toggled: boolean): void {
+
+  }
+}

@@ -7,7 +7,9 @@
   "targets": {
     "build": {
       "executor": "@angular-devkit/build-angular:browser",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/apps/datahub",
         "index": "apps/datahub/src/index.html",
@@ -29,13 +31,28 @@
           }
         ],
         "styles": [
+          "./node_modules/@gouvfr/dsfr/dist/core/core.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/link/link.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/button/button.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/logo/logo.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/form/form.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/badge/badge.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/navigation/navigation.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/modal/modal.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/input/input.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/translate/translate.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/search/search.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/header/header.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/footer/footer.min.css",
           "tailwind.base.css",
           "apps/datahub/src/styles.css",
           "node_modules/tippy.js/dist/tippy.css",
           "node_modules/ol/ol.css",
           "./node_modules/@angular/material/prebuilt-themes/indigo-pink.css"
         ],
-        "scripts": [],
+        "scripts": [
+          "./node_modules/@gouvfr/dsfr/dist/dsfr/dsfr.module.js"
+        ],
         "allowedCommonJsDependencies": [
           "duration-relativetimeformat",
           "papaparse",
@@ -106,11 +123,15 @@
           "apps/datahub/src/**/*.html"
         ]
       },
-      "outputs": ["{options.outputFile}"]
+      "outputs": [
+        "{options.outputFile}"
+      ]
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/apps/datahub"],
+      "outputs": [
+        "{workspaceRoot}/coverage/apps/datahub"
+      ],
       "options": {
         "jestConfig": "apps/datahub/jest.config.ts",
         "passWithNoTests": true
@@ -127,5 +148,8 @@
       }
     }
   },
-  "tags": ["type:app", "published"]
+  "tags": [
+    "type:app",
+    "published"
+  ]
 }

@@ -47,7 +47,7 @@ export class SearchFiltersComponent implements OnInit {
     private searchService: SearchService,
     private fieldsService: FieldsService,
     private authService: AuthService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.authService.user$.subscribe((user) => (this.userId = user?.id))
@@ -110,7 +110,7 @@ export class SearchFiltersComponent implements OnInit {
 
   getClassForFilter(index: number) {
     return (
-      (this.isOpen ? 'block' : 'hidden') + ' ' + (index < 2 ? 'sm:block' : '')
+      (this.isOpen ? 'block' : 'hidden') + ' ' + (index < 3 ? 'sm:block' : '')
     )
   }
 }

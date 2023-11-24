@@ -22,10 +22,11 @@ marker('datahub.header.organisations')
 export class NavigationMenuComponent {
   displayMobileMenu = false
   tabLinks = [
-    {
+    // Page News non-utilisé sur le datahub-IGN
+    /*{
       link: `${ROUTER_ROUTE_NEWS}`,
       label: 'datahub.header.news',
-    },
+    },*/
     {
       link: `${ROUTER_ROUTE_SEARCH}`,
       label: 'datahub.header.datasets',
@@ -46,7 +47,7 @@ export class NavigationMenuComponent {
     )
   )
 
-  constructor(private routerFacade: RouterFacade) {}
+  constructor(private routerFacade: RouterFacade) { }
 
   toggleMobileMenu() {
     this.displayMobileMenu = !this.displayMobileMenu
