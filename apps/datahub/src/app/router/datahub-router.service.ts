@@ -19,7 +19,7 @@ import {
   providedIn: 'root',
 })
 export class DatahubRouterService {
-  constructor(private router: Router) {}
+  constructor(private router: Router) { }
 
   initRoutes() {
     this.router.resetConfig(this.buildRoutes())
@@ -41,16 +41,17 @@ export class DatahubRouterService {
         children: [
           {
             path: '',
-            redirectTo: ROUTER_ROUTE_NEWS,
+            redirectTo: ROUTER_ROUTE_SEARCH,
             pathMatch: 'prefix',
           },
-          {
+          // désactivation de la route news
+          /*{
             path: ROUTER_ROUTE_NEWS,
             component: NewsPageComponent,
             data: {
               shouldDetach: true,
             },
-          },
+          },*/
           {
             path: ROUTER_ROUTE_SEARCH,
             component: SearchPageComponent,
