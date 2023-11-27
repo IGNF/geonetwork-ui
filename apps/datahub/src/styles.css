@@ -72,3 +72,7 @@ input {
 h2.font-title {
   color: white;
 }
+
+a {
+  background-image: none !important;
+}
