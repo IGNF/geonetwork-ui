@@ -7,11 +7,11 @@ name: Docker
 
 on:
   push:
-    branches: [ "catalogue-ign" ]
+    branches: [ "datahub-ign" ]
     # Publish semver tags as releases.
     tags: [ 'v*.*.*' ]
   pull_request:
-    branches: [ "catalogue-ign" ]
+    branches: [ "datahub-ign" ]
 
 env:
   # Use docker.io for Docker Hub if empty
