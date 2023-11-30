@@ -68,6 +68,12 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+      # build dist npm and nx
+      - name: Npm install
+        run: npm install
+      - name: npx build
+        run: npx nx build datahub
+
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
       - name: Build and push Docker image
