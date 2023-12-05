@@ -1,7 +1,11 @@
 # This dockerfile should work for all traditional apps,
 # i.e. it only sets up a nginx server with the app dist folder
 
-FROM nginx:1.24-alpine
+FROM nginxinc/nginx-unprivileged:1.24
+
+USER root
+RUN rm -rf /usr/share/nginx/html/*
+USER nginx
 
 ARG APP_NAME="search"
 ENV APP_NAME=${APP_NAME}
@@ -21,6 +25,6 @@ COPY tools/webcomponent/wc-embedder.html /usr/share/nginx/html/${APP_NAME}
 COPY tools/docker/nginx.ign.conf /etc/nginx/conf.d/default.conf
 RUN sed -i "s/APP_NAME/${APP_NAME}/" /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+EXPOSE 8080
 
 ENTRYPOINT ["sh", "/docker-entrypoint.sh", "nginx", "-g", "daemon off;"]
