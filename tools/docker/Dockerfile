@@ -1,11 +1,15 @@
 # This dockerfile should work for all traditional apps,
 # i.e. it only sets up a nginx server with the app dist folder
 
-FROM nginxinc/nginx-unprivileged:1.24
+ARG registry=docker.io
+FROM ${registry}/library/php:8.1-apache
 
-USER root
-RUN rm -rf /usr/share/nginx/html/*
-USER nginx
+# Configuration de apache
+COPY tools/docker/apache/apache-vhost.conf /etc/apache2/sites-available/000-default.conf
+COPY tools/docker/apache/apache-security.conf /etc/apache2/conf-enabled/security.conf
+COPY tools/docker/apache/apache-ports.conf /etc/apache2/ports.conf
+
+RUN a2enmod rewrite remoteip alias headers
 
 ARG APP_NAME="search"
 ENV APP_NAME=${APP_NAME}
@@ -15,16 +19,7 @@ ENV CONFIG_DIRECTORY_OVERRIDE ""
 ENV ASSETS_DIRECTORY_OVERRIDE ""
 ENV CUSTOM_SCRIPTS_DIRECTORY ""
 
-COPY dist/apps/${APP_NAME} /usr/share/nginx/html/${APP_NAME}
-COPY tools/docker/docker-entrypoint.sh /
-
-# copy Web Components HTML embedder as a bonus
-COPY tools/webcomponent/wc-embedder.html /usr/share/nginx/html/${APP_NAME}
-
-# copy default NGINX conf & put the app name in it
-COPY tools/docker/nginx.ign.conf /etc/nginx/conf.d/default.conf
-RUN sed -i "s/APP_NAME/${APP_NAME}/" /etc/nginx/conf.d/default.conf
+COPY dist/apps/${APP_NAME} /opt/catalogue/
 
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "/docker-entrypoint.sh", "nginx", "-g", "daemon off;"]
