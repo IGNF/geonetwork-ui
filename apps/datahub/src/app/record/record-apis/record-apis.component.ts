@@ -14,10 +14,17 @@ export class RecordApisComponent implements OnInit {
   selectedApiLink: DatasetServiceDistribution
   constructor(public facade: MdViewFacade) {}
 
-  ngOnInit(): void {
-    this.setStyle(undefined)
-    this.selectedApiLink = undefined
+  ngOnInit():void {
+    const link: DatasetServiceDistribution = {
+    type: 'service',
+    url: new URL('https://data.geopf.fr/telechargement/capabilities'),
+    accessServiceProtocol: 'wms',
+    identifierInService: 'pas identification services ',
+    description: 'pas de description',
   }
+  this.setStyle(link)
+  this.selectedApiLink = link
+}
 
   openRecordApiForm(link: DatasetServiceDistribution) {
     this.selectedApiLink = link

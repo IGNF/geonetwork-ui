@@ -1,19 +1,70 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  OnInit,
+} from '@angular/core'
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
-import { BehaviorSubject, combineLatest, map } from 'rxjs'
+import {
+  BehaviorSubject,
+  Observable,
+  catchError,
+  combineLatest,
+  map,
+  of,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs'
+import { HttpClient } from '@angular/common/http'
+import { Choice, DropdownChoice } from '@geonetwork-ui/ui/inputs'
 
 const DEFAULT_PARAMS = {
   OFFSET: '',
   LIMIT: '',
   FORMAT: 'json',
 }
+export interface Label {
+  label: string
+}
+
+export interface FormatProduit {
+  title: string
+  format: Array<TermBucket>
+  zone: any
+}
+
+export interface FormatSortieProduit {
+  label: string
+  value: string | number
+}
+export interface Reponse {
+  entry: Array<any>
+  link: any
+}
+
+export interface FieldAvailableValue {
+  value: string | number
+  label: string
+}
+
+export interface TermBucket {
+  term: string
+  label: string | number
+}
+
+export interface Field {
+  entry: Array<any>
+  link: any
+}
+
 @Component({
-  selector: 'gn-ui-record-api-form',
-  templateUrl: './record-api-form.component.html',
-  styleUrls: ['./record-api-form.component.css'],
+  selector: 'gn-ui-ign-api-dl',
+  templateUrl: './ign-api-dl.component.html',
+  styleUrls: ['./ign-api-dl.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RecordApiFormComponent {
+export class IgnApiDlComponent implements OnInit {
   @Input() set apiLink(value: DatasetServiceDistribution) {
     this.apiBaseUrl = value ? value.url.href : undefined
     this.resetUrl()
@@ -21,11 +72,41 @@ export class RecordApiFormComponent {
   offset$ = new BehaviorSubject('')
   limit$ = new BehaviorSubject('')
   format$ = new BehaviorSubject('')
-  apiBaseUrl: string
-  formatsList = [
-    { label: 'JSON', value: 'json' },
-    { label: 'CSV', value: 'csv' },
+
+  choices$: Observable<Choice[]>
+
+  constructor(protected http: HttpClient) {}
+
+  isOpen = false
+  searchConfig: { fieldName: string; title: string }[] = [
+    { fieldName: 'format', title: 'Le format' },
   ]
+  apiBaseUrl: string
+  // formatsList : DropdownChoice[]= [
+  //   { label: 'JSON', value: 'json' },
+  //   { label: 'CSV', value: 'csv' },
+  // ]
+
+  // formatsList : Observable<FieldAvailableValue[]> = this.getFields('format')
+
+  // getListFields(): DropdownChoice[]{
+  //   const list = this.getFields('format').subscribe(x => {return x});
+  //   console.log(list);
+  //   return list
+  // }
+
+  // url = 'https://data.geopf.fr/telechargement/capabilities'
+
+  ngOnInit(): void {
+    this.choices$ = this.getFields('BDORTHO', 'format')
+  }
+
+  getClassForFilter(index: number) {
+    return (
+      (this.isOpen ? 'block' : 'hidden') + ' ' + (index < 2 ? 'sm:block' : '')
+    )
+  }
+
   apiQueryUrl$ = combineLatest([this.offset$, this.limit$, this.format$]).pipe(
     map(([offset, limit, format]) => {
       let outputUrl
@@ -61,5 +142,23 @@ export class RecordApiFormComponent {
     this.offset$.next(DEFAULT_PARAMS.OFFSET)
     this.limit$.next(DEFAULT_PARAMS.LIMIT)
     this.format$.next(DEFAULT_PARAMS.FORMAT)
+  }
+
+  url = 'https://data.geopf.fr/telechargement/capabilities'
+
+  getFields(produit : string, param : string): Observable<FieldAvailableValue[]> {
+    return this.http.get(this.url).pipe(
+      map((response) =>
+        (response as Field).entry.filter(element => element['id'] == 'https://data.geopf.fr/telechargement/resource/'.concat(produit))),
+      //tap(el => console.log(el)),
+      switchMap((buckets: Array<FormatProduit>) => {
+        const bucketPromises = buckets[0][param].map((bucket) => ({
+          value: bucket.label,
+          label: bucket.term,
+        }))
+        console.log('bucket', bucketPromises)
+        return Promise.all(bucketPromises)
+      })
+    )
   }
 }
