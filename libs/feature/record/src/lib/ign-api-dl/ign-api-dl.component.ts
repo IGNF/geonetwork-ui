@@ -16,6 +16,7 @@ import {
   switchMap,
   tap,
 } from 'rxjs'
+import { fromFetch } from 'rxjs/fetch'
 import { HttpClient } from '@angular/common/http'
 import { Choice, DropdownChoice } from '@geonetwork-ui/ui/inputs'
 
@@ -38,9 +39,8 @@ export interface FormatSortieProduit {
   label: string
   value: string | number
 }
-export interface Reponse {
-  entry: Array<any>
-  link: any
+export interface ListUrl {
+  url: string
 }
 
 export interface FieldAvailableValue {
@@ -74,6 +74,7 @@ export class IgnApiDlComponent implements OnInit {
   format$ = new BehaviorSubject('')
 
   choices$: Observable<Choice[]>
+  subProducts$: any
 
   constructor(protected http: HttpClient) {}
 
@@ -95,10 +96,50 @@ export class IgnApiDlComponent implements OnInit {
   //   return list
   // }
 
-  // url = 'https://data.geopf.fr/telechargement/capabilities'
+  url_produit = 'https://data.geopf.fr/telechargement/resource/BDORTHO'
 
   ngOnInit(): void {
     this.choices$ = this.getFields('BDORTHO', 'format')
+    this.subProducts$ = this.getSubProduct(this.url_produit)
+  }
+
+  async getSubProduct(url: string) {
+    const response = await this.http
+      .get(url, { headers: { accept: 'application/json' } })
+      .pipe(
+        map((response) =>
+          response['entry'].map(async (el) => {
+            const id = el['id']
+
+            const toto = await this.getUrl(id)
+
+            const delay = (ms) => new Promise((res) => setTimeout(res, ms))
+
+            console.log('els', id, toto)
+            return toto
+          })
+        )
+      )
+    //.map((el) => this.getUrl(el))),
+    // )
+    // // .pipe(
+    // tap((el) => console.log('sort', el))
+
+    console.log(response)
+    return response
+  }
+
+  async getUrl(Url) {
+    console.log(Url)
+    const request = await fromFetch(Url).pipe(
+      map(async (response) => {
+        const data = await (response as any).entry
+        console.log('data', data)
+
+        return data
+      })
+    )
+    return request
   }
 
   getClassForFilter(index: number) {
@@ -112,7 +153,7 @@ export class IgnApiDlComponent implements OnInit {
       let outputUrl
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl)
-        const params = { offset: offset, limit: limit, f: format }
+        const params = { offset: offset, limit: limit, format: format }
         for (const [key, value] of Object.entries(params)) {
           if (value && value !== '0') {
             url.searchParams.set(key, value)
@@ -146,19 +187,26 @@ export class IgnApiDlComponent implements OnInit {
 
   url = 'https://data.geopf.fr/telechargement/capabilities'
 
-  getFields(produit : string, param : string): Observable<FieldAvailableValue[]> {
-    return this.http.get(this.url).pipe(
-      map((response) =>
-        (response as Field).entry.filter(element => element['id'] == 'https://data.geopf.fr/telechargement/resource/'.concat(produit))),
-      //tap(el => console.log(el)),
-      switchMap((buckets: Array<FormatProduit>) => {
-        const bucketPromises = buckets[0][param].map((bucket) => ({
-          value: bucket.label,
-          label: bucket.term,
-        }))
-        console.log('bucket', bucketPromises)
-        return Promise.all(bucketPromises)
-      })
-    )
+  getFields(produit: string, param: string): Observable<FieldAvailableValue[]> {
+    return this.http
+      .get(this.url, { headers: { accept: 'application/json' } })
+      .pipe(
+        map((response) =>
+          (response as Field).entry.filter(
+            (element) =>
+              element['id'] ==
+              'https://data.geopf.fr/telechargement/resource/'.concat(produit)
+          )
+        ),
+        //tap(el => console.log(el)),
+        switchMap((buckets: Array<FormatProduit>) => {
+          const bucketPromises = buckets[0][param].map((bucket) => ({
+            value: bucket.label,
+            label: bucket.term,
+          }))
+          //console.log('bucket', bucketPromises)
+          return Promise.all(bucketPromises)
+        })
+      )
   }
 }

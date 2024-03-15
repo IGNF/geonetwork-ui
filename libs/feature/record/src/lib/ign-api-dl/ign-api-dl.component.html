@@ -55,7 +55,7 @@
           extraBtnClass="secondary min-w-full !w-40 !text-black"
           [showTitle]="false"
           class="text-black"
-          [choices]="choices$ |async"
+          [choices]="choices$ | async"
           (selectValue)="setFormat($event)"
           [selected]="format$ | async"
         ></gn-ui-dropdown-selector>
@@ -66,10 +66,15 @@
     <div class="text-sm text-black truncate font-title w-11/12" translate>
       record.metadata.api.form.customUrl
     </div>
-    <div class="bg-white rounded-lg">
+    <!--<div class="bg-white rounded-lg">
       <gn-ui-copy-text-button
         [text]="apiQueryUrl$ | async"
       ></gn-ui-copy-text-button>
+    </div>-->
+
+    <div *ngFor="let subProduct of subProducts$ | async">
+      Produit
+      <a [href]="subProduct.id">Download</a>
     </div>
   </div>
 </div>
