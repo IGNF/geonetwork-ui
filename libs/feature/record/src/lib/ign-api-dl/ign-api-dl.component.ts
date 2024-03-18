@@ -11,6 +11,7 @@ import {
   catchError,
   combineLatest,
   map,
+  mergeMap,
   of,
   startWith,
   switchMap,
@@ -74,7 +75,7 @@ export class IgnApiDlComponent implements OnInit {
   format$ = new BehaviorSubject('')
 
   choices$: Observable<Choice[]>
-  subProducts$: any
+  subProducts$: Observable<any>
 
   constructor(protected http: HttpClient) {}
 
@@ -97,50 +98,72 @@ export class IgnApiDlComponent implements OnInit {
   // }
 
   url_produit = 'https://data.geopf.fr/telechargement/resource/BDORTHO'
+  getSubProduct(url: string) {
+    return this.http
+      .get(url, { headers: { accept: 'application/json' } })
+      .pipe(map((response) => response['entry'].map((el) => el['id'])))
+  }
+
+  getDownloadLink(url: string) {
+    console.log(url)
+
+    return this.http
+      .get(url, { headers: { accept: 'application/json' } })
+      .pipe(map((response) => response['entry']))
+  }
 
   ngOnInit(): void {
     this.choices$ = this.getFields('BDORTHO', 'format')
-    this.subProducts$ = this.getSubProduct(this.url_produit)
-  }
+    this.subProducts$ = this.getSubProduct(this.url_produit).pipe(
+      map((link) => {
+        console.log('hello')
 
-  async getSubProduct(url: string) {
-    const response = await this.http
-      .get(url, { headers: { accept: 'application/json' } })
-      .pipe(
-        map((response) =>
-          response['entry'].map(async (el) => {
-            const id = el['id']
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        const element = [] as Array<String>
 
-            const toto = await this.getUrl(id)
+        for (let indexLink = 0; indexLink < link.length; indexLink++) {
+          console.log('re')
 
-            const delay = (ms) => new Promise((res) => setTimeout(res, ms))
+          const elementToAdd = this.getDownloadLink(link[indexLink]).subscribe(
+            // eslint-disable-next-line prefer-spread
+            (linkDownload) => element.push.apply(element, linkDownload)
+          )
+          console.log('ee', elementToAdd)
+        }
+        console.log(element)
 
-            console.log('els', id, toto)
-            return toto
-          })
-        )
-      )
-    //.map((el) => this.getUrl(el))),
-    // )
-    // // .pipe(
-    // tap((el) => console.log('sort', el))
-
-    console.log(response)
-    return response
-  }
-
-  async getUrl(Url) {
-    console.log(Url)
-    const request = await fromFetch(Url).pipe(
-      map(async (response) => {
-        const data = await (response as any).entry
-        console.log('data', data)
-
-        return data
+        return element
       })
     )
-    return request
   }
+
+  // getSubProduct(url: string) {
+  //   const response = this.http
+  //     .get(url, { headers: { accept: 'application/json' } })
+  //     .pipe(
+  //       mergeMap(response =>  this.getUrl(response['entry'])
+  //       ),
+
+  //       tap((el) => console.log('sort', el))
+  //     )
+  //   console.log('res', response)
+
+  //   return response
+  // }
+  // getUrl(Url) {
+  //   console.log('hello', Url)
+  //   return mergeMap((el) =>
+  //     this.http.get(Url, { headers: { accept: 'application/json' } }).pipe(
+  //       map((response) => {
+  //         console.log('grr')
+  //         const data = (response as any).entry
+  //         console.log('data', data)
+
+  //         return data
+  //       })
+  //     )
+  //   )
+  // }
 
   getClassForFilter(index: number) {
     return (
