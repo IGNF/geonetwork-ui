@@ -24,7 +24,7 @@ import { Choice, DropdownChoice } from '@geonetwork-ui/ui/inputs'
 const DEFAULT_PARAMS = {
   OFFSET: '',
   LIMIT: '',
-  FORMAT: 'json',
+  FORMAT: 'TIFF',
 }
 export interface Label {
   label: string
@@ -97,7 +97,8 @@ export class IgnApiDlComponent implements OnInit {
   //   return list
   // }
 
-  url_produit = 'https://data.geopf.fr/telechargement/resource/BDORTHO'
+  //url_produit = 'https://data.geopf.fr/telechargement/resource/BDORTHO'
+
   getSubProduct(url: string) {
     return this.http
       .get(url, { headers: { accept: 'application/json' } })
@@ -105,7 +106,7 @@ export class IgnApiDlComponent implements OnInit {
   }
 
   getDownloadLink(url: string) {
-    console.log(url)
+    //console.log(url)
 
     return this.http
       .get(url, { headers: { accept: 'application/json' } })
@@ -113,28 +114,35 @@ export class IgnApiDlComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const url = 'https://data.geopf.fr/telechargement/resource/BDORTHO'
     this.choices$ = this.getFields('BDORTHO', 'format')
-    this.subProducts$ = this.getSubProduct(this.url_produit).pipe(
+    this.majProduit(url)}
+
+
+  majProduit(url_produit){
+    this.subProducts$ = this.getSubProduct(url_produit).pipe(
       map((link) => {
-        console.log('hello')
+        console.log(link)
 
         // eslint-disable-next-line @typescript-eslint/ban-types
         const element = [] as Array<String>
 
         for (let indexLink = 0; indexLink < link.length; indexLink++) {
-          console.log('re')
+          //console.log('re')
 
           const elementToAdd = this.getDownloadLink(link[indexLink]).subscribe(
             // eslint-disable-next-line prefer-spread
             (linkDownload) => element.push.apply(element, linkDownload)
+            //console.log(linkDownload)}
           )
-          console.log('ee', elementToAdd)
+          //console.log('ee', elementToAdd)
         }
-        console.log(element)
+        //console.log(element)
 
         return element
       })
     )
+    console.log(this.subProducts$)
   }
 
   // getSubProduct(url: string) {
@@ -186,6 +194,7 @@ export class IgnApiDlComponent implements OnInit {
         }
         outputUrl = url.toString()
       }
+      this.majProduit(outputUrl)
       return outputUrl
     })
   )
