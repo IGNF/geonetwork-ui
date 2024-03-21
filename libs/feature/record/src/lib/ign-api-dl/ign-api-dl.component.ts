@@ -75,7 +75,7 @@ export class IgnApiDlComponent implements OnInit {
   format$ = new BehaviorSubject('')
 
   choices$: Observable<Choice[]>
-  subProducts$: Observable<any>
+  // subProducts$: Observable <Array<string>>
 
   constructor(protected http: HttpClient) {}
 
@@ -84,20 +84,6 @@ export class IgnApiDlComponent implements OnInit {
     { fieldName: 'format', title: 'Le format' },
   ]
   apiBaseUrl: string
-  // formatsList : DropdownChoice[]= [
-  //   { label: 'JSON', value: 'json' },
-  //   { label: 'CSV', value: 'csv' },
-  // ]
-
-  // formatsList : Observable<FieldAvailableValue[]> = this.getFields('format')
-
-  // getListFields(): DropdownChoice[]{
-  //   const list = this.getFields('format').subscribe(x => {return x});
-  //   console.log(list);
-  //   return list
-  // }
-
-  //url_produit = 'https://data.geopf.fr/telechargement/resource/BDORTHO'
 
   getSubProduct(url: string) {
     return this.http
@@ -106,77 +92,13 @@ export class IgnApiDlComponent implements OnInit {
   }
 
   getDownloadLink(url: string) {
-    //console.log(url)
-
     return this.http
       .get(url, { headers: { accept: 'application/json' } })
       .pipe(map((response) => response['entry']))
   }
 
   ngOnInit(): void {
-    const url = 'https://data.geopf.fr/telechargement/resource/BDORTHO'
     this.choices$ = this.getFields('BDORTHO', 'format')
-    this.majProduit(url)}
-
-
-  majProduit(url_produit){
-    this.subProducts$ = this.getSubProduct(url_produit).pipe(
-      map((link) => {
-        console.log(link)
-
-        // eslint-disable-next-line @typescript-eslint/ban-types
-        const element = [] as Array<String>
-
-        for (let indexLink = 0; indexLink < link.length; indexLink++) {
-          //console.log('re')
-
-          const elementToAdd = this.getDownloadLink(link[indexLink]).subscribe(
-            // eslint-disable-next-line prefer-spread
-            (linkDownload) => element.push.apply(element, linkDownload)
-            //console.log(linkDownload)}
-          )
-          //console.log('ee', elementToAdd)
-        }
-        //console.log(element)
-
-        return element
-      })
-    )
-    console.log(this.subProducts$)
-  }
-
-  // getSubProduct(url: string) {
-  //   const response = this.http
-  //     .get(url, { headers: { accept: 'application/json' } })
-  //     .pipe(
-  //       mergeMap(response =>  this.getUrl(response['entry'])
-  //       ),
-
-  //       tap((el) => console.log('sort', el))
-  //     )
-  //   console.log('res', response)
-
-  //   return response
-  // }
-  // getUrl(Url) {
-  //   console.log('hello', Url)
-  //   return mergeMap((el) =>
-  //     this.http.get(Url, { headers: { accept: 'application/json' } }).pipe(
-  //       map((response) => {
-  //         console.log('grr')
-  //         const data = (response as any).entry
-  //         console.log('data', data)
-
-  //         return data
-  //       })
-  //     )
-  //   )
-  // }
-
-  getClassForFilter(index: number) {
-    return (
-      (this.isOpen ? 'block' : 'hidden') + ' ' + (index < 2 ? 'sm:block' : '')
-    )
   }
 
   apiQueryUrl$ = combineLatest([this.offset$, this.limit$, this.format$]).pipe(
@@ -194,26 +116,56 @@ export class IgnApiDlComponent implements OnInit {
         }
         outputUrl = url.toString()
       }
-      this.majProduit(outputUrl)
       return outputUrl
     })
   )
 
-  setOffset(value: string) {
-    this.offset$.next(value)
-  }
+  subProducts$ = this.apiQueryUrl$.pipe(
+    mergeMap(url=> this.getSubProduct(url).pipe(
+      map((link) => {
+        //console.log(link)
 
-  setLimit(value: string) {
-    this.limit$.next(value)
-  }
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        const element = [] as Array<string>
+
+        for (let indexLink = 0; indexLink < link.length; indexLink++) {
+          //console.log('re')
+
+          const elementToAdd = this.getDownloadLink(link[indexLink]).subscribe(
+            // eslint-disable-next-line prefer-spread
+            (linkDownload) => element.push.apply(element, linkDownload)
+            //console.log(linkDownload)}
+          )
+          //console.log('ee', elementToAdd)
+        }
+        console.log("sortie de requete produit : ",element)
+
+        return element
+      })
+    )))
+
+
+  // getClassForFilter(index: number) {
+  //   return (
+  //     (this.isOpen ? 'block' : 'hidden') + ' ' + (index < 2 ? 'sm:block' : '')
+  //   )
+  // }
+
+  // setOffset(value: string) {
+  //   this.offset$.next(value)
+  // }
+
+  // setLimit(value: string) {
+  //   this.limit$.next(value)
+  // }
 
   setFormat(value: string) {
     this.format$.next(value)
   }
 
   resetUrl() {
-    this.offset$.next(DEFAULT_PARAMS.OFFSET)
-    this.limit$.next(DEFAULT_PARAMS.LIMIT)
+    // this.offset$.next(DEFAULT_PARAMS.OFFSET)
+    // this.limit$.next(DEFAULT_PARAMS.LIMIT)
     this.format$.next(DEFAULT_PARAMS.FORMAT)
   }
 

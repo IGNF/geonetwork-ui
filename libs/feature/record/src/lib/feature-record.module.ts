@@ -12,6 +12,7 @@ import { MdViewEffects } from './state/mdview.effects'
 import { MapViewComponent } from './map-view/map-view.component'
 import { DataViewComponent } from './data-view/data-view.component'
 import { IgnApiDlComponent } from './ign-api-dl/ign-api-dl.component'
+import { IgnApiProduitComponent } from './ign-api-produit/ign-api-produit.component'
 import { MD_VIEW_FEATURE_STATE_KEY, reducer } from './state/mdview.reducer'
 import { MatTabsModule } from '@angular/material/tabs'
 import { MatIconModule } from '@angular/material/icon'
@@ -33,8 +34,8 @@ import { DataViewShareComponent } from './data-view-share/data-view-share.compon
     DataViewPermalinkComponent,
     DataViewWebComponentComponent,
     DataViewShareComponent,
-    IgnApiDlComponent
-
+    IgnApiDlComponent,
+    IgnApiProduitComponent,
   ],
   imports: [
     CommonModule,

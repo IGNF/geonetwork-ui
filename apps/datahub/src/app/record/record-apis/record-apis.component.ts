@@ -16,12 +16,12 @@ export class RecordApisComponent implements OnInit {
 
   ngOnInit():void {
     const link: DatasetServiceDistribution = {
-    type: 'service',
-    url: new URL('https://data.geopf.fr/telechargement/resource/BDORTHO'),
-    accessServiceProtocol: 'wms',
-    identifierInService: 'pas identification services ',
-    description: 'pas de description',
-  }
+      type: 'service',
+      url: new URL('https://data.geopf.fr/telechargement/resource/BDORTHO'),
+      accessServiceProtocol: 'wms',
+      identifierInService: 'pas identification services ',
+      description: 'pas de description',
+    }
   this.setStyle(link)
   this.selectedApiLink = link
 }
