@@ -24,7 +24,7 @@ import { Choice, DropdownChoice } from '@geonetwork-ui/ui/inputs'
 const DEFAULT_PARAMS = {
   OFFSET: '',
   LIMIT: '',
-  FORMAT: 'TIFF',
+  FORMAT: '',
 }
 export interface Label {
   label: string
@@ -71,18 +71,16 @@ export class IgnApiDlComponent implements OnInit {
     this.resetUrl()
   }
   offset$ = new BehaviorSubject('')
-  limit$ = new BehaviorSubject('')
+  zone$ = new BehaviorSubject('')
   format$ = new BehaviorSubject('')
 
-  choices$: Observable<Choice[]>
+  choicesFormat$: Observable<Choice[]>
+  choicesZone$: Observable<Choice[]>
   // subProducts$: Observable <Array<string>>
 
   constructor(protected http: HttpClient) {}
 
   isOpen = false
-  searchConfig: { fieldName: string; title: string }[] = [
-    { fieldName: 'format', title: 'Le format' },
-  ]
   apiBaseUrl: string
 
   getSubProduct(url: string) {
@@ -98,15 +96,16 @@ export class IgnApiDlComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.choices$ = this.getFields('BDORTHO', 'format')
+    this.choicesZone$ = this.getFields('BDORTHO', 'zone')
+    this.choicesFormat$ = this.getFields('BDORTHO', 'format')
   }
 
-  apiQueryUrl$ = combineLatest([this.offset$, this.limit$, this.format$]).pipe(
-    map(([offset, limit, format]) => {
+  apiQueryUrl$ = combineLatest([this.offset$, this.zone$, this.format$]).pipe(
+    map(([offset, zone, format]) => {
       let outputUrl
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl)
-        const params = { offset: offset, limit: limit, format: format }
+        const params = { offset: offset, zone: zone, format: format }
         for (const [key, value] of Object.entries(params)) {
           if (value && value !== '0') {
             url.searchParams.set(key, value)
@@ -115,6 +114,7 @@ export class IgnApiDlComponent implements OnInit {
           }
         }
         outputUrl = url.toString()
+        console.log(outputUrl);
       }
       return outputUrl
     })
@@ -123,23 +123,14 @@ export class IgnApiDlComponent implements OnInit {
   subProducts$ = this.apiQueryUrl$.pipe(
     mergeMap(url=> this.getSubProduct(url).pipe(
       map((link) => {
-        //console.log(link)
-
-        // eslint-disable-next-line @typescript-eslint/ban-types
         const element = [] as Array<string>
-
         for (let indexLink = 0; indexLink < link.length; indexLink++) {
-          //console.log('re')
-
           const elementToAdd = this.getDownloadLink(link[indexLink]).subscribe(
             // eslint-disable-next-line prefer-spread
             (linkDownload) => element.push.apply(element, linkDownload)
-            //console.log(linkDownload)}
           )
-          //console.log('ee', elementToAdd)
         }
         console.log("sortie de requete produit : ",element)
-
         return element
       })
     )))
@@ -155,17 +146,18 @@ export class IgnApiDlComponent implements OnInit {
   //   this.offset$.next(value)
   // }
 
-  // setLimit(value: string) {
-  //   this.limit$.next(value)
-  // }
+  setZone(value: string) {
+    this.zone$.next(value)
+  }
 
   setFormat(value: string) {
+    console.log('on change de valeur')
     this.format$.next(value)
   }
 
   resetUrl() {
     // this.offset$.next(DEFAULT_PARAMS.OFFSET)
-    // this.limit$.next(DEFAULT_PARAMS.LIMIT)
+    this.zone$.next(DEFAULT_PARAMS.LIMIT)
     this.format$.next(DEFAULT_PARAMS.FORMAT)
   }
 
