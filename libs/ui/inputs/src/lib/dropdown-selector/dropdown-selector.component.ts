@@ -28,7 +28,7 @@ const DEFAULT_ROW_NUMBERS = 6
 })
 export class DropdownSelectorComponent implements OnInit {
   @Input() title: string
-  @Input() showTitle = true
+  @Input() showTitle = false
   @Input() ariaName: string
   @Input() choices: Array<DropdownChoice>
   @Input() selected: DropdownChoice['value']
@@ -80,6 +80,7 @@ export class DropdownSelectorComponent implements OnInit {
     if (!this.choices || this.choices.length === 0) {
       this.choices = []
     }
+    console.log("un nv test",this.focusFirstItem())
   }
 
   isSelected(choice: DropdownChoice) {

@@ -20,12 +20,21 @@ export class IgnApiProduitComponent {
   constructor(protected http: HttpClient) {}
 
   ngOnInit() {
-    this.listeProduit = this.http.get(this.urlProduit).pipe(
-      map(
-        (reponse) => reponse['entry'],
-      )
-    )
+    this.listeProduit = this.http
+      .get(this.urlProduit)
+      .pipe(map((reponse) => reponse['entry']))
   }
+
+  // downloadFile() {
+  //   console.log('Telechargement!!')
+  //   this.listeProduit.subscribe((reponse) =>
+  //     reponse.map((el) => this.downloadProduct(el['id']))
+  //   )
+  // }
+
+  // downloadProduct(url) {
+  //   console.log(url)
+  // }
 
   // (value: Array<any>) {
   //   this.setProduits(value)

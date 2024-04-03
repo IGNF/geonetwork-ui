@@ -9,6 +9,8 @@ import {
   BehaviorSubject,
   Observable,
   combineLatest,
+  filter,
+  iif,
   map,
   mergeMap,
   switchMap,
@@ -24,8 +26,9 @@ export interface Label {
 
 export interface FormatProduit {
   title: string
+  editionDate: string
   format: Array<TermBucket>
-  zone: any
+  zone: Array<TermBucket>
 }
 
 export interface FormatSortieProduit {
@@ -60,17 +63,19 @@ export interface Field {
 export class IgnApiDlComponent implements OnInit {
   @Input() set apiLink(value: DatasetServiceDistribution) {
     this.apiBaseUrl = value ? value.url.href : undefined
-    //this.resetUrl()
+    this.resetUrl()
   }
 
-  offset$ = new BehaviorSubject('')
+  editionDate$ = new BehaviorSubject('')
   zone$ = new BehaviorSubject('')
   format$ = new BehaviorSubject('')
-  zoneFiltree: string
-  formatFiltree: string
+  spatialDatasetIdentifierCode$ = new BehaviorSubject('')
+
 
   choicesFormat$: Observable<Choice[]>
   choicesZone$: Observable<Choice[]>
+  choicesEditionDate$: Observable<Choice[]>
+  choicesSpatialDatasetIdentifierCode$: Observable<Choice[]>
   // listProduit$: Observable<any>
   // subProducts$: Observable <Array<string>>
 
@@ -80,17 +85,19 @@ export class IgnApiDlComponent implements OnInit {
   apiBaseUrl: string
 
   ngOnInit(): void {
-    this.choicesZone$ = this.getFields('BDORTHO', 'zone')
-    this.choicesFormat$ = this.getFields('BDORTHO', 'format')
+    this.choicesZone$ = this.getFields('BDORTHO', 'zone');
+    this.choicesFormat$ = this.getFields('BDORTHO', 'format');
+    this.choicesEditionDate$ = this.getFields('BDORTHO', 'editionDate')
+    this.choicesSpatialDatasetIdentifierCode$ = this.getFields('BDORTHO', 'spatialDatasetIdentifierCode')
   }
 
-  apiQueryUrl$ = combineLatest([this.zone$, this.format$]).pipe(
-    map(([zone, format]) => {
+  apiQueryUrl$ = combineLatest([this.zone$, this.format$,this.editionDate$,this.spatialDatasetIdentifierCode$]).pipe(
+    map(([zone, format, editionDate,spatialDatasetIdentifierCode]) => {
       console.log('on change de valeur')
       let outputUrl
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
-        const params = { zone: zone, format: format } // initialisation des paramètres de filtres
+        const params = { zone: zone, format: format, editionDate: editionDate ,spatialDatasetIdentifierCode: spatialDatasetIdentifierCode} // initialisation des paramètres de filtres
         for (const [key, value] of Object.entries(params)) {
           if (value && value !== '0') {
             url.searchParams.set(key, value)
@@ -151,23 +158,28 @@ export class IgnApiDlComponent implements OnInit {
   //   )
   // }
 
-  // setOffset(value: string) {
-  //   this.offset$.next(value)
-  // }
+  setEditionDate(value: string) {
+    this.editionDate$.next(value)
+  }
 
   setZone(value: string) {
     this.zone$.next(value)
   }
 
+  setSpatialDatasetIdentifierCode(value: string) {
+    this.spatialDatasetIdentifierCode$.next(value)
+  }
+
+
   setFormat(value: string) {
     this.format$.next(value)
   }
 
-  // resetUrl() {
-  //   // this.offset$.next(DEFAULT_PARAMS.OFFSET)
-  //   this.zone$.next(DEFAULT_PARAMS.LIMIT)
-  //   this.format$.next(DEFAULT_PARAMS.FORMAT)
-  // }
+  resetUrl() {
+    // this.offset$.next(DEFAULT_PARAMS.OFFSET)
+    this.zone$.next(this.choicesZone$[0])
+    this.format$.next(this.choicesFormat$[0])
+  }
 
   // getProduit(response){
 
@@ -189,17 +201,48 @@ export class IgnApiDlComponent implements OnInit {
           (element) =>
             element['id'] ==
             'https://data.geopf.fr/telechargement/resource/'.concat(produit)
-        )
+        )[0]
       ),
-      //tap((el) => console.log(el)),
-      switchMap((buckets: Array<FormatProduit>) => {
-        const bucketPromises = buckets[0][param].map((bucket) => ({
+      tap((el) => console.log(el)),
+      switchMap((buckets: FormatProduit) => {
+       if (param != 'editionDate' && param != 'spatialDatasetIdentifierCode' ) {
+        console.log(typeof(buckets[param]));
+        const bucketPromises = buckets[param].map((bucket) => ({
           value: bucket.label,
-          label: bucket.term || 'Pas de valeur',
+          label: bucket.term || param,
         }))
-        //console.log('bucket', bucketPromises)
-        return Promise.all(bucketPromises)
+        return Promise.all(bucketPromises)}
+        else{
+          console.log(typeof(buckets[param]));
+          const bucketPromises = [{
+            value: buckets[param] ||"",
+            label: buckets[param] || param
+          }]
+          console.log(bucketPromises);
+          return Promise.all(bucketPromises)
+        }
       })
     )
   }
+
+  // getFieldsUnique(produit: string, param: string): Observable<FieldAvailableValue[]> {
+  //   return this.http.get(this.url).pipe(
+  //     map((response) =>
+  //       (response as Field).entry.filter(
+  //         (element) =>
+  //           element['id'] ==
+  //           'https://data.geopf.fr/telechargement/resource/'.concat(produit)
+  //       )
+  //     ),
+  //     tap((el) => console.log(el)),
+  //     switchMap((buckets: Array<FormatProduit>) => {
+  //       const bucketPromises = [{
+  //         value: buckets[0][param],
+  //         label: buckets[0][param] || param,
+  //       }]
+  //       //console.log('bucket', bucketPromises)
+  //       return Promise.all(bucketPromises)
+  //     })
+  //   )
+  // }
 }

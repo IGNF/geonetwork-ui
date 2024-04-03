@@ -4,10 +4,18 @@
       <div class="text-[16px] text-black truncate font-title w-11/12" translate>
         record.metadata.api.form.create
       </div>
+      <button
+        (click)="resetUrl()"
+        class="bg-primary-opacity-50 inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded capitalize text-primary-lightest hover:bg-primary transition-colors"
+      >
+        <p class="text-[13px] uppercase" translate>
+          record.metadata.api.form.reset
+        </p>
+      </button>
     </div>
     <div class="flex flex-row flex-wrap justify-between flex-grow gap-5">
       <div class="flex flex-col gap-3">
-        <p class="text-sm" translate>record.metadata.api.form.type</p>
+        <!--<p class="text-sm" translate>record.metadata.api.form.type</p>-->
         <gn-ui-dropdown-selector
           #format
           [title]="''"
@@ -21,7 +29,7 @@
         </gn-ui-dropdown-selector>
       </div>
       <div class="flex flex-col gap-3">
-        <p class="text-sm" translate>Département</p>
+        <!--<p class="text-sm" translate>Département</p>-->
         <gn-ui-dropdown-selector
           #zone
           [title]="''"
@@ -34,22 +42,34 @@
         >
         </gn-ui-dropdown-selector>
       </div>
-      <div class="flex flex-row flex-wrap justify-between flex-grow gap-5">
-        <div class="flex flex-col gap-3">
-          <button
-            #validation
-            class="bg-primary-opacity-50 inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded capitalize text-primary-lightest hover:bg-primary transition-colors"
-          >
-            <p class="text-[13px] uppercase" translate>Rechercher</p>
-          </button>
-        </div>
+      <div class="flex flex-col gap-3">
+        <!--<p class="text-sm" translate>Département</p>-->
+        <gn-ui-dropdown-selector
+          #date
+          [title]="''"
+          extraBtnClass="secondary min-w-full !w-40 !text-black"
+          [showTitle]="false"
+          class="text-black"
+          [choices]="choicesEditionDate$ | async"
+          (selectValue)="setEditionDate($event)"
+          [selected]="editionDate$ | async"
+        >
+        </gn-ui-dropdown-selector>
       </div>
-      <!--<div class="flex flex-col gap-3 mb-3">
-      <div class="bg-white rounded-lg">
-      <gn-ui-copy-text-button
-        [text]="apiQueryUrl$ | async"
-      ></gn-ui-copy-text-button>
-    </div>-->
+      <div class="flex flex-col gap-3">
+        <!--<p class="text-sm" translate>Département</p>-->
+        <gn-ui-dropdown-selector
+          #SRC
+          [title]="''"
+          extraBtnClass="secondary min-w-full !w-40 !text-black"
+          [showTitle]="false"
+          class="text-black"
+          [choices]="choicesSpatialDatasetIdentifierCode$ | async"
+          (selectValue)="setSpatialDatasetIdentifierCode($event)"
+          [selected]="spatialDatasetIdentifierCode$ | async"
+        >
+        </gn-ui-dropdown-selector>
+      </div>
     </div>
     <div class="bg-white rounded-lg">
       <div class="overflow-auto h-60 w-65 bg-white-300 m-2">
@@ -61,7 +81,7 @@
               <div
                 class="py-2 pr-2 text-xl border-b border-slate-200 dark:border-slate-400/20"
               >
-                Produit
+                Produits :
               </div>
             </tr>
           </thead>
@@ -70,10 +90,15 @@
             <tr>
               <div
                 class="py-2 pr-2 font-mono font-medium text-s leading-6 text-sky-500 whitespace-nowrap dark:text-sky-400"
-                *ngFor="let produit of listeProduitFiltree$ | async; let i = index"
+                *ngFor="
+                  let produit of listeProduitFiltree$ | async;
+                  let i = index
+                "
               >
-                <h1>Lot de produits {{i}}</h1>
-                <gn-ui-ign-api-produit [urlProduit]="produit"></gn-ui-ign-api-produit>
+                <h1>Produits {{ i }} :</h1>
+                <gn-ui-ign-api-produit
+                  [urlProduit]="produit"
+                ></gn-ui-ign-api-produit>
               </div>
             </tr>
           </tbody>
