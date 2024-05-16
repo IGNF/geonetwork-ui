@@ -4,9 +4,8 @@ WORKDIR /app
 
 COPY . .
 
-RUN npm install
 
-RUN npx nx build apps/datahub
+RUN npx nx build app/datahub
 
 FROM nginx:stable-alpine
 
