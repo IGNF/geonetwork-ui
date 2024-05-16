@@ -2,8 +2,10 @@ FROM node:16.13.0-alpine AS builder
 
 WORKDIR /app
 
-COPY ./dist .
+COPY . .
 
+RUN npm install
+RUN npx nx build datahub
 
 FROM nginx:stable-alpine
 
