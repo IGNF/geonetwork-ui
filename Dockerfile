@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY . .
 
+RUN npm install
 
 RUN npx nx build app/datahub
 
