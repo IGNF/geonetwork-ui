@@ -9,4 +9,8 @@ import { DatasetDistribution } from '@geonetwork-ui/common/domain/model/record'
 })
 export class LinkCardComponent {
   @Input() link: DatasetDistribution
+
+  ngOnInit() {
+    console.log("je suis le link de lien", this.link)
+  }
 }
