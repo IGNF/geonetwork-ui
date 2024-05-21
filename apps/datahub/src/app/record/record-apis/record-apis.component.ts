@@ -15,15 +15,17 @@ export class RecordApisComponent implements OnInit {
   constructor(public facade: MdViewFacade) {}
 
   ngOnInit():void {
-    const link: DatasetServiceDistribution = {
-      type: 'service',
-      url: new URL('https://data.geopf.fr/telechargement/resource/BDORTHO'),
-      accessServiceProtocol: 'wms',
-      identifierInService: 'pas identification services ',
-      description: 'pas de description',
-    }
-  this.setStyle(link)
-  this.selectedApiLink = link
+  //   const link: DatasetServiceDistribution = {
+  //     type: 'service',
+  //     url: new URL('https://data.geopf.fr/telechargement/resource/BDORTHO'),
+  //     accessServiceProtocol: 'wms',
+  //     identifierInService: 'pas identification services ',
+  //     description: 'pas de description',
+  //   }
+  // //if(link.accessServiceProtocol === "ignDl"){
+  //   this.setStyle(link)
+  //   this.selectedApiLink = link
+  // //}
 }
 
   openRecordApiForm(link: DatasetServiceDistribution) {
