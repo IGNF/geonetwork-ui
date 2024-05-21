@@ -63,6 +63,7 @@ export interface Field {
 export class IgnApiDlComponent implements OnInit {
   @Input() set apiLink(value: DatasetServiceDistribution) {
     this.apiBaseUrl = value ? value.url.href : undefined
+    console.log(this.apiBaseUrl)
     this.resetUrl()
   }
 
