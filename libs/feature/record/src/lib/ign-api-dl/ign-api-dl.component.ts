@@ -93,7 +93,7 @@ export class IgnApiDlComponent implements OnInit {
 
   apiQueryUrl$ = combineLatest([this.zone$, this.format$,this.editionDate$,this.category$]).pipe(
     map(([zone, format, editionDate,category]) => {
-      let outputUrl
+      let outputUrl: string
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
         const params = { zone: zone, format: format, editionDate: editionDate ,crs: category} // initialisation des paramètres de filtres
@@ -107,6 +107,17 @@ export class IgnApiDlComponent implements OnInit {
         outputUrl = url.toString()
         console.log(outputUrl)
       }
+      const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
+      const params = { zone: zone, format: format, editionDate: editionDate ,src: category} // initialisation des paramètres de filtres
+      for (const [key, value] of Object.entries(params)) {
+        if (value && value !== '0') {
+          url.searchParams.set(key, value)
+        } else {
+          url.searchParams.delete(key)
+        }
+      }
+      outputUrl = url.toString()
+      console.log(outputUrl)
       return outputUrl
     })
   )
@@ -179,22 +190,10 @@ export class IgnApiDlComponent implements OnInit {
   }
 
   resetUrl() {
-    // this.offset$.next(DEFAULT_PARAMS.OFFSET)
     this.zone$.next(this.choicesZone$[0])
     this.format$.next(this.choicesFormat$[0])
     this.category$.next(this.choicesFormat$[0])
   }
-
-  // getProduit(response){
-
-  //   console.log('produit dans le html',response)
-  // }
-
-  // rechercheProduit(){
-  //   console.log('bouton apuyer');
-  //   //this.zone$.next(this.zoneFiltree)
-  //   this.format$.next(this.formatFiltree)
-  // }
 
   url = 'https://data.geopf.fr/telechargement/capabilities'
 
@@ -221,25 +220,4 @@ export class IgnApiDlComponent implements OnInit {
       )
     )
   }
-
-  // getFieldsUnique(produit: string, param: string): Observable<FieldAvailableValue[]> {
-  //   return this.http.get(this.url).pipe(
-  //     map((response) =>
-  //       (response as Field).entry.filter(
-  //         (element) =>
-  //           element['id'] ==
-  //           'https://data.geopf.fr/telechargement/resource/'.concat(produit)
-  //       )
-  //     ),
-  //     tap((el) => console.log(el)),
-  //     switchMap((buckets: Array<FormatProduit>) => {
-  //       const bucketPromises = [{
-  //         value: buckets[0][param],
-  //         label: buckets[0][param] || param,
-  //       }]
-  //       //console.log('bucket', bucketPromises)
-  //       return Promise.all(bucketPromises)
-  //     })
-  //   )
-  // }
 }
