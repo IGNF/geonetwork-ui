@@ -25,8 +25,11 @@ export class LinkClassifierService {
           case 'wms':
           case 'wmts':
             return [LinkUsage.API, LinkUsage.MAP_API]
+          
           case 'ogcFeatures':
             return [LinkUsage.API]
+          case 'ignDl':
+            return [LinkUsage.API, LinkUsage.DOWNLOAD]
           default:
             return [LinkUsage.UNKNOWN]
         }
