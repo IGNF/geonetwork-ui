@@ -318,7 +318,6 @@ export class Gn4FieldMapper {
 
   getLinkType(url: string, protocol?: string): DatasetDistributionType {
     
-    console.log("hello proto",protocol);
     if (!protocol) {
       return 'link'
     }
@@ -373,12 +372,10 @@ export class Gn4FieldMapper {
       protocol && protocol.match(/^WWW:DOWNLOAD:(.+\/.+)$/)
     console.log("je suis le mimetypeMatches" ,mimeTypeMatches)
     const mimeType = mimeTypeMatches && mimeTypeMatches[1]
-    console.log("je suis le mimeTyep", mimeType)
     const distribution = {
       ...(name && { name }),
       ...(description && { description }),
     }
-    console.log("hello type",type);
     
     switch (type) {
       case 'service':
