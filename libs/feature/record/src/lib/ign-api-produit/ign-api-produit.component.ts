@@ -8,7 +8,7 @@ import {
   Output,
 } from '@angular/core'
 import { DatasetDistribution } from '@geonetwork-ui/common/domain/model/record'
-import { Observable, catchError, map, tap, throwError } from 'rxjs'
+import { Observable, catchError, map, mergeMap, tap, throwError } from 'rxjs'
 
 @Component({
   selector: 'gn-ui-ign-api-produit',
@@ -30,5 +30,16 @@ export class IgnApiProduitComponent implements OnInit{
       map((response) => response['entry'][0]['id']),
       // tap((el) => console.log(el))
       )
+  }
+  downloadListe():void{
+    this.http.get(this.link['id']).pipe(
+      map((response) => response['entry']),
+      mergeMap((response) => response)
+    ).subscribe(reponse=>this.download(reponse['id']))
+  }
+
+  download(url):void{
+    console.log(url)
+    this.http.get(url).subscribe()
   }
 }

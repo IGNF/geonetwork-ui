@@ -14,7 +14,8 @@
       </button>
     </div>
     <div class="flex flex-row flex-wrap justify-between flex-grow gap-5">
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-3"
+      *ngIf = "choicesFormat$ |async">
         <!--<p class="text-sm" translate>record.metadata.api.form.type</p>-->
         <gn-ui-dropdown-selector
           #format
@@ -28,8 +29,8 @@
         >
         </gn-ui-dropdown-selector>
       </div>
-      <div class="flex flex-col gap-3">
-        <!--<p class="text-sm" translate>Département</p>-->
+      <div class="flex flex-col gap-3"
+      *ngIf = "choicesZone$ | async">
         <gn-ui-dropdown-selector
           #zone
           [title]="''"
@@ -42,8 +43,8 @@
         >
         </gn-ui-dropdown-selector>
       </div>
-      <div class="flex flex-col gap-3">
-        <!--<p class="text-sm" translate>Département</p>-->
+      <div class="flex flex-col gap-3"
+      *ngIf = "choicesEditionDate$ | async">
         <gn-ui-dropdown-selector
           #date
           [title]="''"
@@ -56,8 +57,8 @@
         >
         </gn-ui-dropdown-selector>
       </div>
-      <div class="flex flex-col gap-3">
-        <!--<p class="text-sm" translate>Département</p>-->
+      <div class="flex flex-col gap-3"
+      *ngIf = "choicesCategory$ | async">
         <gn-ui-dropdown-selector
           #SRC
           [title]="''"

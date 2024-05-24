@@ -28,7 +28,6 @@ export class ApiCardComponent implements OnInit, OnChanges {
     this.displayApiFormButton =
       this.link.accessServiceProtocol === 'ogcFeatures' ||
       this.link.accessServiceProtocol === 'ignDl'
-    console.log('je suis le link', this.link)
   }
 
   ngOnChanges(changes: SimpleChanges) {

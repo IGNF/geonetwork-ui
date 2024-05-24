@@ -26,7 +26,7 @@ export interface Label {
 
 export interface FormatProduit {
   title: string
-  editionDate: string
+  update: string
   format: Array<TermBucket>
   zone: Array<TermBucket>
 }
@@ -43,6 +43,13 @@ export interface FieldAvailableValue {
   value: string | number
   label: string
 }
+export interface listFieldAvailableValue {
+  zone: FieldAvailableValue[]
+  format: FieldAvailableValue[]
+  editionDate: FieldAvailableValue[]
+  crs : FieldAvailableValue[]
+}
+
 
 export interface TermBucket {
   term: string
@@ -63,7 +70,6 @@ export interface Field {
 export class IgnApiDlComponent implements OnInit {
   @Input() set apiLink(value: DatasetServiceDistribution) {
     this.apiBaseUrl = value ? value.url.href : undefined
-    console.log(this.apiBaseUrl)
     this.resetUrl()
   }
 
@@ -77,6 +83,8 @@ export class IgnApiDlComponent implements OnInit {
   choicesZone$: Observable<Choice[]>
   choicesEditionDate$: Observable<Choice[]>
   choicesCategory$: Observable<Choice[]>
+
+  choice$: Observable<listFieldAvailableValue[]>
   // listProduit$: Observable<any>
   // subProducts$: Observable <Array<string>>
 
@@ -86,10 +94,28 @@ export class IgnApiDlComponent implements OnInit {
   apiBaseUrl: string
 
   ngOnInit(): void {
-    this.choicesZone$ = this.getFields('BDORTHO', 'zone');
-    this.choicesFormat$ = this.getFields('BDORTHO', 'format');
-    this.choicesEditionDate$ = this.getFields('BDORTHO', 'editionDate')
-    this.choicesCategory$ = this.getFields('BDORTHO', 'category')
+
+    this.choice$ = this.getFields2('BDORTHO')
+
+    this.choicesZone$ = this.choice$.pipe(
+
+      mergeMap(rep=>rep),
+
+      map( rep=> rep['zone'])
+      );
+    this.choicesFormat$ = this.choice$.pipe(
+
+      mergeMap(rep=>rep),
+
+      map( rep=> rep['format'])
+      );
+
+  this.choicesCategory$ = this.choice$.pipe(
+
+    mergeMap(rep=>rep),
+
+    map( rep=> rep['crs'])
+    );
   }
 
   apiQueryUrl$ = combineLatest([this.zone$, this.format$,this.editionDate$,this.category$]).pipe(
@@ -108,17 +134,6 @@ export class IgnApiDlComponent implements OnInit {
         outputUrl = url.toString()
         console.log(outputUrl)
       }
-      const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
-      const params = { zone: zone, format: format, editionDate: editionDate ,src: category} // initialisation des paramètres de filtres
-      for (const [key, value] of Object.entries(params)) {
-        if (value && value !== '0') {
-          url.searchParams.set(key, value)
-        } else {
-          url.searchParams.delete(key)
-        }
-      }
-      outputUrl = url.toString()
-      console.log(outputUrl)
       return outputUrl
     })
   )
@@ -139,39 +154,7 @@ export class IgnApiDlComponent implements OnInit {
     //console.log(produit['format'][0])
     return produit['format'][0]['label']
   }
-  // getSubProduct(url: string) {
-  //   return this.http
-  //     .get(url, { headers: { accept: 'application/json' } })
-  //     .pipe(map((response) => response['entry'].map((el) => el['id'])))
-  // }
 
-  // getDownloadLink(url: string) {
-  //   return this.http
-  //     .get(url, { headers: { accept: 'application/json' } })
-  //     .pipe(map((response) => response['entry']))
-  // }
-  // getProduct(){
-  //   return this.apiQueryUrl$.pipe(
-  //     concatMap(url=> this.getSubProduct(url).pipe(
-  //       map((link) => {
-  //         const element = [] as Array<string>
-  //         for (let indexLink = 0; indexLink < link.length; indexLink++) {
-  //           const elementToAdd = this.getDownloadLink(link[indexLink]).subscribe(
-  //             // eslint-disable-next-line prefer-spread
-  //             (linkDownload) => element.push.apply(element, linkDownload)
-  //           )
-  //         }
-  //         console.log("sortie de requete produit : ",element)
-  //         return element
-  //       })
-  //     )))
-  // }
-
-  // getClassForFilter(index: number) {
-  //   return (
-  //     (this.isOpen ? 'block' : 'hidden') + ' ' + (index < 2 ? 'sm:block' : '')
-  //   )
-  // }
 
   setEditionDate(value: string) {
     this.editionDate$.next(value)
@@ -217,7 +200,59 @@ export class IgnApiDlComponent implements OnInit {
         }))
         bucketPromises.unshift({value: "",label: param});
         console.log(bucketPromises);
+
         return Promise.all(bucketPromises)}
+      )
+    )
+  }
+
+  getFields2(produit: string): Observable<listFieldAvailableValue[]> {
+    console.log('lancement de la requete')
+    return this.http.get(this.url).pipe(
+      map((response) =>
+        (response as Field).entry.filter(
+          (element) =>
+            element['id'] ==
+            'https://data.geopf.fr/telechargement/resource/'.concat(produit)
+        )[0]
+      ),
+      switchMap((buckets: FormatProduit) => {
+
+        const bucketPromisesZone : FieldAvailableValue[]= buckets['zone'].map((bucket) => (
+          {
+          value: bucket.label,
+          label: bucket.term
+        }))
+        bucketPromisesZone.unshift({value: "",label: 'zone'});
+
+        const bucketPromisesFormat: FieldAvailableValue[] = buckets['format'].map((bucket) => (
+          {
+          value: bucket.label,
+          label: bucket.term
+        }))
+        bucketPromisesFormat.unshift({value: "",label: 'format'});
+
+        const bucketPromisesEditionDate : FieldAvailableValue [] =
+          [{
+          value: buckets['updated']|| "null",
+          label: buckets['updated'] || "null"
+        }]
+        // bucketPromisesEditionDate.unshift({value: "",label: 'editionDate'});
+
+        const bucketPromisesCrs : FieldAvailableValue[] = buckets['category'].map((bucket) => (
+          {
+          value: bucket.label,
+          label: bucket.term
+        }))
+        bucketPromisesCrs.unshift({value: "",label: 'crs'});
+
+        const  bucketPromises :listFieldAvailableValue = {
+          zone : bucketPromisesZone,
+          format : bucketPromisesFormat,
+          editionDate : bucketPromisesEditionDate,
+          crs : bucketPromisesCrs
+        }
+        return Promise.all([bucketPromises])}
       )
     )
   }
