@@ -11,24 +11,18 @@ import { MdViewFacade } from '@geonetwork-ui/feature/record'
 export class RecordApisComponent implements OnInit {
   maxHeight = '0px'
   opacity = 0
+  displayApiIgnForm: boolean
   selectedApiLink: DatasetServiceDistribution
   constructor(public facade: MdViewFacade) {}
 
-  ngOnInit():void {
-  //   const link: DatasetServiceDistribution = {
-  //     type: 'service',
-  //     url: new URL('https://data.geopf.fr/telechargement/resource/BDORTHO'),
-  //     accessServiceProtocol: 'wms',
-  //     identifierInService: 'pas identification services ',
-  //     description: 'pas de description',
-  //   }
-  // //if(link.accessServiceProtocol === "ignDl"){
-  //   this.setStyle(link)
-  //   this.selectedApiLink = link
-  // //}
-}
+  ngOnInit(): void {
+    this.setStyle(undefined)
+    this.selectedApiLink = undefined
+  }
 
   openRecordApiForm(link: DatasetServiceDistribution) {
+    this.displayApiIgnForm =
+      link.accessServiceProtocol === 'GPFDL' ? true : false
     this.selectedApiLink = link
     this.setStyle(link)
   }
@@ -39,7 +33,7 @@ export class RecordApisComponent implements OnInit {
   }
 
   setStyle(link: DatasetServiceDistribution) {
-    this.maxHeight = link === undefined ? '0px' : '1000px'
+    this.maxHeight = link === undefined ? '0px' : '500px'
     this.opacity = link === undefined ? 0 : 1
   }
 }
