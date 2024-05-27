@@ -2,9 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   Input,
-  OnChanges,
   OnInit,
-  SimpleChanges,
 } from '@angular/core'
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
 import {
@@ -62,9 +60,9 @@ export interface Field {
   styleUrls: ['./ign-api-dl.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class IgnApiDlComponent {
+export class IgnApiDlComponent implements OnInit {
   @Input() set apiLink(value: DatasetServiceDistribution) {
-    this.apiBaseUrl = value.url.href
+    this.apiBaseUrl = value ? value.url.href : undefined
     console.log(this.apiBaseUrl)
     this.resetUrl()
   }
@@ -74,12 +72,10 @@ export class IgnApiDlComponent {
   format$ = new BehaviorSubject('')
   spatialDatasetIdentifierCode$ = new BehaviorSubject('')
 
-  choicesFormat$: Observable<Choice[]> = this.getFields('format')
-  choicesZone$: Observable<Choice[]> = this.getFields('zone')
-  choicesEditionDate$: Observable<Choice[]> = this.getFields('editionDate')
-  choicesSpatialDatasetIdentifierCode$: Observable<Choice[]> = this.getFields(
-    'spatialDatasetIdentifierCode'
-  )
+  choicesFormat$: Observable<Choice[]>
+  choicesZone$: Observable<Choice[]>
+  choicesEditionDate$: Observable<Choice[]>
+  choicesSpatialDatasetIdentifierCode$: Observable<Choice[]>
   // listProduit$: Observable<any>
   // subProducts$: Observable <Array<string>>
 
@@ -87,6 +83,16 @@ export class IgnApiDlComponent {
 
   isOpen = false
   apiBaseUrl: string
+
+  ngOnInit(): void {
+    this.choicesZone$ = this.getFields('zone')
+    this.choicesFormat$ = this.getFields('format')
+    this.choicesEditionDate$ = this.getFields('editionDate')
+    this.choicesSpatialDatasetIdentifierCode$ = this.getFields(
+      'spatialDatasetIdentifierCode'
+    )
+  }
+
   apiQueryUrl$ = combineLatest([
     this.zone$,
     this.format$,
@@ -112,7 +118,9 @@ export class IgnApiDlComponent {
           url.searchParams.delete(key)
         }
       }
-      return url.toString()
+      let outputUrl = url.toString()
+      console.log(outputUrl)
+      return outputUrl
     })
   )
 
@@ -150,42 +158,37 @@ export class IgnApiDlComponent {
     this.format$.next(this.choicesFormat$[0])
   }
 
-  getFields(param: string): Observable<FieldAvailableValue[]> {
-    return this.http
-      .get('https://data.geopf.fr/telechargement/capabilities')
-      .pipe(
-        map(
-          (response) =>
-            (response as Field).entry.filter((element) => {
-              element['id'] == this.apiBaseUrl
-            })[0]
-        ),
-        tap((el) => console.log(el)),
-        switchMap((buckets: FormatProduit) => {
-          console.log('hellol')
+  url = 'https://data.geopf.fr/telechargement/capabilities'
 
-          if (
-            param != 'editionDate' &&
-            param != 'spatialDatasetIdentifierCode'
-          ) {
-            console.log('hello bucket', typeof buckets[param])
-            const bucketPromises = buckets[param].map((bucket) => ({
-              value: bucket.label,
-              label: bucket.term || param,
-            }))
-            return Promise.all(bucketPromises)
-          } else {
-            console.log(typeof buckets[param])
-            const bucketPromises = [
-              {
-                value: buckets[param] || '',
-                label: buckets[param] || param,
-              },
-            ]
-            console.log(bucketPromises)
-            return Promise.all(bucketPromises)
-          }
-        })
-      )
+  getFields(param: string): Observable<FieldAvailableValue[]> {
+    return this.http.get(this.url).pipe(
+      map(
+        (response) =>
+          (response as Field).entry.filter(
+            (element) => element['id'] == this.apiBaseUrl
+          )[0]
+      ),
+      tap((el) => console.log(el)),
+      switchMap((buckets: FormatProduit) => {
+        if (param != 'editionDate' && param != 'spatialDatasetIdentifierCode') {
+          console.log(typeof buckets[param])
+          const bucketPromises = buckets[param].map((bucket) => ({
+            value: bucket.label,
+            label: bucket.term || param,
+          }))
+          return Promise.all(bucketPromises)
+        } else {
+          console.log(typeof buckets[param])
+          const bucketPromises = [
+            {
+              value: buckets[param] || '',
+              label: buckets[param] || param,
+            },
+          ]
+          console.log(bucketPromises)
+          return Promise.all(bucketPromises)
+        }
+      })
+    )
   }
 }
