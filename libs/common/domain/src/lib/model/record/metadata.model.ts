@@ -99,7 +99,7 @@ export type ServiceProtocol =
   | 'wmts'
   | 'esriRest'
   | 'ogcFeatures'
-  | 'ignDl'
+  | 'GPFDL'
   | 'other'
 
 export type DatasetDistributionType = 'service' | 'download' | 'link'

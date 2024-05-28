@@ -28,7 +28,7 @@ export class LinkClassifierService {
           
           case 'ogcFeatures':
             return [LinkUsage.API]
-          case 'ignDl':
+          case 'GPFDL':
             return [LinkUsage.API, LinkUsage.DOWNLOAD]
           default:
             return [LinkUsage.UNKNOWN]
