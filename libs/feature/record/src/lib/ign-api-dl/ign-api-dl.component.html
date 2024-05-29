@@ -14,8 +14,7 @@
       </button>
     </div>
     <div class="flex flex-row flex-wrap justify-between flex-grow gap-5">
-      <div class="flex flex-col gap-3"
-      *ngIf = "choicesFormat$ |async">
+      <div class="flex flex-col gap-3" >
         <!--<p class="text-sm" translate>record.metadata.api.form.type</p>-->
         <gn-ui-dropdown-selector
           #format
@@ -23,51 +22,36 @@
           extraBtnClass="secondary min-w-full !w-40 !text-black"
           [showTitle]="false"
           class="text-black"
-          [choices]="choicesFormat$ | async"
+          [choices]="bucketPromisesZone"
           (selectValue)="setFormat($event)"
           [selected]="format$ | async"
         >
         </gn-ui-dropdown-selector>
       </div>
-      <div class="flex flex-col gap-3"
-      *ngIf = "choicesZone$ | async">
+      <div class="flex flex-col gap-3" >
+        <!--<p class="text-sm" translate>record.metadata.api.form.type</p>-->
         <gn-ui-dropdown-selector
-          #zone
+          #format
           [title]="''"
           extraBtnClass="secondary min-w-full !w-40 !text-black"
           [showTitle]="false"
           class="text-black"
-          [choices]="choicesZone$ | async"
-          (selectValue)="setZone($event)"
-          [selected]="zone$ | async"
+          [choices]="bucketPromisesFormat"
+          (selectValue)="setFormat($event)"
+          [selected]="format$ | async"
         >
         </gn-ui-dropdown-selector>
       </div>
-      <div class="flex flex-col gap-3"
-      *ngIf = "choicesEditionDate$ | async">
+      <div class="flex flex-col gap-3" >
+        <!--<p class="text-sm" translate>record.metadata.api.form.type</p>-->
         <gn-ui-dropdown-selector
-          #date
-          [title]="''"
-          extraBtnClass="secondary min-w-full !w-40 !text-black"
-          [showTitle]="false"
-          class="text-black"
-          [choices]="choicesEditionDate$ | async"
-          (selectValue)="setEditionDate($event)"
-          [selected]="editionDate$ | async"
-        >
-        </gn-ui-dropdown-selector>
-      </div>
-      <div class="flex flex-col gap-3"
-      *ngIf = "choicesCategory$ | async">
-        <gn-ui-dropdown-selector
-          #SRC
-          [title]="''"
-          extraBtnClass="secondary min-w-full !w-40 !text-black"
-          [showTitle]="false"
-          class="text-black"
-          [choices]="choicesCategory$ | async"
-          (selectValue)="setCategory($event)"
-          [selected]="category$ | async"
+          #format
+          [title]="'CRS'"
+
+
+          [choices]="bucketPromisesCrs"
+          (selectValue)="setFormat($event)"
+          [selected]="format$ | async"
         >
         </gn-ui-dropdown-selector>
       </div>

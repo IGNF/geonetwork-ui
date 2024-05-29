@@ -10,6 +10,7 @@ import {
   Observable,
   combineLatest,
   filter,
+  first,
   iif,
   map,
   mergeMap,
@@ -19,6 +20,7 @@ import {
 import { fromFetch } from 'rxjs/fetch'
 import { HttpClient } from '@angular/common/http'
 import { Choice, DropdownChoice } from '@geonetwork-ui/ui/inputs'
+import axios from 'axios'
 
 export interface Label {
   label: string
@@ -39,17 +41,12 @@ export interface ListUrl {
   url: string
 }
 
-export interface FieldAvailableValue {
-  value: string | number
-  label: string
+export interface listChoice {
+  zone: Choice[]
+  format: Choice[]
+  editionDate: Choice[]
+  crs: Choice[]
 }
-export interface listFieldAvailableValue {
-  zone: FieldAvailableValue[]
-  format: FieldAvailableValue[]
-  editionDate: FieldAvailableValue[]
-  crs : FieldAvailableValue[]
-}
-
 
 export interface TermBucket {
   term: string
@@ -68,53 +65,38 @@ export interface Field {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IgnApiDlComponent implements OnInit {
-  @Input() set apiLink(value: DatasetServiceDistribution) {
-    this.apiBaseUrl = value ? value.url.href : undefined
-    this.resetUrl()
-  }
-
+  isOpen = false
+  apiBaseUrl: string
   editionDate$ = new BehaviorSubject('')
   zone$ = new BehaviorSubject('')
   format$ = new BehaviorSubject('')
   category$ = new BehaviorSubject('')
+  url ='https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
 
-  choicesFormat$: Observable<Choice[]>
-  choicesZone$: Observable<Choice[]>
-  choicesEditionDate$: Observable<Choice[]>
-  choicesCategory$: Observable<Choice[]>
-
-  choice$: Observable<listFieldAvailableValue[]>
-  // listProduit$: Observable<any>
-  // subProducts$: Observable <Array<string>>
-
+  choices: any
+  bucketPromisesZone: Choice[]
+  bucketPromisesFormat: Choice[]
+  bucketPromisesCrs: Choice[]
   constructor(protected http: HttpClient) {}
 
-  isOpen = false
-  apiBaseUrl: string
+  @Input() set apiLink(value: DatasetServiceDistribution) {
+    this.apiBaseUrl = value ? value.url.href : undefined
+  }
 
   ngOnInit(): void {
-
-    this.choice$ = this.getFields2('BDORTHO')
-
-    this.choicesZone$ = this.choice$.pipe(
-
-      mergeMap(rep=>rep),
-
-      map( rep=> rep['zone'])
-      );
-    this.choicesFormat$ = this.choice$.pipe(
-
-      mergeMap(rep=>rep),
-
-      map( rep=> rep['format'])
-      );
-
-  this.choicesCategory$ = this.choice$.pipe(
-
-    mergeMap(rep=>rep),
-
-    map( rep=> rep['crs'])
-    );
+    this.getFields2()
+    this.bucketPromisesZone = [
+      { value : 'null',
+        label : 'ZONE'
+      }]
+    this.bucketPromisesFormat = [
+      { value : 'null',
+        label : 'FORMAT'
+      }]
+    this.bucketPromisesCrs = [
+      { value : 'null',
+        label : 'CRS'
+      }]
   }
 
   apiQueryUrl$ = combineLatest([
@@ -160,10 +142,8 @@ export class IgnApiDlComponent implements OnInit {
     )
   }
   getLinkFormat(produit): string {
-    //console.log(produit['format'][0])
     return produit['format'][0]['label']
   }
-
 
   setEditionDate(value: string) {
     this.editionDate$.next(value)
@@ -183,97 +163,33 @@ export class IgnApiDlComponent implements OnInit {
 
   resetUrl() {
     // this.offset$.next(DEFAULT_PARAMS.OFFSET)
-    this.zone$.next(this.choicesZone$[0])
-    this.format$.next(this.choicesFormat$[0])
-    this.category$.next(this.choicesFormat$[0])
+    this.zone$.next(this.bucketPromisesZone[0].label)
+    this.format$.next(this.bucketPromisesZone[0].label)
+    this.category$.next(this.bucketPromisesZone[0].label)
   }
 
-  // getProduit(response){
+  async getFields2() {
+    const [firstResponse] = await Promise.all([axios.get(this.url)])
+    this.choices = firstResponse.data.entry.filter(
+      (element) => element['id'] == this.apiBaseUrl
+    )[0]
+    this.bucketPromisesZone = this.choices.zone.map((bucket) => ({
+      value: bucket.label,
+      label: bucket.term,
+    }))
+    this.bucketPromisesZone.unshift({ value: '', label: 'ZONE' })
 
-  //   console.log('produit dans le html',response)
-  // }
+    this.bucketPromisesFormat = this.choices.format.map((bucket) => ({
+      value: bucket.label,
+      label: bucket.term,
+    }))
+    this.bucketPromisesFormat.unshift({ value: '', label: 'FORMAT' })
 
-  // rechercheProduit(){
-  //   console.log('bouton apuyer');
-  //   //this.zone$.next(this.zoneFiltree)
-  //   this.format$.next(this.formatFiltree)
-  // }
-
-  url = 'https://data.geopf.fr/telechargement/capabilities'
-
-  getFields(produit: string, param: string): Observable<FieldAvailableValue[]> {
-    return this.http.get(this.url).pipe(
-      map(
-        (response) =>
-          (response as Field).entry.filter(
-            (element) =>
-              element['id'] ==
-              'https://data.geopf.fr/telechargement/resource/'.concat(produit)
-          )[0]
-      ),
-      //tap((el) => console.log(el)),
-      switchMap((buckets: FormatProduit) => {
-        //console.log(buckets)
-        const bucketPromises = buckets[param].map((bucket) => ({
-          value: bucket.label,
-          label: bucket.term,
-        }))
-        bucketPromises.unshift({value: "",label: param});
-        console.log(bucketPromises);
-
-        return Promise.all(bucketPromises)}
-      )
-    )
+    this.bucketPromisesCrs = this.choices.category.map((bucket) => ({
+      value: bucket.label,
+      label: bucket.term,
+    }))
+    this.bucketPromisesCrs.unshift({ value: '', label: 'CRS' })
   }
 
-  getFields2(produit: string): Observable<listFieldAvailableValue[]> {
-    console.log('lancement de la requete')
-    return this.http.get(this.url).pipe(
-      map((response) =>
-        (response as Field).entry.filter(
-          (element) =>
-            element['id'] ==
-            'https://data.geopf.fr/telechargement/resource/'.concat(produit)
-        )[0]
-      ),
-      switchMap((buckets: FormatProduit) => {
-
-        const bucketPromisesZone : FieldAvailableValue[]= buckets['zone'].map((bucket) => (
-          {
-          value: bucket.label,
-          label: bucket.term
-        }))
-        bucketPromisesZone.unshift({value: "",label: 'zone'});
-
-        const bucketPromisesFormat: FieldAvailableValue[] = buckets['format'].map((bucket) => (
-          {
-          value: bucket.label,
-          label: bucket.term
-        }))
-        bucketPromisesFormat.unshift({value: "",label: 'format'});
-
-        const bucketPromisesEditionDate : FieldAvailableValue [] =
-          [{
-          value: buckets['updated']|| "null",
-          label: buckets['updated'] || "null"
-        }]
-        // bucketPromisesEditionDate.unshift({value: "",label: 'editionDate'});
-
-        const bucketPromisesCrs : FieldAvailableValue[] = buckets['category'].map((bucket) => (
-          {
-          value: bucket.label,
-          label: bucket.term
-        }))
-        bucketPromisesCrs.unshift({value: "",label: 'crs'});
-
-        const  bucketPromises :listFieldAvailableValue = {
-          zone : bucketPromisesZone,
-          format : bucketPromisesFormat,
-          editionDate : bucketPromisesEditionDate,
-          crs : bucketPromisesCrs
-        }
-        return Promise.all([bucketPromises])}
-      )
-    )
-  }
 }
