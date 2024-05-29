@@ -12,4 +12,13 @@ export class AppComponent implements OnInit {
     const favicon = getThemeConfig().FAVICON
     if (favicon) ThemeService.setFavicon(favicon)
   }
+
+  // methodes pour le header
+  searchChange(toggled: boolean): void {}
+
+  searchSelect(toggled: boolean): void {}
+
+  linkSelect(toggled: boolean): void {}
+
+  langChange(toggled: boolean): void {}
 }

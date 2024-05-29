@@ -2,5 +2,64 @@
   gnUiSearchRouterContainer="mainSearch"
   class="selection:bg-primary-lightest selection:text-primary-darker"
 >
+  <dsfr-header
+    [serviceTitle]="'catalogue.gouv.fr'"
+    [menu]="[
+      { label: 'carte.gouv.fr', link: 'https://cartes.gouv.fr', active: true },
+      {
+        label: 'Menu déroulant',
+        subItems: [
+          { label: 'Accès routerLink', routerLink: '/' },
+          { label: 'Accès direct 3' }
+        ]
+      },
+      {
+        label: 'Menu déroulant 2',
+        link: '#',
+        subItems: [{ label: 'Accès routerLink' }, { label: 'Accès direct 3' }]
+      },
+      {
+        label: 'Menu déroulant 3',
+        link: '#',
+        subItems: [
+          { label: 'Accès routerLink', target: '_self' },
+          { label: 'Accès direct 3' }
+        ]
+      }
+    ]"
+    (searchChange)="searchChange($event)"
+    (searchSelect)="searchSelect($event)"
+    (linkSelect)="linkSelect($event)"
+    (langChange)="langChange($event)"
+  ></dsfr-header>
   <router-outlet></router-outlet>
+  <dsfr-footer
+    [presentation]="'Ici on met un text de présentation'"
+    [institutionalLinks]="[
+      { label: 'legifrance.gouv.fr', link: 'https://legifrance.gouv.fr' },
+      { label: 'gouvernement.fr', link: 'https://gouvernement.fr' },
+      { label: 'service-public.fr', link: 'https://service-public.fr' },
+      { label: 'data.gouv.fr', link: 'https://data.gouv.fr' }
+    ]"
+    [mandatoryLinks]="[
+      {
+        label: 'Accessibilité : ',
+        link: 'https://www.gouvernement.fr/accessibilite',
+        target: '_blank'
+      },
+      { label: 'Mentions légales', link: '#' },
+      {
+        label: 'Données personnelles',
+        link: 'https://www.gouvernement.fr/donnees-personnelles-et-cookies',
+        target: '_blank'
+      },
+      {
+        label: 'Gestion des cookies',
+        link: 'https://www.gouvernement.fr/donnees-personnelles-et-cookies',
+        target: '_blank'
+      }
+    ]"
+    [partnersSub]="[]"
+    [reboundLinks]="[]"
+  ></dsfr-footer>
 </div>

@@ -110,7 +110,7 @@ export class SearchFiltersComponent implements OnInit {
 
   getClassForFilter(index: number) {
     return (
-      (this.isOpen ? 'block' : 'hidden') + ' ' + (index < 2 ? 'sm:block' : '')
+      (this.isOpen ? 'block' : 'hidden') + ' ' + (index < 3 ? 'sm:block' : '')
     )
   }
 }
