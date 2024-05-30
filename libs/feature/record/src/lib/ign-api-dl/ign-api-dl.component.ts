@@ -66,17 +66,19 @@ export interface Field {
 })
 export class IgnApiDlComponent implements OnInit {
   isOpen = false
+  collapsed = false
   apiBaseUrl: string
   editionDate$ = new BehaviorSubject('')
   zone$ = new BehaviorSubject('')
   format$ = new BehaviorSubject('')
-  category$ = new BehaviorSubject('')
-  url ='https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
-
+  crs$ = new BehaviorSubject('')
+  url =
+    'https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
   choices: any
   bucketPromisesZone: Choice[]
   bucketPromisesFormat: Choice[]
   bucketPromisesCrs: Choice[]
+
   constructor(protected http: HttpClient) {}
 
   @Input() set apiLink(value: DatasetServiceDistribution) {
@@ -84,39 +86,31 @@ export class IgnApiDlComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.getFields2()
-    this.bucketPromisesZone = [
-      { value : 'null',
-        label : 'ZONE'
-      }]
-    this.bucketPromisesFormat = [
-      { value : 'null',
-        label : 'FORMAT'
-      }]
-    this.bucketPromisesCrs = [
-      { value : 'null',
-        label : 'CRS'
-      }]
+    this.getFields()
+    this.bucketPromisesZone = [{ value: '', label: 'ZONE' }]
+    this.bucketPromisesFormat = [{ value: '', label: 'FORMAT' }]
+    this.bucketPromisesCrs = [{ value: '', label: 'CRS' }]
   }
 
   apiQueryUrl$ = combineLatest([
     this.zone$,
     this.format$,
     this.editionDate$,
-    this.category$,
+    this.crs$,
   ]).pipe(
-    map(([zone, format, editionDate, category]) => {
+    map(([zone, format, editionDate, crs]) => {
       let outputUrl
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
+        console.log(zone)
         const params = {
           zone: zone,
           format: format,
           editionDate: editionDate,
-          crs: category,
+          crs: crs,
         } // initialisation des paramètres de filtres
         for (const [key, value] of Object.entries(params)) {
-          if (value && value !== '0') {
+          if (value && value !== 'null') {
             url.searchParams.set(key, value)
           } else {
             url.searchParams.delete(key)
@@ -134,6 +128,7 @@ export class IgnApiDlComponent implements OnInit {
       return this.getProduits(url)
     })
   )
+
 
   getProduits(url): Observable<Array<any>> {
     return this.http.get(url).pipe(
@@ -153,8 +148,8 @@ export class IgnApiDlComponent implements OnInit {
     this.zone$.next(value)
   }
 
-  setCategory(value: string) {
-    this.category$.next(value)
+  setCrs(value: string) {
+    this.crs$.next(value)
   }
 
   setFormat(value: string) {
@@ -163,12 +158,12 @@ export class IgnApiDlComponent implements OnInit {
 
   resetUrl() {
     // this.offset$.next(DEFAULT_PARAMS.OFFSET)
-    this.zone$.next(this.bucketPromisesZone[0].label)
-    this.format$.next(this.bucketPromisesZone[0].label)
-    this.category$.next(this.bucketPromisesZone[0].label)
+    this.zone$.next('null')
+    this.format$.next('null')
+    this.crs$.next('null')
   }
 
-  async getFields2() {
+  async getFields() {
     const [firstResponse] = await Promise.all([axios.get(this.url)])
     this.choices = firstResponse.data.entry.filter(
       (element) => element['id'] == this.apiBaseUrl
@@ -177,19 +172,18 @@ export class IgnApiDlComponent implements OnInit {
       value: bucket.label,
       label: bucket.term,
     }))
-    this.bucketPromisesZone.unshift({ value: '', label: 'ZONE' })
+    this.bucketPromisesZone.unshift({ value: 'null', label: 'ZONE' })
 
     this.bucketPromisesFormat = this.choices.format.map((bucket) => ({
       value: bucket.label,
       label: bucket.term,
     }))
-    this.bucketPromisesFormat.unshift({ value: '', label: 'FORMAT' })
+    this.bucketPromisesFormat.unshift({ value: 'null', label: 'FORMAT' })
 
     this.bucketPromisesCrs = this.choices.category.map((bucket) => ({
       value: bucket.label,
       label: bucket.term,
     }))
-    this.bucketPromisesCrs.unshift({ value: '', label: 'CRS' })
+    this.bucketPromisesCrs.unshift({ value: 'null', label: 'CRS' })
   }
-
 }
