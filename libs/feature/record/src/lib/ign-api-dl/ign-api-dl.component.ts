@@ -67,11 +67,14 @@ export interface Field {
 export class IgnApiDlComponent implements OnInit {
   isOpen = false
   collapsed = false
+  initialPageSize = '50'
   apiBaseUrl: string
   editionDate$ = new BehaviorSubject('')
   zone$ = new BehaviorSubject('')
   format$ = new BehaviorSubject('')
   crs$ = new BehaviorSubject('')
+  pageSize$ = new BehaviorSubject(this.initialPageSize)
+
   url =
     'https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
   choices: any
@@ -97,17 +100,18 @@ export class IgnApiDlComponent implements OnInit {
     this.format$,
     this.editionDate$,
     this.crs$,
+    this.pageSize$,
   ]).pipe(
-    map(([zone, format, editionDate, crs]) => {
+    map(([zone, format, editionDate, crs, pageSize]) => {
       let outputUrl
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
-        console.log(zone)
         const params = {
           zone: zone,
           format: format,
           editionDate: editionDate,
           crs: crs,
+          pageSize: pageSize
         } // initialisation des paramètres de filtres
         for (const [key, value] of Object.entries(params)) {
           if (value && value !== 'null') {
@@ -123,37 +127,48 @@ export class IgnApiDlComponent implements OnInit {
     })
   )
 
-  listeProduitFiltree$ = this.apiQueryUrl$.pipe(
+  listFilteredProduct$ = this.apiQueryUrl$.pipe(
     mergeMap((url) => {
-      return this.getProduits(url)
+      return this.getFilteredProduct$(url).pipe(
+        map((response) => response['entry']),
+        tap(el=>console.log(el))
+      )
+    })
+  )
+  numberFilteredProduct$ = this.apiQueryUrl$.pipe(
+    mergeMap((url) => {
+      return this.getFilteredProduct$(url).pipe(
+        map((response) => response['totalentries'])
+      )
     })
   )
 
-
-  getProduits(url): Observable<Array<any>> {
-    return this.http.get(url).pipe(
-      map((response) => response['entry']),
-      tap((el) => console.log(el))
-    )
+  getFilteredProduct$(url): Observable<any> {
+    return this.http.get(url)
   }
+
   getLinkFormat(produit): string {
     return produit['format'][0]['label']
   }
 
   setEditionDate(value: string) {
     this.editionDate$.next(value)
+    this.resetPageSize()
   }
 
   setZone(value: string) {
     this.zone$.next(value)
+    this.resetPageSize()
   }
 
   setCrs(value: string) {
     this.crs$.next(value)
+    this.resetPageSize()
   }
 
   setFormat(value: string) {
     this.format$.next(value)
+    this.resetPageSize()
   }
 
   resetUrl() {
@@ -161,6 +176,14 @@ export class IgnApiDlComponent implements OnInit {
     this.zone$.next('null')
     this.format$.next('null')
     this.crs$.next('null')
+  }
+  moreResult():void{
+    const size = Number(this.pageSize$.value) + 50
+    this.pageSize$.next(String(size))
+    console.log(size)
+  }
+  resetPageSize():void{
+    this.pageSize$.next(this.initialPageSize)
   }
 
   async getFields() {
@@ -172,18 +195,21 @@ export class IgnApiDlComponent implements OnInit {
       value: bucket.label,
       label: bucket.term,
     }))
+    this.bucketPromisesZone.sort((a, b) => (a.label > b.label ? 1 : -1))
     this.bucketPromisesZone.unshift({ value: 'null', label: 'ZONE' })
 
     this.bucketPromisesFormat = this.choices.format.map((bucket) => ({
       value: bucket.label,
       label: bucket.term,
     }))
+    this.bucketPromisesFormat.sort((a, b) => (a.label > b.label ? 1 : -1))
     this.bucketPromisesFormat.unshift({ value: 'null', label: 'FORMAT' })
 
     this.bucketPromisesCrs = this.choices.category.map((bucket) => ({
       value: bucket.label,
       label: bucket.term,
     }))
+    this.bucketPromisesCrs.sort((a, b) => (a.label > b.label ? 1 : -1))
     this.bucketPromisesCrs.unshift({ value: 'null', label: 'CRS' })
   }
 }

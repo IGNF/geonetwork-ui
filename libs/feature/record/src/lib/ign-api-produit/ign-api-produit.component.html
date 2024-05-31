@@ -24,7 +24,7 @@
       >
     </div>
     <div  *ngFor="let link of liste$ | async">
-      <a [href] = "link['id']">Télécharger</a>
+      <a [href] = "link['href']">Télécharger</a>
       </div>
   </div>
   <div class="shrink-1 w-14 flex flex-col justify-center items-center">

@@ -26,8 +26,9 @@ export class IgnApiProduitComponent implements OnInit {
 
   ngOnInit(): void {
     this.liste$ = this.http.get(this.link['id']).pipe(
-      map((response) => response['entry']),
-      tap(el=>console.log(el))
+
+      map((response) => response['entry'][0]['link']),
+      // tap(el=> console.log(el)),
       )
     }
 
