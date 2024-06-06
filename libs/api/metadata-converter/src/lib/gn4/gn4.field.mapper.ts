@@ -396,7 +396,8 @@ export class Gn4FieldMapper {
       /^OGC:WMS/.test(protocol) ||
       /^OGC:WFS/.test(protocol) ||
       /^OGC:WMTS/.test(protocol) ||
-      /ogc\W*api\W*features/i.test(protocol)
+      /ogc\W*api\W*features/i.test(protocol) ||
+      /^WWW:DOWNLOAD-/.test(protocol)
     ) {
       return 'service'
     }
@@ -440,11 +441,11 @@ export class Gn4FieldMapper {
     const mimeTypeMatches =
       protocol && protocol.match(/^WWW:DOWNLOAD:(.+\/.+)$/)
     const mimeType = mimeTypeMatches && mimeTypeMatches[1]
-
     const distribution = {
       ...(name && { name }),
       ...(description && { description }),
     }
+
     switch (type) {
       case 'service':
         return {
