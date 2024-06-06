@@ -2,64 +2,69 @@ import { HttpClient } from '@angular/common/http'
 import { Injectable } from '@angular/core'
 import type { FeatureCollection } from 'geojson'
 import { extend, Extent, isEmpty } from 'ol/extent'
-import OlFeature, { FeatureLike } from 'ol/Feature'
+import Feature from 'ol/Feature'
 import GeoJSON from 'ol/format/GeoJSON'
 import { Geometry } from 'ol/geom'
 import Layer from 'ol/layer/Layer'
 import Map from 'ol/Map'
-import { fromLonLat } from 'ol/proj'
+import { transformExtent } from 'ol/proj'
 import Source from 'ol/source/Source'
 import ImageWMS from 'ol/source/ImageWMS'
 import TileWMS from 'ol/source/TileWMS'
 import VectorSource from 'ol/source/Vector'
-import { Options, optionsFromCapabilities } from 'ol/source/WMTS'
-import { DragPan, MouseWheelZoom, defaults, Interaction } from 'ol/interaction'
+import { defaults, DragPan, Interaction, MouseWheelZoom } from 'ol/interaction'
 import {
   mouseOnly,
   noModifierKeys,
   platformModifierKeyOnly,
   primaryAction,
 } from 'ol/events/condition'
-import WMTSCapabilities from 'ol/format/WMTSCapabilities'
-import { from, Observable, of } from 'rxjs'
+import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import {
   MapContextLayerModel,
-  MapContextLayerTypeEnum,
-  MapContextLayerWmtsModel,
+  MapContextLayerWmsModel,
 } from '../map-context/map-context.model'
-import { MapUtilsWMSService } from './map-utils-wms.service'
 import Collection from 'ol/Collection'
+import { defaults as defaultControls } from 'ol/control.js'
 import MapBrowserEvent from 'ol/MapBrowserEvent'
-import { DatasetDistribution } from '@geonetwork-ui/common/domain/model/record'
+import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
+import { ProxyService } from '@geonetwork-ui/util/shared'
+import { WmsEndpoint, WmtsEndpoint } from '@camptocamp/ogc-client'
+import { LONLAT_CRS_CODES } from '../constant/projections'
+import { fromEPSGCode, register } from 'ol/proj/proj4'
+import proj4 from 'proj4/dist/proj4'
 
 const FEATURE_PROJECTION = 'EPSG:3857'
 const DATA_PROJECTION = 'EPSG:4326'
+
+const GEOJSON = new GeoJSON()
 
 @Injectable({
   providedIn: 'root',
 })
 export class MapUtilsService {
-  constructor(private http: HttpClient, private wmsUtils: MapUtilsWMSService) {}
+  constructor(private http: HttpClient, private proxy: ProxyService) {}
 
   createEmptyMap(): Map {
-    const map = new Map({
-      controls: [],
+    return new Map({
+      controls: defaultControls({
+        attribution: true,
+        attributionOptions: { collapsible: false },
+      }),
       pixelRatio: 1,
     })
-    return map
   }
 
   readFeatureCollection = (
     featureCollection: FeatureCollection,
     featureProjection = FEATURE_PROJECTION,
     dataProjection = DATA_PROJECTION
-  ): FeatureLike[] => {
-    const olFeatures = new GeoJSON().readFeatures(featureCollection, {
+  ): Feature<Geometry>[] => {
+    return GEOJSON.readFeatures(featureCollection, {
       featureProjection,
       dataProjection,
-    })
-    return olFeatures
+    }) as Feature<Geometry>[]
   }
 
   isWMSLayer(layer: Layer<Source>): boolean {
@@ -78,20 +83,14 @@ export class MapUtilsService {
       ...source.getParams(),
       INFO_FORMAT: 'application/json',
     }
-    const url = source.getFeatureInfoUrl(
-      coordinate,
-      resolution,
-      projection,
-      params
-    )
-    return url
+    return source.getFeatureInfoUrl(coordinate, resolution, projection, params)
   }
 
-  getVectorFeaturesFromClick(olMap, event): OlFeature<Geometry>[] {
+  getVectorFeaturesFromClick(olMap, event): Feature<Geometry>[] {
     const features = []
     const hit = olMap.forEachFeatureAtPixel(
       event.pixel,
-      (feature: OlFeature<Geometry>) => {
+      (feature: Feature<Geometry>) => {
         return feature
       },
       { layerFilter: (layer) => layer.getSource() instanceof VectorSource }
@@ -103,9 +102,9 @@ export class MapUtilsService {
   }
 
   getGFIFeaturesObservablesFromClick(
-    olMap,
-    event
-  ): Observable<OlFeature<Geometry>[]>[] {
+    olMap: Map,
+    event: MapBrowserEvent<PointerEvent>
+  ): Observable<Feature<Geometry>[]>[] {
     const wmsLayers = olMap.getLayers().getArray().filter(this.isWMSLayer)
 
     if (wmsLayers.length > 0) {
@@ -128,8 +127,8 @@ export class MapUtilsService {
   /**
    * Will emit `null` if no extent could be computed
    */
-  getLayerExtent(layer: MapContextLayerModel): Observable<Extent | null> {
-    let geographicExtent: Observable<Extent>
+  async getLayerExtent(layer: MapContextLayerModel): Promise<Extent | null> {
+    let latLonExtent: Extent
     if (
       layer &&
       layer.type === 'geojson' &&
@@ -138,79 +137,60 @@ export class MapUtilsService {
       layer.data.features[0] &&
       layer.data.features[0].geometry
     ) {
-      geographicExtent = of(layer.data).pipe(
-        map((layerData) =>
-          new GeoJSON()
-            .readFeatures(layerData)
-            .map((feature) => feature.getGeometry())
-            .filter((geom) => !!geom)
-            .reduce(
-              (prev, curr) =>
-                prev ? extend(prev, curr.getExtent()) : curr.getExtent(),
-              null as Extent
-            )
+      latLonExtent = new GeoJSON()
+        .readFeatures(layer.data)
+        .map((feature) => feature.getGeometry())
+        .filter((geom) => !!geom)
+        .reduce(
+          (prev, curr) =>
+            prev ? extend(prev, curr.getExtent()) : curr.getExtent(),
+          null as Extent
         )
-      )
     } else if (layer && layer.type === 'wms') {
-      geographicExtent = this.wmsUtils.getLayerLonLatBBox(layer)
+      latLonExtent = await this.getWmsLayerExtent(layer)
     } else if (layer && layer.type === 'wmts') {
-      if (layer.extent) {
-        geographicExtent = of(layer.extent)
-      } else {
-        return of(layer.options.tileGrid.getExtent())
-      }
+      // TODO: isolate this in utils service
+      latLonExtent = await new WmtsEndpoint(layer.url)
+        .isReady()
+        .then((endpoint) => {
+          const layerName = endpoint.getSingleLayerName() ?? layer.name
+          const wmtsLayer = endpoint.getLayerByName(layerName)
+          return wmtsLayer.latLonBoundingBox
+        })
     } else {
-      return of(null)
+      return null
     }
-    return geographicExtent.pipe(
-      map((extent) => [
-        ...fromLonLat([extent[0], extent[1]], 'EPSG:3857'),
-        ...fromLonLat([extent[2], extent[3]], 'EPSG:3857'),
-      ]),
-      map((extent) => (isEmpty(extent) ? null : extent))
-    )
+    if (!latLonExtent || isEmpty(latLonExtent)) {
+      return null
+    }
+    return transformExtent(latLonExtent, 'EPSG:4326', 'EPSG:3857')
   }
 
-  getWmtsLayerFromCapabilities(
-    link: DatasetDistribution
-  ): Observable<MapContextLayerWmtsModel> {
-    const getCapabilitiesUrl = new URL(link.url, window.location.toString())
-    getCapabilitiesUrl.searchParams.set('SERVICE', 'WMTS')
-    getCapabilitiesUrl.searchParams.set('REQUEST', 'GetCapabilities')
-    return from(
-      fetch(getCapabilitiesUrl.toString())
-        .then(async function (response) {
-          if (!response.ok) {
-            throw new Error(`WMTS GetCapabilities HTTP request failed with code ${
-              response.status
-            } and body:
-${await response.text()}`)
-          }
-          return response.text()
-        })
-        .then(function (text) {
-          try {
-            const result = new WMTSCapabilities().read(text)
-            const options = optionsFromCapabilities(result, {
-              layer: link.name,
-              matrixSet: 'EPSG:3857',
-            })
-            const layerCap = result?.Contents?.Layer.find(
-              (layer) => layer.Identifier === link.name
-            )
-            return {
-              options,
-              type: MapContextLayerTypeEnum.WMTS as 'wmts',
-              ...(layerCap?.WGS84BoundingBox
-                ? { extent: layerCap.WGS84BoundingBox }
-                : {}),
-            }
-          } catch (e: any) {
-            throw new Error(`WMTS GetCapabilities parsing failed:
-${e.stack || e.message || e}`)
-          }
-        })
+  async getWmsLayerExtent(
+    layer: MapContextLayerWmsModel
+  ): Promise<Extent | null> {
+    const endpoint = await new WmsEndpoint(
+      this.proxy.getProxiedUrl(layer.url)
+    ).isReady()
+    const { boundingBoxes } = endpoint.getLayerByName(layer.name)
+    if (!Object.keys(boundingBoxes).length) {
+      return null
+    }
+    const lonLatCRS = Object.keys(boundingBoxes)?.find((crs) =>
+      LONLAT_CRS_CODES.includes(crs)
     )
+    if (lonLatCRS) {
+      return boundingBoxes[lonLatCRS]
+    } else {
+      const availableEPSGCode = Object.keys(boundingBoxes)[0]
+      register(proj4)
+      const proj = await fromEPSGCode(availableEPSGCode)
+      return transformExtent(
+        boundingBoxes[availableEPSGCode],
+        proj,
+        'EPSG:4326'
+      )
+    }
   }
 
   prioritizePageScroll(interactions: Collection<Interaction>) {
@@ -234,6 +214,21 @@ ${e.stack || e.message || e}`)
         ])
         .getArray()
     )
+  }
+
+  getRecordExtent(record: Partial<CatalogRecord>): Extent {
+    if (!('spatialExtents' in record) || record.spatialExtents.length === 0) {
+      return null
+    }
+    // transform an array of geojson geometries into a bbox
+    const totalExtent = record.spatialExtents.reduce(
+      (prev, curr) => {
+        const geom = GEOJSON.readGeometry(curr.geometry)
+        return extend(prev, geom.getExtent())
+      },
+      [Infinity, Infinity, -Infinity, -Infinity]
+    )
+    return transformExtent(totalExtent, 'EPSG:4326', 'EPSG:3857')
   }
 }
 

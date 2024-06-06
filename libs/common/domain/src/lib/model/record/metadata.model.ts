@@ -1,6 +1,7 @@
 import { marker } from '@biesbjerg/ngx-translate-extract-marker'
-import { Individual } from './contact.model'
-import { Organization } from './organization.model'
+import type { Individual } from './contact.model'
+import type { Organization } from './organization.model'
+import type { Geometry } from 'geojson'
 
 type Uuid = string
 
@@ -47,13 +48,7 @@ export const RecordStatusValues = [
 ]
 export type RecordStatus = typeof RecordStatusValues[number]
 
-export type AccessConstraintType = 'security' | 'privacy' | 'legal' | 'other'
-export interface AccessConstraint {
-  text: string
-  type: AccessConstraintType
-}
-
-export type License = {
+export type Constraint = {
   text: string
   url?: URL
 }
@@ -65,6 +60,22 @@ export type SpatialRepresentationType =
   | 'table'
   | 'point'
 
+export type KeywordType = 'place' | 'temporal' | 'theme' | 'other'
+
+export type KeywordThesaurus = {
+  id: string
+  name?: string
+  url?: URL
+}
+
+export interface Keyword {
+  label: string
+  type: KeywordType
+  thesaurus?: KeywordThesaurus
+}
+// languages should be expressed using two-letters ISO 639-1 codes
+export type LanguageCode = string
+
 export interface BaseRecord {
   uniqueIdentifier: Uuid
   ownerOrganization: Organization
@@ -72,20 +83,27 @@ export interface BaseRecord {
   title: string
   abstract: string
   recordCreated?: Date
+  recordPublished?: Date
   recordUpdated: Date
+  languages: Array<LanguageCode>
   kind: RecordKind
-  themes: Array<string> // TODO: handle codelists
-  keywords: Array<string> // TODO: handle thesaurus and id
-  accessConstraints: Array<AccessConstraint>
-  useLimitations: Array<string>
-  legalConstraints?: Array<string>
-  licenses: Array<License>
+  topics: Array<string> // TODO: handle codelists
+  keywords: Array<Keyword>
+  licenses: Array<Constraint>
+  legalConstraints: Array<Constraint>
+  securityConstraints: Array<Constraint>
+  otherConstraints: Array<Constraint>
   overviews: Array<GraphicOverview>
   extras?: Record<string, unknown>
   landingPage?: URL
   updateFrequency?: UpdateFrequency
 
-  // to add: iso19139.topicCategory
+  // information related to the resource (dataset, service)
+  contactsForResource: Array<Individual>
+  resourceCreated?: Date
+  resourcePublished?: Date
+  resourceUpdated?: Date
+
   // to add: canonical url
   // to add: source catalog (??)
   // to add: is open data ?
@@ -123,6 +141,7 @@ export interface DatasetDownloadDistribution {
   // textEncoding?: string
   name?: string
   description?: string
+  accessServiceProtocol?: ServiceProtocol
 }
 
 export interface OnlineLinkResource {
@@ -146,26 +165,26 @@ export interface GraphicOverview {
 }
 
 export interface DatasetSpatialExtent {
-  geometry: unknown // GeoJSON
+  geometry: Geometry
   description?: string
 }
 
+/**
+ * At least a start or an end date should be provided
+ */
 export interface DatasetTemporalExtent {
-  start: Date
-  end: Date
+  start?: Date
+  end?: Date
   description?: string
 }
 
 export interface DatasetRecord extends BaseRecord {
   kind: 'dataset'
-  contactsForResource: Array<Individual>
   status: RecordStatus
-  datasetCreated?: Date
-  datasetUpdated?: Date
   lineage: string // Explanation of the origin of this record (e.g: how, why)"
   distributions: Array<DatasetDistribution>
-  spatialExtents: Array<DatasetSpatialExtent> // not handled yet
-  temporalExtents: Array<DatasetTemporalExtent> // not handled yet
+  spatialExtents: Array<DatasetSpatialExtent>
+  temporalExtents: Array<DatasetTemporalExtent>
   spatialRepresentation?: SpatialRepresentationType
 }
 
@@ -188,3 +207,5 @@ export interface ServiceRecord extends BaseRecord {
 }
 
 export type CatalogRecord = ServiceRecord | DatasetRecord
+
+export type CatalogRecordKeys = keyof ServiceRecord | keyof DatasetRecord

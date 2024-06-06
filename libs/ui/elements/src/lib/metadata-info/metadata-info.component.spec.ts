@@ -4,7 +4,7 @@ import { TranslateModule } from '@ngx-translate/core'
 import { ContentGhostComponent } from '../content-ghost/content-ghost.component'
 import { MetadataInfoComponent } from './metadata-info.component'
 import { DATASET_RECORDS } from '@geonetwork-ui/common/fixtures'
-import { TranslateTestingModule } from '@geonetwork-ui/util/i18n'
+import { TranslateTestingModule } from 'ngx-translate-testing'
 import { TranslateMessageFormatCompiler } from 'ngx-translate-messageformat-compiler'
 
 describe('MetadataInfoComponent', () => {
@@ -37,8 +37,9 @@ describe('MetadataInfoComponent', () => {
       component.metadata = {
         ...DATASET_RECORDS[0],
         abstract: null,
-        useLimitations: null,
-        accessConstraints: null,
+        licenses: null,
+        legalConstraints: null,
+        otherConstraints: null,
         extras: {
           isOpenData: false,
         },
@@ -77,11 +78,6 @@ describe('MetadataInfoComponent', () => {
       const displayedElement = fixture.nativeElement.querySelector(
         'gn-ui-markdown-parser'
       )
-      expect(displayedElement).toBeTruthy()
-    })
-    it('should display the metadata origin even if there is no lineage text', () => {
-      const displayedElement =
-        fixture.nativeElement.querySelector('.metadata-origin')
       expect(displayedElement).toBeTruthy()
     })
   })

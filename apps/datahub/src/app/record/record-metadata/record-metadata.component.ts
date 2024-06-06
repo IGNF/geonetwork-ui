@@ -3,9 +3,12 @@ import { SourcesService } from '@geonetwork-ui/feature/catalog'
 import { SearchService } from '@geonetwork-ui/feature/search'
 import { ErrorType } from '@geonetwork-ui/ui/elements'
 import { BehaviorSubject, combineLatest } from 'rxjs'
-import { filter, map, mergeMap } from 'rxjs/operators'
+import { filter, map, mergeMap, startWith } from 'rxjs/operators'
 import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
-import { Organization } from '@geonetwork-ui/common/domain/model/record'
+import {
+  Keyword,
+  Organization,
+} from '@geonetwork-ui/common/domain/model/record'
 import { MdViewFacade } from '@geonetwork-ui/feature/record'
 
 @Component({
@@ -18,44 +21,71 @@ export class RecordMetadataComponent {
   @Input() metadataQualityDisplay: boolean
 
   displayMap$ = combineLatest([
-    this.facade.mapApiLinks$,
-    this.facade.geoDataLinks$,
+    this.metadataViewFacade.mapApiLinks$,
+    this.metadataViewFacade.geoDataLinksWithGeometry$,
   ]).pipe(
-    map(
-      ([mapLinks, geoDataLinks]) =>
-        mapLinks?.length > 0 || geoDataLinks?.length > 0
-    )
+    map(([mapApiLinks, geoDataLinksWithGeometry]) => {
+      return mapApiLinks?.length > 0 || geoDataLinksWithGeometry?.length > 0
+    }),
+    startWith(false)
   )
+
   displayData$ = combineLatest([
-    this.facade.dataLinks$,
-    this.facade.geoDataLinks$,
+    this.metadataViewFacade.dataLinks$,
+    this.metadataViewFacade.geoDataLinks$,
   ]).pipe(
     map(
       ([dataLinks, geoDataLinks]) =>
         dataLinks?.length > 0 || geoDataLinks?.length > 0
     )
   )
-  displayDownload$ = this.facade.downloadLinks$.pipe(
+
+  displayDownload$ = this.metadataViewFacade.downloadLinks$.pipe(
     map((links) => links?.length > 0)
   )
-  displayApi$ = this.facade.apiLinks$.pipe(map((links) => links?.length > 0))
-  displayOtherLinks = this.facade.otherLinks$.pipe(
+  displayApi$ = this.metadataViewFacade.apiLinks$.pipe(
     map((links) => links?.length > 0)
   )
-  displayRelated$ = this.facade.related$.pipe(
+
+  displayOtherLinks = this.metadataViewFacade.otherLinks$.pipe(
+    map((links) => links?.length > 0)
+  )
+  displayRelated$ = this.metadataViewFacade.related$.pipe(
     map((records) => records?.length > 0)
   )
 
-  sourceLabel$ = this.facade.metadata$.pipe(
+  displayDatasetHasNoLinkBlock$ = combineLatest([
+    this.displayDownload$,
+    this.displayApi$,
+    this.displayOtherLinks,
+  ]).pipe(
+    map(
+      ([displayDownload, displayApi, displayOtherLinks]) =>
+        !displayDownload && !displayApi && !displayOtherLinks
+    )
+  )
+
+  organisationName$ = this.metadataViewFacade.metadata$.pipe(
+    map((record) => record?.ownerOrganization?.name),
+    filter(Boolean)
+  )
+
+  metadataUuid$ = this.metadataViewFacade.metadata$.pipe(
+    map((record) => record?.uniqueIdentifier),
+    filter(Boolean)
+  )
+
+  sourceLabel$ = this.metadataViewFacade.metadata$.pipe(
     map((record) => record?.extras?.catalogUuid as string),
     filter((uuid) => !!uuid),
     mergeMap((uuid) => this.sourceService.getSourceLabel(uuid))
   )
 
   errorTypes = ErrorType
+
   selectedTabIndex$ = new BehaviorSubject(0)
 
-  thumbnailUrl$ = this.facade.metadata$.pipe(
+  thumbnailUrl$ = this.metadataViewFacade.metadata$.pipe(
     map((metadata) => {
       // in order to differentiate between metadata not loaded yet
       // and url not defined
@@ -71,7 +101,7 @@ export class RecordMetadataComponent {
   showOverlay = true
 
   constructor(
-    public facade: MdViewFacade,
+    public metadataViewFacade: MdViewFacade,
     private searchService: SearchService,
     private sourceService: SourcesService,
     private orgsService: OrganizationsServiceInterface
@@ -84,9 +114,10 @@ export class RecordMetadataComponent {
     }, 0)
   }
 
-  onInfoKeywordClick(keyword: string) {
-    this.searchService.updateFilters({ any: keyword })
+  onInfoKeywordClick(keyword: Keyword) {
+    this.searchService.updateFilters({ any: keyword.label })
   }
+
   onOrganizationClick(org: Organization) {
     this.orgsService
       .getFiltersForOrgs([org])

@@ -23,6 +23,9 @@ import { UiInputsModule } from '@geonetwork-ui/ui/inputs'
 import { AddLayerFromWmsComponent } from './add-layer-from-wms/add-layer-from-wms.component'
 import { AddLayerFromFileComponent } from './add-layer-from-file/add-layer-from-file.component'
 import { AddLayerFromWfsComponent } from './add-layer-from-wfs/add-layer-from-wfs.component'
+import { GeocodingComponent } from './geocoding/geocoding.component'
+import { GEOCODING_PROVIDER, GeocodingProvider } from './geocoding.service'
+import { AddLayerFromOgcApiComponent } from './add-layer-from-ogc-api/add-layer-from-ogc-api.component'
 
 @NgModule({
   declarations: [
@@ -35,6 +38,7 @@ import { AddLayerFromWfsComponent } from './add-layer-from-wfs/add-layer-from-wf
     AddLayerFromWmsComponent,
     AddLayerFromFileComponent,
     AddLayerFromWfsComponent,
+    GeocodingComponent,
   ],
   exports: [
     MapContextComponent,
@@ -42,6 +46,7 @@ import { AddLayerFromWfsComponent } from './add-layer-from-wfs/add-layer-from-wf
     LayersPanelComponent,
     AddLayerFromCatalogComponent,
     MapContainerComponent,
+    GeocodingComponent,
   ],
   imports: [
     CommonModule,
@@ -55,6 +60,7 @@ import { AddLayerFromWfsComponent } from './add-layer-from-wfs/add-layer-from-wf
     EffectsModule.forFeature([MapEffects]),
     UiElementsModule,
     UiInputsModule,
+    AddLayerFromOgcApiComponent,
   ],
   providers: [
     {
@@ -62,6 +68,10 @@ import { AddLayerFromWfsComponent } from './add-layer-from-wfs/add-layer-from-wf
       useValue: defaultMapOptions,
     },
     MapFacade,
+    {
+      provide: GEOCODING_PROVIDER,
+      useValue: ['geonames', { maxRows: 5 }] as GeocodingProvider,
+    },
   ],
 })
 export class FeatureMapModule {}

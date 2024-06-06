@@ -6,14 +6,17 @@ import {
   Meta,
   StoryObj,
 } from '@storybook/angular'
-import { TRANSLATE_DEFAULT_CONFIG } from '@geonetwork-ui/util/i18n'
+import {
+  TRANSLATE_DEFAULT_CONFIG,
+  UtilI18nModule,
+} from '@geonetwork-ui/util/i18n'
 import { TableComponent } from './table.component'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { UiDatavizModule } from '../ui-dataviz.module'
 import { importProvidersFrom } from '@angular/core'
 
 export default {
-  title: 'Layout/TableComponent',
+  title: 'Dataviz/TableComponent',
   component: TableComponent,
   decorators: [
     applicationConfig({
@@ -21,11 +24,12 @@ export default {
         importProvidersFrom(UiDatavizModule),
         importProvidersFrom(BrowserAnimationsModule),
         importProvidersFrom(HttpClientModule),
+        importProvidersFrom(UtilI18nModule),
         importProvidersFrom(TranslateModule.forRoot(TRANSLATE_DEFAULT_CONFIG)),
       ],
     }),
     componentWrapperDecorator(
-      (story) => `<div style="max-width: 700px">${story}</div>`
+      (story) => `<div style="max-width: 700px; height: 400px">${story}</div>`
     ),
   ],
 } as Meta<TableComponent>

@@ -20,18 +20,17 @@ import { AppComponent } from './app.component'
 import { appRoutes } from './app.routes'
 import { FeatureAuthModule } from '@geonetwork-ui/feature/auth'
 import { BrowserModule } from '@angular/platform-browser'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { extModules } from './build-specifics'
 import { DashboardPageComponent } from './dashboard/dashboard-page.component'
 import { EditorRouterService } from './router.service'
-import { provideRepositoryUrl } from '@geonetwork-ui/api/repository'
-import { provideGn4 } from '@geonetwork-ui/api/repository'
+import { provideGn4, provideRepositoryUrl } from '@geonetwork-ui/api/repository'
+import { FeatureEditorModule } from '@geonetwork-ui/feature/editor'
 
 @NgModule({
   declarations: [AppComponent],
   imports: [
     BrowserModule,
-    BrowserAnimationsModule,
     StoreModule.forRoot(
       {},
       {
@@ -55,11 +54,13 @@ import { provideGn4 } from '@geonetwork-ui/api/repository'
     importProvidersFrom(FeatureSearchModule),
     importProvidersFrom(FeatureCatalogModule),
     importProvidersFrom(FeatureRecordModule),
+    importProvidersFrom(FeatureEditorModule),
     importProvidersFrom(UtilI18nModule),
     importProvidersFrom(TranslateModule.forRoot(TRANSLATE_DEFAULT_CONFIG)),
     provideRepositoryUrl(() => getGlobalConfig().GN4_API_URL),
     importProvidersFrom(EffectsModule.forRoot()),
     provideGn4(),
+    provideAnimations(),
   ],
   bootstrap: [AppComponent],
 })
@@ -68,12 +69,11 @@ export class AppModule {
     ThemeService.applyCssVariables(
       getThemeConfig().PRIMARY_COLOR,
       getThemeConfig().SECONDARY_COLOR,
-      getThemeConfig().MAIN_COLOR || '#555',
+      getThemeConfig().MAIN_COLOR,
       getThemeConfig().BACKGROUND_COLOR,
       getThemeConfig().MAIN_FONT || "'Rubik', sans-serif",
       getThemeConfig().TITLE_FONT || "'Readex Pro', sans-serif",
-      getThemeConfig().FONTS_STYLESHEET_URL ||
-        'https://fonts.googleapis.com/css2?family=Readex+Pro&family=Rubik&display=swap'
+      getThemeConfig().FONTS_STYLESHEET_URL || 'assets/css/default-fonts.css'
     )
   }
 }

@@ -79,7 +79,7 @@ background_color = "#fdfbff"
 # filter_geometry_data = '{ "coordinates": [...], "type": "Polygon" }'
 
 # The advanced search filters available to the user can be customized with this setting.
-# The following fields can be used for filtering: 'publisher', 'format', 'publicationYear', 'standard', 'inspireKeyword', 'topic', 'isSpatial', 'license', 'resourceType', 'representationType'
+# The following fields can be used for filtering: 'publisher', 'format', 'publicationYear', 'standard', 'inspireKeyword', 'keyword', 'topic', 'isSpatial', 'license', 'resourceType', 'representationType'
 # any other field will be ignored
 # advanced_filters = ['publisher', 'format', 'publicationYear', 'topic', 'isSpatial', 'license']
 
@@ -140,6 +140,9 @@ background_color = "#fdfbff"
 
 # Optional; if true, opens external viewer in new tab (default false)
 # external_viewer_open_new_tab = false
+
+# Optional; Will not tile WMS. False by default.
+# do_not_tile_wms = false
 
 # Optional; if true, the default basemap will not be added to the map.
 # Use [[map_layer]] sections to define your own custom layers (see below)

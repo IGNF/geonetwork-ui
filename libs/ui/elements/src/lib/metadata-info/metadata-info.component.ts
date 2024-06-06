@@ -5,7 +5,11 @@ import {
   Input,
   Output,
 } from '@angular/core'
-import { DatasetRecord } from '@geonetwork-ui/common/domain/model/record'
+import {
+  DatasetRecord,
+  Keyword,
+} from '@geonetwork-ui/common/domain/model/record'
+import { getTemporalRangeUnion } from '@geonetwork-ui/util/shared'
 
 @Component({
   selector: 'gn-ui-metadata-info',
@@ -16,24 +20,48 @@ import { DatasetRecord } from '@geonetwork-ui/common/domain/model/record'
 export class MetadataInfoComponent {
   @Input() metadata: Partial<DatasetRecord>
   @Input() incomplete: boolean
-  @Output() keyword = new EventEmitter<string>()
+  @Output() keyword = new EventEmitter<Keyword>()
   updatedTimes: number
 
   get hasUsage() {
     return (
       this.metadata.extras?.isOpenData === true ||
-      this.metadata.useLimitations?.length ||
-      this.metadata.accessConstraints?.length
+      (this.metadata.legalConstraints?.length > 0 &&
+        this.legalConstraints.length > 0) ||
+      (this.metadata.otherConstraints?.length > 0 &&
+        this.otherConstraints.length > 0) ||
+      (this.metadata.licenses?.length > 0 && this.licenses.length > 0)
     )
   }
 
-  get usages(): string[] {
+  get legalConstraints() {
     let array = []
-    if (this.metadata.useLimitations?.length) {
-      array = array.concat(this.metadata.useLimitations)
+    if (this.metadata.legalConstraints?.length) {
+      array = array.concat(
+        this.metadata.legalConstraints.filter((c) => c.text).map((c) => c.text)
+      )
     }
-    if (this.metadata.accessConstraints?.length) {
-      array = array.concat(this.metadata.accessConstraints.map((c) => c.text))
+    return array
+  }
+
+  get otherConstraints() {
+    let array = []
+    if (this.metadata.otherConstraints?.length) {
+      array = array.concat(
+        this.metadata.otherConstraints.filter((c) => c.text).map((c) => c.text)
+      )
+    }
+    return array
+  }
+
+  get licenses(): { text: string; url: string }[] {
+    let array = []
+    if (this.metadata.licenses?.length) {
+      array = array.concat(
+        this.metadata.licenses
+          .filter((c) => c.text)
+          .map((c) => ({ text: c.text, url: c.url }))
+      )
     }
     return array
   }
@@ -49,16 +77,24 @@ export class MetadataInfoComponent {
     }
   }
 
+  get temporalExtent(): { start: string; end: string } {
+    const temporalExtents = this.metadata.temporalExtents
+    return getTemporalRangeUnion(temporalExtents)
+  }
+
+  get shownOrganization() {
+    return this.metadata.ownerOrganization
+  }
+
+  get resourceContact() {
+    return this.metadata.contactsForResource?.[0]
+  }
+
   fieldReady(propName: string) {
     return !this.incomplete || propName in this.metadata
   }
 
-  onKeywordClick(keyword: string) {
+  onKeywordClick(keyword: Keyword) {
     this.keyword.emit(keyword)
-  }
-
-  copyText() {
-    navigator.clipboard.writeText(this.metadata.uniqueIdentifier)
-    ;(event.target as HTMLElement).blur()
   }
 }

@@ -12,29 +12,30 @@ import { propagateToDocumentOnly } from '@geonetwork-ui/util/shared'
   templateUrl: './button.component.html',
   styleUrls: ['./button.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
 })
 export class ButtonComponent {
-  private btnClass: string
+  private btnClass = 'gn-ui-btn-default'
 
-  // btn-classes are explicited to allow tailwind recognize them and add it in css.
   @Input() set type(
     value: 'primary' | 'secondary' | 'default' | 'outline' | 'light'
   ) {
+    // btn-classes are written in full to be picked up by tailwind
     switch (value) {
       case 'primary':
-        this.btnClass = 'btn-primary'
+        this.btnClass = 'gn-ui-btn-primary'
         break
       case 'secondary':
-        this.btnClass = 'btn-secondary'
+        this.btnClass = 'gn-ui-btn-secondary'
         break
       case 'outline':
-        this.btnClass = 'btn-outline'
+        this.btnClass = 'gn-ui-btn-outline'
         break
       case 'light':
-        this.btnClass = 'btn-light'
+        this.btnClass = 'gn-ui-btn-light'
         break
       default:
-        this.btnClass = 'btn-default'
+        this.btnClass = 'gn-ui-btn-default'
         break
     }
   }

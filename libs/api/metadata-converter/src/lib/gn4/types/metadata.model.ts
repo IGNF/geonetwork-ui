@@ -56,15 +56,13 @@ interface SpecificationConformance {
   pass: BooleanString
 }
 
-type Keyword = MultilingualField
-type Keywords = Keyword[]
 type ThesaurusName = string
-interface Thesaurus {
+export interface Thesaurus {
   id?: string
   title?: string
   theme?: string
   link?: string
-  keywords: Keywords
+  keywords: MultilingualField[]
 }
 
 export interface Link {
@@ -152,6 +150,7 @@ export type MetadataObject = Partial<{
   pointOfContactOrg: string
   pointOfContactOrgForResource: string
   popularity: number
+  publicationDateForResource: string
   rating: string
   record: string
   recordGroup: string
@@ -175,7 +174,7 @@ export type MetadataObject = Partial<{
   specificationConformance: MaybeArray<SpecificationConformance>
   standardNameObject: MultilingualField
   standardVersionObject: MultilingualField
-  tag: Keywords
+  tag: MultilingualField[]
   tagNumber: string
   userSavedCount: string
   userinfo: string

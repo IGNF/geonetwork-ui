@@ -63,6 +63,7 @@ describe('header', () => {
         .find('a')
         .first()
         .should('have.attr', 'title', 'Accroches vélos MEL')
+      cy.screenshot({ capture: 'viewport' })
     })
     it('should display the search results on enter touch', () => {
       cy.get('gn-ui-fuzzy-search').type('velo{enter}')
@@ -95,12 +96,25 @@ describe('header', () => {
         .find('input')
         .should('have.value', '')
     })
-    it('should reset search results on click on cancel button', () => {
-      cy.get('gn-ui-fuzzy-search').type('velo')
-      cy.get('mat-icon')
-        .contains('close')
-        .trigger('click', { waitForAnimations: false })
-      cy.get('gn-ui-record-preview-row').should('have.length.gt', 1)
+    describe('when on search url path', () => {
+      it('should reset search results on click on cancel button', () => {
+        cy.visit('/search')
+        cy.get('gn-ui-fuzzy-search').type('velo')
+        cy.get('mat-icon')
+          .contains('close')
+          .trigger('click', { waitForAnimations: false })
+        cy.get('gn-ui-record-preview-row').should('have.length.gt', 1)
+      })
+    })
+    describe('when on news url path', () => {
+      it('should stay on news url path', () => {
+        cy.visit('/')
+        cy.get('gn-ui-fuzzy-search').type('velo')
+        cy.get('mat-icon')
+          .contains('close')
+          .trigger('click', { waitForAnimations: false })
+        cy.url().should('include', '/news')
+      })
     })
   })
 
@@ -125,6 +139,7 @@ describe('header', () => {
         .getActiveDropdownOption()
         .invoke('attr', 'data-cy-value')
         .should('equal', 'desc,createDate')
+      cy.screenshot({ capture: 'viewport' })
     })
     it('should filter results by popularity', () => {
       cy.get('gn-ui-fuzzy-search').next().find('button').eq(1).click()

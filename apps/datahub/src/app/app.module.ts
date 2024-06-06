@@ -25,11 +25,19 @@ import {
   RECORD_URL_TOKEN,
 } from '@geonetwork-ui/feature/search'
 import {
+  LinkCardComponent,
   THUMBNAIL_PLACEHOLDER,
   UiElementsModule,
 } from '@geonetwork-ui/ui/elements'
-import { UiInputsModule } from '@geonetwork-ui/ui/inputs'
-import { UiLayoutModule } from '@geonetwork-ui/ui/layout'
+import {
+  PreviousNextButtonsComponent,
+  UiInputsModule,
+} from '@geonetwork-ui/ui/inputs'
+import {
+  BlockListComponent,
+  CarouselComponent,
+  UiLayoutModule,
+} from '@geonetwork-ui/ui/layout'
 import { UiSearchModule } from '@geonetwork-ui/ui/search'
 import { IgnApiDlComponent } from '@geonetwork-ui/feature/record'
 
@@ -71,19 +79,24 @@ import { FormsModule } from '@angular/forms'
 import { UiDatavizModule } from '@geonetwork-ui/ui/dataviz'
 import { LANGUAGES_LIST, UiCatalogModule } from '@geonetwork-ui/ui/catalog'
 import {
+  LOGIN_URL,
   METADATA_LANGUAGE,
+  provideGn4,
   provideRepositoryUrl,
 } from '@geonetwork-ui/api/repository'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { LOGIN_URL, provideGn4 } from '@geonetwork-ui/api/repository'
 import { RecordRelatedRecordsComponent } from './record/record-related-records/record-related-records.component'
 import { RecordMetadataComponent } from './record/record-metadata/record-metadata.component'
 import { RecordOtherlinksComponent } from './record/record-otherlinks/record-otherlinks.component'
 import { RecordDownloadsComponent } from './record/record-downloads/record-downloads.component'
 import { RecordApisComponent } from './record/record-apis/record-apis.component'
 import { MatTabsModule } from '@angular/material/tabs'
+import { UiWidgetsModule } from '@geonetwork-ui/ui/widgets'
+import { RecordUserFeedbacksComponent } from './record/record-user-feedbacks/record-user-feedbacks.component'
+import { LetDirective } from '@ngrx/component'
 
 export const metaReducers: MetaReducer[] = !environment.production ? [] : []
+
 // https://github.com/nrwl/nx/issues/191
 @NgModule({
   declarations: [
@@ -102,6 +115,7 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     KeyFiguresComponent,
     NavigationMenuComponent,
     RecordRelatedRecordsComponent,
+    RecordUserFeedbacksComponent,
     RecordMetadataComponent,
     RecordOtherlinksComponent,
     RecordDownloadsComponent,
@@ -146,6 +160,12 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     UiInputsModule,
     UiCatalogModule,
     MatTabsModule,
+    UiWidgetsModule,
+    LinkCardComponent,
+    CarouselComponent,
+    BlockListComponent,
+    PreviousNextButtonsComponent,
+    LetDirective,
   ],
   providers: [
     importProvidersFrom(FeatureAuthModule),
@@ -215,8 +235,7 @@ export class AppModule {
       getThemeConfig().BACKGROUND_COLOR,
       getThemeConfig().MAIN_FONT || "'Rubik', sans-serif",
       getThemeConfig().TITLE_FONT || "'Readex Pro', sans-serif",
-      getThemeConfig().FONTS_STYLESHEET_URL ||
-        'https://fonts.googleapis.com/css2?family=Readex+Pro&family=Rubik&display=swap'
+      getThemeConfig().FONTS_STYLESHEET_URL || 'assets/css/default-fonts.css'
     )
     ThemeService.generateBgOpacityClasses(
       'primary',

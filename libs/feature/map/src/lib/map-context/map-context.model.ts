@@ -1,7 +1,6 @@
 import type { FeatureCollection } from 'geojson'
 import { Coordinate } from 'ol/coordinate'
 import type { Extent } from 'ol/extent'
-import { Options } from 'ol/source/WMTS'
 
 export enum MapContextLayerTypeEnum {
   XYZ = 'xyz',
@@ -9,6 +8,7 @@ export enum MapContextLayerTypeEnum {
   WMTS = 'wmts',
   WFS = 'wfs',
   GEOJSON = 'geojson',
+  OGCAPI = 'ogcapi',
 }
 
 export interface MapContextModel {
@@ -20,23 +20,35 @@ export interface MapContextLayerWmsModel {
   type: 'wms'
   url: string
   name: string
+  attributions?: string
 }
 
 export interface MapContextLayerWmtsModel {
   type: 'wmts'
-  options: Options
-  extent?: Extent
+  url: string
+  name: string
+  attributions?: string
 }
 
 interface MapContextLayerWfsModel {
   type: 'wfs'
   url: string
   name: string
+  attributions?: string
+}
+
+export interface MapContextLayerOgcapiModel {
+  type: 'ogcapi'
+  url: string
+  name: string
+  layerType: 'feature' | 'vectorTiles' | 'mapTiles' | 'record'
+  attributions?: string
 }
 
 interface LayerXyzModel {
   type: 'xyz'
   name?: string
+  attributions?: string
 }
 interface LayerXyzModelWithUrl extends LayerXyzModel {
   url: string
@@ -52,6 +64,7 @@ export type MapContextLayerXyzModel =
 
 interface LayerGeojson {
   type: 'geojson'
+  attributions?: string
 }
 interface LayerGeojsonWithUrl extends LayerGeojson {
   url: string
@@ -71,6 +84,7 @@ export type MapContextLayerModel =
   | MapContextLayerWfsModel
   | MapContextLayerXyzModel
   | MapContextLayerGeojsonModel
+  | MapContextLayerOgcapiModel
 
 export interface MapContextViewModel {
   center?: Coordinate // expressed in long/lat (EPSG:4326)

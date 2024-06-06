@@ -35,18 +35,33 @@ Cypress.Commands.add(
       },
     })
     cy.getCookie('XSRF-TOKEN').then((xsrfTokenCookie) => {
-      cy.request({
-        method: 'POST',
-        url: '/geonetwork/signin',
-        body: `username=${username}&password=${password}&_csrf=${xsrfTokenCookie.value}`,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        followRedirect: false,
-      })
+      // do the login 2 times because it sometimes doesn't register (?)
+      for (let i = 0; i < 2; i++) {
+        cy.request({
+          method: 'POST',
+          url: '/geonetwork/signin',
+          body: `username=${username}&password=${password}&_csrf=${xsrfTokenCookie.value}`,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          followRedirect: false,
+        })
+      }
     })
-    if (redirect) return cy.visit('/')
-    else return cy.window()
+    cy.request({
+      method: 'GET',
+      url: '/geonetwork/srv/api/me',
+      headers: {
+        Accept: 'application/json',
+      },
+    }).then((response) => {
+      if (response.status !== 200) {
+        throw new Error('Could not log in to GeoNetwork API 😢')
+      }
+      cy.log('Login to GeoNetwork API successful!')
+    })
+    if (redirect) cy.visit('/')
+    return cy.window()
   }
 )
 
@@ -97,10 +112,8 @@ Cypress.Commands.add(
   'openDropdown',
   { prevSubject: true },
   (dropdownElement) => {
-    cy.get('body').click() // first click on the document to close other dropdowns
-    const width = dropdownElement.width()
-    const height = dropdownElement.height()
-    cy.wrap(dropdownElement).click(width - 10, height / 2) // click on the right size to avoid the label
+    cy.get('body').click('bottomLeft') // first click on the document to close other dropdowns
+    cy.wrap(dropdownElement).find('button').click()
     return cy.get('.cdk-overlay-container').find('[role=listbox]')
   }
 )

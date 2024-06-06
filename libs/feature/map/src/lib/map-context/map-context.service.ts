@@ -22,9 +22,15 @@ import { LayerConfig, MapConfig } from '@geonetwork-ui/util/app-config'
 import { FeatureCollection } from 'geojson'
 import { fromLonLat } from 'ol/proj'
 import WMTS from 'ol/source/WMTS'
-import { removeSearchParams } from '@geonetwork-ui/util/shared'
 import { Geometry } from 'ol/geom'
 import Feature from 'ol/Feature'
+import { WfsEndpoint, WmtsEndpoint } from '@camptocamp/ogc-client'
+import OGCVectorTile from 'ol/source/OGCVectorTile.js'
+import { MVT } from 'ol/format'
+import VectorTileLayer from 'ol/layer/VectorTile'
+import OGCMapTile from 'ol/source/OGCMapTile.js'
+import ImageLayer from 'ol/layer/Image'
+import ImageWMS from 'ol/source/ImageWMS'
 
 export const DEFAULT_BASELAYER_CONTEXT: MapContextLayerXyzModel = {
   type: MapContextLayerTypeEnum.XYZ,
@@ -33,6 +39,7 @@ export const DEFAULT_BASELAYER_CONTEXT: MapContextLayerXyzModel = {
     `https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png`,
     `https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png`,
   ],
+  attributions: `<span>© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, © <a href="https://carto.com/">Carto</a></span>`,
 }
 
 export const DEFAULT_VIEW: MapContextViewModel = {
@@ -58,6 +65,8 @@ export class MapContextService {
   ): Map {
     if (mapConfig) {
       mapContext = this.mergeMapConfigWithContext(mapContext, mapConfig)
+    } else {
+      mapContext.layers = this.addDefaultBaselayerContext(mapContext.layers)
     }
     if (
       !mapContext.view?.extent &&
@@ -67,62 +76,123 @@ export class MapContextService {
     }
     map.setView(this.createView(mapContext.view, map))
     map.getLayers().clear()
-    mapContext.layers.forEach((layer) => map.addLayer(this.createLayer(layer)))
+    mapContext.layers.forEach((layer) =>
+      map.addLayer(this.createLayer(layer, mapConfig))
+    )
     return map
   }
 
-  createLayer(layerModel: MapContextLayerModel): Layer {
+  createLayer(layerModel: MapContextLayerModel, mapConfig?: MapConfig): Layer {
     const { type } = layerModel
     const style = this.styleService.styles.default
     switch (type) {
+      case MapContextLayerTypeEnum.OGCAPI:
+        if (layerModel.layerType === 'vectorTiles') {
+          return new VectorTileLayer({
+            source: new OGCVectorTile({
+              url: layerModel.url,
+              format: new MVT(),
+              attributions: layerModel.attributions,
+            }),
+          })
+        } else if (layerModel.layerType === 'mapTiles') {
+          return new TileLayer({
+            source: new OGCMapTile({
+              url: layerModel.url,
+              attributions: layerModel.attributions,
+            }),
+          })
+        } else {
+          return new VectorLayer({
+            source: new VectorSource({
+              format: new GeoJSON(),
+              url: layerModel.url,
+              attributions: layerModel.attributions,
+            }),
+            style,
+          })
+        }
       case MapContextLayerTypeEnum.XYZ:
         return new TileLayer({
           source: new XYZ({
             url: 'url' in layerModel ? layerModel.url : undefined,
             urls: 'urls' in layerModel ? layerModel.urls : undefined,
+            attributions: layerModel.attributions,
           }),
         })
       case MapContextLayerTypeEnum.WMS:
-        return new TileLayer({
-          source: new TileWMS({
-            url: removeSearchParams(layerModel.url, ['request', 'service']),
-            params: { LAYERS: layerModel.name },
-            gutter: 20,
-          }),
+        if (mapConfig?.DO_NOT_TILE_WMS) {
+          return new ImageLayer({
+            source: new ImageWMS({
+              url: layerModel.url,
+              params: { LAYERS: layerModel.name },
+              attributions: layerModel.attributions,
+            }),
+          })
+        } else {
+          return new TileLayer({
+            source: new TileWMS({
+              url: layerModel.url,
+              params: { LAYERS: layerModel.name, TILED: true },
+              attributions: layerModel.attributions,
+            }),
+          })
+        }
+
+      case MapContextLayerTypeEnum.WMTS: {
+        // TODO: isolate this in utils service
+        const olLayer = new TileLayer({})
+        const endpoint = new WmtsEndpoint(layerModel.url)
+        endpoint.isReady().then(async (endpoint) => {
+          const layerName = endpoint.getSingleLayerName() ?? layerModel.name
+          const layer = endpoint.getLayerByName(layerName)
+          const matrixSet = layer.matrixSets[0]
+          const tileGrid = await endpoint.getOpenLayersTileGrid(layer.name)
+          const resourceUrl = layer.resourceLinks[0]
+          const dimensions = endpoint.getDefaultDimensions(layer.name)
+          olLayer.setSource(
+            new WMTS({
+              layer: layer.name,
+              style: layer.defaultStyle,
+              matrixSet: matrixSet.identifier,
+              format: resourceUrl.format,
+              url: resourceUrl.url,
+              requestEncoding: resourceUrl.encoding,
+              tileGrid,
+              projection: matrixSet.crs,
+              dimensions,
+              attributions: layerModel.attributions,
+            })
+          )
         })
-      case MapContextLayerTypeEnum.WMTS:
-        return new TileLayer({
-          source: new WMTS(layerModel.options),
-        })
-      case MapContextLayerTypeEnum.WFS:
-        return new VectorLayer({
-          source: new VectorSource({
-            format: new GeoJSON(),
-            url: function (extent) {
-              const urlObj = new URL(
-                removeSearchParams(layerModel.url, [
-                  'service',
-                  'version',
-                  'request',
-                ])
-              )
-              urlObj.searchParams.set('service', 'WFS')
-              urlObj.searchParams.set('version', '1.1.0')
-              urlObj.searchParams.set('request', 'GetFeature')
-              urlObj.searchParams.set('outputFormat', 'application/json')
-              urlObj.searchParams.set('typename', layerModel.name)
-              urlObj.searchParams.set('srsname', 'EPSG:3857')
-              urlObj.searchParams.set('bbox', `${extent.join(',')},EPSG:3857`)
-              urlObj.searchParams.set(
-                'maxFeatures',
-                WFS_MAX_FEATURES.toString()
-              )
-              return urlObj.toString()
-            },
-            strategy: bboxStrategy,
-          }),
+        return olLayer
+      }
+      case MapContextLayerTypeEnum.WFS: {
+        const olLayer = new VectorLayer({
           style,
         })
+        new WfsEndpoint(layerModel.url).isReady().then((endpoint) => {
+          const featureType =
+            endpoint.getSingleFeatureTypeName() ?? layerModel.name
+          olLayer.setSource(
+            new VectorSource({
+              format: new GeoJSON(),
+              url: function (extent: [number, number, number, number]) {
+                return endpoint.getFeatureUrl(featureType, {
+                  maxFeatures: WFS_MAX_FEATURES,
+                  asJson: true,
+                  outputCrs: 'EPSG:3857',
+                  extent,
+                  extentCrs: 'EPSG:3857',
+                })
+              },
+              strategy: bboxStrategy,
+              attributions: layerModel.attributions,
+            })
+          )
+        })
+        return olLayer
+      }
       case MapContextLayerTypeEnum.GEOJSON: {
         if ('url' in layerModel) {
           return new VectorLayer({
@@ -177,6 +247,14 @@ export class MapContextService {
       })
     }
     return view
+  }
+
+  addDefaultBaselayerContext(
+    layers: MapContextLayerModel[]
+  ): MapContextLayerModel[] {
+    return layers.includes(DEFAULT_BASELAYER_CONTEXT)
+      ? layers
+      : [DEFAULT_BASELAYER_CONTEXT, ...layers]
   }
 
   mergeMapConfigWithContext(

@@ -12,6 +12,21 @@ export const GENERIC_DATASET_RECORD: DatasetRecord = {
   contacts: [
     {
       email: 'bob@org.net',
+      role: 'point_of_contact',
+      organization: {
+        name: 'MyOrganization',
+        website: new URL('https://www.my.org/info'),
+        logoUrl: new URL('https://www.my.org/logo.png'),
+        description: 'A generic organization',
+      },
+      firstName: 'Bob',
+      lastName: 'TheGreat',
+      position: 'developer',
+    },
+  ],
+  contactsForResource: [
+    {
+      email: 'bob@org.net',
       role: 'author',
       organization: {
         name: 'MyOrganization',
@@ -32,13 +47,26 @@ export const GENERIC_DATASET_RECORD: DatasetRecord = {
       },
       position: 'manager',
     },
+    {
+      email: 'bill@org2.com',
+      role: 'distributor',
+      organization: {
+        name: 'Another Organization',
+        website: new URL('https://www.another.org/docs'),
+      },
+      position: 'randomWorker',
+      address: '123 rue des moulins, 10808 Montargis, FR',
+      phone: '+11234567890',
+      lastName: 'TheDistributor',
+      firstName: 'Bill',
+    },
   ],
-  contactsForResource: [],
   status: 'ongoing',
-  recordCreated: new Date('2022-02-01T15:12:00'),
+  recordCreated: new Date('2021-11-15T09:00:00'),
+  recordPublished: new Date('2022-01-01T10:00:00'),
   recordUpdated: new Date('2022-02-01T15:12:00'),
-  datasetCreated: new Date('2022-09-01T14:18:19'),
-  datasetUpdated: new Date('2022-12-04T15:12:00'),
+  resourceCreated: new Date('2022-09-01T14:18:19'),
+  resourceUpdated: new Date('2022-12-04T15:12:00'),
   title: 'A very interesting dataset (un jeu de données très intéressant)',
   abstract: `# Introduction
 This dataset has been established for testing purposes.
@@ -57,8 +85,61 @@ Cette section contient des *caractères internationaux* (ainsi que des "caractè
       url: new URL('http://my-org.net/two.png'),
     },
   ],
-  keywords: ['international', 'test', '_another_keyword_'],
-  themes: ['testData', 'exampleData'],
+  keywords: [
+    {
+      thesaurus: {
+        id: 'geonetwork.thesaurus.local',
+        name: 'geonetwork.thesaurus.local',
+      },
+      type: 'other',
+      label: 'international',
+    },
+    {
+      thesaurus: {
+        id: 'geonetwork.thesaurus.local',
+        name: 'geonetwork.thesaurus.local',
+      },
+      type: 'other',
+      label: 'test',
+    },
+    {
+      thesaurus: {
+        id: 'geonetwork.thesaurus.local',
+        name: 'geonetwork.thesaurus.local',
+      },
+      type: 'other',
+      label: '_another_keyword_',
+    },
+    {
+      thesaurus: {
+        id: 'geonetwork.thesaurus.theme',
+        name: 'geonetwork.thesaurus.theme',
+      },
+      type: 'theme',
+      label: 'test theme',
+    },
+    {
+      thesaurus: {
+        id: 'geonetwork.thesaurus.place',
+        name: 'geonetwork.thesaurus.place',
+      },
+      type: 'place',
+      label: 'test place',
+    },
+    {
+      type: 'theme',
+      label: 'themeNoThesaurus',
+    },
+    {
+      type: 'theme',
+      label: 'themeNoThesaurus 2',
+    },
+    {
+      type: 'temporal',
+      label: 'temporalNoThesaurus',
+    },
+  ],
+  topics: ['agriculture'],
   spatialRepresentation: 'grid',
   distributions: [
     {
@@ -93,9 +174,9 @@ Cette section contient des *caractères internationaux* (ainsi que des "caractè
   lineage: `This record was edited manually to test the conversion processes
 
 As such, **it is not very interesting at all.**`,
-  useLimitations: [
-    'Should only be used as a testing tool',
-    'Might cause minor annoyance in people',
+  otherConstraints: [
+    { text: 'Should only be used as a testing tool' },
+    { text: 'Might cause minor annoyance in people' },
   ],
   licenses: [
     {
@@ -103,14 +184,14 @@ As such, **it is not very interesting at all.**`,
       url: new URL('https://data.rennesmetropole.fr/pages/licence/'),
     },
   ],
-  accessConstraints: [
+  legalConstraints: [
     {
       text: "Dataset access isn't possible since it does not really exist",
-      type: 'other',
     },
+  ],
+  securityConstraints: [
     {
       text: 'Contains sensitive information related to national defense',
-      type: 'security',
     },
   ],
   spatialExtents: [],
@@ -119,4 +200,5 @@ As such, **it is not very interesting at all.**`,
     updatedTimes: 3,
     per: 'month',
   },
+  languages: [],
 }

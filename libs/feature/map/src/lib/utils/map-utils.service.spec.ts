@@ -9,14 +9,12 @@ import Map from 'ol/Map'
 import ImageWMS from 'ol/source/ImageWMS'
 import TileWMS from 'ol/source/TileWMS'
 import XYZ from 'ol/source/XYZ'
-import { of } from 'rxjs'
-import { MapUtilsWMSService } from './map-utils-wms.service'
+import { firstValueFrom } from 'rxjs'
 import {
   dragPanCondition,
   MapUtilsService,
   mouseWheelZoomCondition,
 } from './map-utils.service'
-import { readFirst } from '@nx/angular/testing'
 import {
   defaults,
   DragPan,
@@ -24,22 +22,53 @@ import {
   MouseWheelZoom,
   PinchRotate,
 } from 'ol/interaction'
-import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
+import {
+  CatalogRecord,
+  DatasetServiceDistribution,
+} from '@geonetwork-ui/common/domain/model/record'
 import MapBrowserEvent from 'ol/MapBrowserEvent'
 import type { MapContextLayerWmtsModel } from '../map-context/map-context.model'
+import * as olProjProj4 from 'ol/proj/proj4'
+import * as olProj from 'ol/proj'
+import { get } from 'ol/proj'
 
-jest.mock('ol/proj/proj4', () => {
-  const fromEPSGCodeMock = jest.fn()
-  const registerMock = jest.fn()
-  return {
-    fromEPSGCode: fromEPSGCodeMock,
-    register: registerMock,
-  }
-})
+jest.mock('@camptocamp/ogc-client', () => ({
+  WmsEndpoint: class {
+    constructor(private url) {}
+    isReady() {
+      return Promise.resolve({
+        getLayerByName: (name) => {
+          if (name.includes('error')) {
+            throw new Error('Something went wrong')
+          }
+          let boundingBoxes
+          if (name.includes('nobbox')) {
+            boundingBoxes = {}
+          } else if (name.includes('4326')) {
+            boundingBoxes = {
+              'EPSG:4326': [1, 2.6, 3.3, 4.2],
+              'CRS:84': [2.3, 50.6, 2.8, 50.9],
+            }
+          } else if (name.includes('2154')) {
+            boundingBoxes = {
+              'EPSG:2154': [650796.4, 7060330.6, 690891.3, 7090402.2],
+            }
+          } else {
+            boundingBoxes = {
+              'CRS:84': [2.3, 50.6, 2.8, 50.9],
+              'EPSG:2154': [650796.4, 7060330.6, 690891.3, 7090402.2],
+            }
+          }
+          return {
+            name,
+            boundingBoxes,
+          }
+        },
+      })
+    }
+  },
+}))
 
-const wmsUtilsMock = {
-  getLayerLonLatBBox: jest.fn(() => of([1.33, 48.81, 4.3, 51.1])),
-}
 const wmsTileLayer = new TileLayer({
   source: new TileWMS({
     url: 'url',
@@ -63,14 +92,12 @@ describe('MapUtilsService', () => {
   let service: MapUtilsService
 
   beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [
-        {
-          provide: MapUtilsWMSService,
-          useValue: wmsUtilsMock,
-        },
-      ],
     })
     service = TestBed.inject(MapUtilsService)
   })
@@ -169,7 +196,7 @@ describe('MapUtilsService', () => {
       expect(map).toBeInstanceOf(Map)
     })
     it('with no control', () => {
-      expect(map.getControls().getArray().length).toBe(0)
+      expect(map.getControls().getArray().length).toBe(3)
     })
     it('with no layer', () => {
       expect(map.getLayers().getArray().length).toBe(0)
@@ -186,7 +213,7 @@ describe('MapUtilsService', () => {
         }
       })
       it('returns an observable emitting the aggregated extent', async () => {
-        const extent = await readFirst(service.getLayerExtent(layer))
+        const extent = await service.getLayerExtent(layer)
         expect(extent).toEqual([
           -571959.6817241046, 5065908.545923665, 1064128.2009725596,
           6636971.049871371,
@@ -211,12 +238,18 @@ describe('MapUtilsService', () => {
         }
       })
       it('returns an observable emitting null', async () => {
-        const extent = await readFirst(service.getLayerExtent(layer))
+        const extent = await service.getLayerExtent(layer)
         expect(extent).toEqual(null)
       })
     })
     describe('WMS layer', () => {
       let layer
+      beforeEach(() => {
+        jest
+          .spyOn(olProj, 'transformExtent')
+          .mockImplementation((extent) => extent)
+      })
+
       describe('extent available in capabilities', () => {
         beforeEach(() => {
           layer = {
@@ -225,14 +258,82 @@ describe('MapUtilsService', () => {
             url: 'http://mock/wms',
           }
         })
-        it('returns an observable emitting the advertised extent', async () => {
-          const extent = await readFirst(service.getLayerExtent(layer))
-          expect(extent).toEqual([
-            148054.92275505388, 6242683.64671384, 478673.81041107635,
-            6639001.66376131,
-          ])
+        it('returns the advertised extent (CRS 84)', async () => {
+          const extent = await service.getLayerExtent(layer)
+          expect(extent).toEqual([2.3, 50.6, 2.8, 50.9])
         })
       })
+
+      describe('bbox in EPSG:4326', () => {
+        beforeEach(() => {
+          layer = {
+            type: 'wms',
+            name: 'mock_4326',
+            url: 'http://mock/wms',
+          }
+        })
+        it('returns EPSG:4326 bbox', async () => {
+          const extent = await service.getLayerExtent(layer)
+          expect(extent).toEqual([1, 2.6, 3.3, 4.2])
+        })
+      })
+      describe('no lon lat bbox', () => {
+        beforeEach(() => {
+          layer = {
+            type: 'wms',
+            name: 'mock_2154',
+            url: 'http://mock/wms',
+          }
+          jest
+            .spyOn(olProjProj4, 'fromEPSGCode')
+            .mockImplementation(async () => get('EPSG:4326'))
+        })
+        it('transforms to EPSG:4326 bbox', async () => {
+          const extent = await service.getLayerExtent(layer)
+          expect(olProjProj4.fromEPSGCode).toHaveBeenCalledWith('EPSG:2154')
+          expect(extent).toEqual([650796.4, 7060330.6, 690891.3, 7090402.2])
+        })
+      })
+      describe('no bbox at all', () => {
+        beforeEach(() => {
+          layer = {
+            type: 'wms',
+            name: 'mock_nobbox',
+            url: 'http://mock/wms',
+          }
+        })
+        it('returns the advertised extent', async () => {
+          const extent = await service.getLayerExtent(layer)
+          expect(extent).toEqual(null)
+        })
+      })
+      describe('error while loading capabilities', () => {
+        beforeEach(() => {
+          layer = {
+            type: 'wms',
+            name: 'mock_error',
+            url: 'http://mock/wms',
+          }
+        })
+        it('returns a translatable error', async () => {
+          try {
+            await service.getLayerExtent(layer)
+          } catch (e) {
+            const error = e as Error
+            expect(error.message).toEqual('Something went wrong')
+          }
+        })
+      })
+    })
+  })
+
+  describe('getRecordExtent', () => {
+    it('should return null if spatialExtents is not present or is an empty array', () => {
+      const record1: Partial<CatalogRecord> = {}
+      const record2: Partial<CatalogRecord> = { spatialExtents: [] }
+
+      expect(service.getRecordExtent(record1)).toBeNull()
+      expect(service.getRecordExtent(record2)).toBeNull()
     })
   })
 
@@ -313,254 +414,6 @@ describe('MapUtilsService', () => {
       )
 
       expect(dragPanCondition.bind(interaction)(event)).toBe(false)
-    })
-  })
-
-  const SAMPLE_WMTS_LINK = {
-    name: 'GEOGRAPHICALGRIDSYSTEMS.ETATMAJOR10',
-    url: new URL('http://my.server.org/wmts'),
-    type: 'service',
-    accessServiceProtocol: 'wmts',
-  } as DatasetServiceDistribution
-  const SAMPLE_WMTS_CAPABILITIES = `<?xml version="1.0" encoding="UTF-8"?>
-<Capabilities xmlns="http://www.opengis.net/wmts/1.0" xmlns:gml="http://www.opengis.net/gml" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0.0" xsi:schemaLocation="http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd">
-  <ows:OperationsMetadata>
-    <ows:Operation name="GetTile">
-      <ows:DCP>
-        <ows:HTTP>
-          <ows:Get xlink:href="https://wxs.ign.fr/cartes/geoportail/wmts?">
-            <ows:Constraint name="GetEncoding">
-              <ows:AllowedValues>
-                <ows:Value>KVP</ows:Value>
-              </ows:AllowedValues>
-            </ows:Constraint>
-          </ows:Get>
-        </ows:HTTP>
-      </ows:DCP>
-    </ows:Operation>
-  </ows:OperationsMetadata>
-  <Contents>
-    <Layer>
-      <ows:Title>Carte de l'état-major - environs de Paris (1818 - 1824)</ows:Title>
-      <ows:Abstract>Carte des environs de Paris au 1 : 10 000 établie entre 1818 et 1824.</ows:Abstract>
-      <ows:WGS84BoundingBox>
-        <ows:LowerCorner>1.82682 48.3847</ows:LowerCorner>
-        <ows:UpperCorner>2.79738 49.5142</ows:UpperCorner>
-      </ows:WGS84BoundingBox>
-      <ows:Identifier>GEOGRAPHICALGRIDSYSTEMS.ETATMAJOR10</ows:Identifier>
-      <Format>image/jpeg</Format>
-      <Style isDefault="true">
-        <ows:Title>Légende générique</ows:Title>
-        <ows:Abstract>
-          Fichier de légende générique – pour la compatibilité avec certains systèmes
-        </ows:Abstract>
-        <ows:Identifier>normal</ows:Identifier>
-        <LegendURL format="image/jpeg" height="200" maxScaleDenominator="100000000" minScaleDenominator="200" width="200" xlink:href="https://wxs.ign.fr/static/legends/LEGEND.jpg"/>
-      </Style>
-      <TileMatrixSetLink>
-        <TileMatrixSet>PM</TileMatrixSet>
-        <TileMatrixSetLimits>
-          <TileMatrixLimits>
-            <TileMatrix>6</TileMatrix>
-            <MinTileRow>21</MinTileRow>
-            <MaxTileRow>22</MaxTileRow>
-            <MinTileCol>32</MinTileCol>
-            <MaxTileCol>32</MaxTileCol>
-          </TileMatrixLimits>
-          <TileMatrixLimits>
-            <TileMatrix>7</TileMatrix>
-            <MinTileRow>43</MinTileRow>
-            <MaxTileRow>44</MaxTileRow>
-            <MinTileCol>64</MinTileCol>
-            <MaxTileCol>64</MaxTileCol>
-          </TileMatrixLimits>
-          <TileMatrixLimits>
-            <TileMatrix>8</TileMatrix>
-            <MinTileRow>87</MinTileRow>
-            <MaxTileRow>88</MaxTileRow>
-            <MinTileCol>129</MinTileCol>
-            <MaxTileCol>129</MaxTileCol>
-          </TileMatrixLimits>
-        </TileMatrixSetLimits>
-      </TileMatrixSetLink>
-    </Layer>
-    <TileMatrixSet>
-      <ows:Identifier>PM</ows:Identifier>
-      <ows:SupportedCRS>EPSG:3857</ows:SupportedCRS>
-      <TileMatrix>
-        <ows:Identifier>0</ows:Identifier>
-        <ScaleDenominator>559082264.0287178958533332</ScaleDenominator>
-        <TopLeftCorner>
-          -20037508.3427892476320267 20037508.3427892476320267
-        </TopLeftCorner>
-        <TileWidth>256</TileWidth>
-        <TileHeight>256</TileHeight>
-        <MatrixWidth>1</MatrixWidth>
-        <MatrixHeight>1</MatrixHeight>
-      </TileMatrix>
-      <TileMatrix>
-        <ows:Identifier>1</ows:Identifier>
-        <ScaleDenominator>279541132.0143588959472254</ScaleDenominator>
-        <TopLeftCorner>
-          -20037508.3427892476320267 20037508.3427892476320267
-        </TopLeftCorner>
-        <TileWidth>256</TileWidth>
-        <TileHeight>256</TileHeight>
-        <MatrixWidth>2</MatrixWidth>
-        <MatrixHeight>2</MatrixHeight>
-      </TileMatrix>
-      <TileMatrix>
-        <ows:Identifier>2</ows:Identifier>
-        <ScaleDenominator>139770566.0071793960087234</ScaleDenominator>
-        <TopLeftCorner>
-        -20037508.3427892476320267 20037508.3427892476320267
-        </TopLeftCorner>
-        <TileWidth>256</TileWidth>
-        <TileHeight>256</TileHeight>
-        <MatrixWidth>4</MatrixWidth>
-        <MatrixHeight>4</MatrixHeight>
-      </TileMatrix>
-      <TileMatrix>
-        <ows:Identifier>3</ows:Identifier>
-        <ScaleDenominator>69885283.0035897239868063</ScaleDenominator>
-        <TopLeftCorner>
-          -20037508.3427892476320267 20037508.3427892476320267
-        </TopLeftCorner>
-        <TileWidth>256</TileWidth>
-        <TileHeight>256</TileHeight>
-        <MatrixWidth>8</MatrixWidth>
-        <MatrixHeight>8</MatrixHeight>
-      </TileMatrix>
-    </TileMatrixSet>
-  </Contents>
-</Capabilities>`
-
-  describe('#getWmtsOptionsFromCapabilities', () => {
-    let originalFetch
-    beforeEach(() => {
-      originalFetch = window.fetch
-    })
-    afterEach(() => {
-      window.fetch = originalFetch
-    })
-    describe('nominal', () => {
-      let wmtsLayer: MapContextLayerWmtsModel
-      beforeEach(async () => {
-        ;(window as any).fetch = jest.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            text: () => Promise.resolve(SAMPLE_WMTS_CAPABILITIES),
-          })
-        )
-        wmtsLayer = await readFirst(
-          service.getWmtsLayerFromCapabilities(SAMPLE_WMTS_LINK)
-        )
-      })
-      it('appends query params to the URL', () => {
-        expect(window.fetch).toHaveBeenCalledWith(
-          'http://my.server.org/wmts?SERVICE=WMTS&REQUEST=GetCapabilities'
-        )
-      })
-      it('returns appropriate WMTS options', () => {
-        expect(wmtsLayer).toMatchObject({
-          type: 'wmts',
-          options: {
-            format: 'image/jpeg',
-            layer: 'GEOGRAPHICALGRIDSYSTEMS.ETATMAJOR10',
-            matrixSet: 'PM',
-            requestEncoding: 'KVP',
-            style: 'normal',
-            urls: ['https://wxs.ign.fr/cartes/geoportail/wmts?'],
-          },
-        })
-      })
-      describe('layer extent', () => {
-        describe('when the WGS84BoundingBox is defined', () => {
-          it('set the WGS84BoundingBox', () => {
-            expect(wmtsLayer.extent).toEqual([
-              1.82682, 48.3847, 2.79738, 49.5142,
-            ])
-          })
-        })
-        describe('when the WGS84BoundingBox is not defined', () => {
-          beforeEach(async () => {
-            ;(window as any).fetch = jest.fn(() =>
-              Promise.resolve({
-                ok: true,
-                status: 200,
-                text: () =>
-                  Promise.resolve(
-                    SAMPLE_WMTS_CAPABILITIES.replace(
-                      /WGS84BoundingBox/g,
-                      'NoWGS84BoundingBox'
-                    )
-                  ),
-              })
-            )
-            wmtsLayer = await readFirst(
-              service.getWmtsLayerFromCapabilities(SAMPLE_WMTS_LINK)
-            )
-          })
-
-          it('set the WGS84BoundingBox', () => {
-            expect(wmtsLayer.extent).toBeUndefined()
-          })
-        })
-      })
-    })
-    describe('http error', () => {
-      let error
-      beforeEach(async () => {
-        ;(window as any).fetch = jest.fn(() =>
-          Promise.resolve({
-            ok: false,
-            status: 403,
-            text: () => `<ExceptionReport xmlns="http://www.opengis.net/ows/1.1">
-<Exception exceptionCode="InvalidParameterValue" >
-  Le service est inconnu pour ce serveur.
-</Exception>
-</ExceptionReport>`,
-          })
-        )
-        try {
-          await readFirst(
-            service.getWmtsLayerFromCapabilities(SAMPLE_WMTS_LINK)
-          )
-        } catch (e) {
-          error = e
-        }
-      })
-      it('throws an explicit error', () => {
-        expect(error).toBeInstanceOf(Error)
-        expect(error.message).toMatch('request failed')
-      })
-    })
-    describe('parsing error', () => {
-      let error
-      beforeEach(async () => {
-        ;(window as any).fetch = jest.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            text: () =>
-              Promise.resolve(
-                '{ "response": "This is probably not what you expected!" }'
-              ),
-          })
-        )
-        try {
-          await readFirst(
-            service.getWmtsLayerFromCapabilities(SAMPLE_WMTS_LINK)
-          )
-        } catch (e) {
-          error = e
-        }
-      })
-      it('throws an explicit error', () => {
-        expect(error).toBeInstanceOf(Error)
-        expect(error.message).toMatch('parsing failed')
-      })
     })
   })
 })

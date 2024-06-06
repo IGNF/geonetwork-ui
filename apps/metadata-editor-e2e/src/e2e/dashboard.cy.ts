@@ -2,9 +2,9 @@ describe('dashboard', () => {
   let pageOne
   describe('pagination', () => {
     it('should display different results on click on arrow', () => {
-      cy.visit('/records/all')
-      cy.get('gn-ui-record-table')
-        .find('.record-table-col')
+      cy.visit('/records/search')
+      cy.get('gn-ui-results-table')
+        .find('.table-row-cell')
         .first()
         .invoke('text')
         .then((text) => {
@@ -15,8 +15,8 @@ describe('dashboard', () => {
     it.skip('should display different results on click on specific page and change url', () => {
       cy.visit('/records/search?_page=2')
       cy.get('gn-ui-pagination-buttons').find('gn-ui-button').eq(1).click()
-      cy.get('gn-ui-record-table')
-        .find('.record-table-col')
+      cy.get('gn-ui-results-table')
+        .find('.table-row-cell')
         .first()
         .invoke('text')
         .then((text) => {
@@ -24,8 +24,8 @@ describe('dashboard', () => {
           cy.url().should('include', 'page=1')
         })
       cy.get('gn-ui-pagination-buttons').find('gn-ui-button').last().click()
-      cy.get('gn-ui-record-table')
-        .find('.record-table-col')
+      cy.get('gn-ui-results-table')
+        .find('.table-row-cell')
         .first()
         .invoke('text')
         .then((text) => {
@@ -36,67 +36,64 @@ describe('dashboard', () => {
   })
 
   describe('sorting', () => {
-    let originalFirstItem
-    let newFirstItem
     it('should order the result list on click', () => {
-      cy.visit('/records/all')
-      cy.get('gn-ui-record-table')
-        .find('.record-table-col')
+      cy.visit('/records/search')
+      cy.get('gn-ui-results-table')
+        .find('.table-row-cell')
         .eq(1)
         .invoke('text')
-        .then((list) => {
-          originalFirstItem = list.trim()
-          cy.get('.record-table-header').first().click()
-          // Takes time to refresh results
-          // eslint-disable-next-line cypress/no-unnecessary-waiting
-          cy.wait(500)
-          cy.get('gn-ui-record-table')
-            .find('.record-table-col')
-            .eq(1)
-            .invoke('text')
-            .then((list) => {
-              newFirstItem = list.trim()
-              expect(newFirstItem).not.to.equal(originalFirstItem)
-              cy.url().should(
-                'include',
-                'sort=resourceTitleObject.default.keyword'
-              )
-            })
-        })
+        .invoke('trim')
+        .as('originalFirstItem')
+
+      // order by title descending
+      cy.get('.table-header-cell').eq(1).click()
+      cy.url().should('include', 'sort=resourceTitleObject.default.keyword')
+      cy.get('.table-header-cell').eq(1).click()
+      cy.url().should('include', 'sort=-resourceTitleObject.default.keyword')
+
+      // this is wrapped in a then call because we want to have access to `this.originalFirstItem`
+      cy.get('gn-ui-results-table').then(function (table) {
+        cy.wrap(table)
+          .find('.table-row-cell')
+          .eq(1)
+          .invoke('text')
+          .invoke('trim')
+          .should('not.equal', this.originalFirstItem)
+      })
     })
   })
 
   describe('checkboxes', () => {
     it('should show the correct amount of selected records when they are selected', () => {
-      cy.visit('/records/all')
-      cy.get('gn-ui-record-table')
-        .find('.record-table-col')
+      cy.visit('/records/search')
+      cy.get('gn-ui-results-table')
+        .find('.table-row-cell')
         .get('gn-ui-checkbox')
         .eq(2)
         .click()
-      cy.get('.selected-records').contains('1 selected')
+      cy.get('[data-test=selected-count]').contains('1 selected')
     })
 
     it('should show nothing when none are selected', () => {
-      cy.visit('/records/all')
-      cy.get('gn-ui-record-table')
-        .find('.record-table-col')
+      cy.visit('/records/search')
+      cy.get('gn-ui-results-table')
+        .find('.table-row-cell')
         .get('gn-ui-checkbox')
         .each(($checkbox) => cy.wrap($checkbox).click())
-      cy.get('.records-information').should(
+      cy.get('[data-cy=records-information]').should(
         'not.have.descendants',
-        '.selected-records'
+        '[data-test=selected-count]'
       )
     })
 
     it('should select all records when the "select all" checkbox is checked', () => {
-      cy.visit('/records/all')
-      cy.get('gn-ui-record-table')
-        .find('.record-table-col')
+      cy.visit('/records/search')
+      cy.get('gn-ui-results-table')
+        .find('.table-row-cell')
         .get('gn-ui-checkbox')
         .first()
         .click()
-      cy.get('.selected-records').contains('12 selected')
+      cy.get('[data-test=selected-count]').contains('14 selected')
     })
   })
 })

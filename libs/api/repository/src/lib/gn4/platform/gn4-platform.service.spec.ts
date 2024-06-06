@@ -3,13 +3,20 @@ import {
   RegistriesApiService,
   SiteApiService,
   ToolsApiService,
+  UserfeedbackApiService,
+  UserFeedbackDTOApiModel,
   UsersApiService,
 } from '@geonetwork-ui/data-access/gn4'
 import { TestBed } from '@angular/core/testing'
 import { Gn4PlatformService } from './gn4-platform.service'
-import { firstValueFrom, lastValueFrom, of, Subject } from 'rxjs'
+import { firstValueFrom, lastValueFrom, of, Subject, throwError } from 'rxjs'
 import { AvatarServiceInterface } from '../auth/avatar.service.interface'
 import { Gn4PlatformMapper } from './gn4-platform.mapper'
+import { LangService } from '@geonetwork-ui/util/i18n'
+import {
+  A_USER_FEEDBACK,
+  SOME_USER_FEEDBACKS,
+} from '@geonetwork-ui/common/fixtures'
 
 let geonetworkVersion: string
 
@@ -92,10 +99,10 @@ class RegistriesApiServiceMock {
         coordSouth: '',
         coordNorth: '',
         thesaurusKey: 'external.theme.httpinspireeceuropaeutheme-theme',
-        uri: 'http://inspire.ec.europa.eu/theme/ad',
-        definition:
-          'Localisation des propriétés fondée sur les identifiants des adresses, habituellement le nom de la rue, le numéro de la maison et le code postal.',
-        value: 'Adresses',
+        // note how the uri can sometimes be prefixed by an "all thesaurus" uri
+        uri: 'http://org.fao.geonet.thesaurus.all/external.theme.httpinspireeceuropaeutheme-theme@@@http://inspire.ec.europa.eu/theme/ad',
+        definition: 'localization of properties',
+        value: 'addresses',
       },
       {
         values: {
@@ -110,12 +117,21 @@ class RegistriesApiServiceMock {
         coordNorth: '',
         thesaurusKey: 'external.theme.httpinspireeceuropaeutheme-theme',
         uri: 'http://inspire.ec.europa.eu/theme/el',
-        definition:
-          "Modèles numériques pour l'altitude des surfaces terrestres, glaciaires et océaniques. Comprend l'altitude terrestre, la bathymétrie et la ligne de rivage.",
-        value: 'Altitude',
+        definition: 'digital terrain models',
+        value: 'altitude',
       },
     ])
   )
+}
+
+class LangServiceMock {
+  iso3 = 'fre'
+}
+
+class UserfeedbackApiServiceMock {
+  getUserComments = jest.fn(() => of(SOME_USER_FEEDBACKS))
+
+  newUserFeedback = jest.fn(() => of(undefined))
 }
 
 describe('Gn4PlatformService', () => {
@@ -123,6 +139,7 @@ describe('Gn4PlatformService', () => {
   let meApiService: MeApiService
   let toolsApiService: ToolsApiService
   let registriesApiService: RegistriesApiService
+  let userFeedbackApiService: UserfeedbackApiServiceMock
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -153,12 +170,21 @@ describe('Gn4PlatformService', () => {
           provide: RegistriesApiService,
           useClass: RegistriesApiServiceMock,
         },
+        {
+          provide: LangService,
+          useClass: LangServiceMock,
+        },
+        {
+          provide: UserfeedbackApiService,
+          useClass: UserfeedbackApiServiceMock,
+        },
       ],
     })
     service = TestBed.inject(Gn4PlatformService)
     meApiService = TestBed.inject(MeApiService)
     toolsApiService = TestBed.inject(ToolsApiService)
     registriesApiService = TestBed.inject(RegistriesApiService)
+    userFeedbackApiService = TestBed.inject(UserfeedbackApiService as any)
   })
 
   it('creates', () => {
@@ -261,27 +287,145 @@ describe('Gn4PlatformService', () => {
       await lastValueFrom(service.translateKey('Second value'))
       expect(toolsApiService.getTranslationsPackage1).toHaveBeenCalledTimes(1)
     })
+    describe('if key is a URI', () => {
+      beforeEach(() => {
+        jest.spyOn(service, 'getThesaurusByUri')
+      })
+      it('calls getThesaurusByUri using the thesaurus base path', async () => {
+        await lastValueFrom(
+          service.translateKey(
+            'https://www.eionet.europa.eu/gemet/concept/15028?abc#123'
+          )
+        )
+        expect(service.getThesaurusByUri).toHaveBeenCalledWith(
+          'https://www.eionet.europa.eu/gemet/concept/'
+        )
+      })
+      it('returns translation if found', async () => {
+        const translation = await lastValueFrom(
+          service.translateKey('http://inspire.ec.europa.eu/theme/ad')
+        )
+        expect(translation).toEqual('Adresses')
+      })
+      it('returns key if not found', async () => {
+        const translation = await lastValueFrom(
+          service.translateKey(
+            'http://www.eionet.europa.eu/gemet/concept/15028'
+          )
+        )
+        expect(translation).toEqual(
+          'http://www.eionet.europa.eu/gemet/concept/15028'
+        )
+      })
+    })
   })
-  describe('#getThesaurusByLang', () => {
+  describe('#getThesaurusByUri', () => {
     it('calls api service ', async () => {
-      service.getThesaurusByLang('inspire', 'fre')
+      service.getThesaurusByUri('http://inspire.ec.europa.eu/theme/')
       expect(registriesApiService.searchKeywords).toHaveBeenCalledWith(
         null,
         'fre',
         1000,
         0,
         null,
-        ['inspire']
+        null,
+        null,
+        'http://inspire.ec.europa.eu/theme/*'
       )
     })
-    it('returns mapped thesaurus ', async () => {
+    it('returns mapped thesaurus with translated values', async () => {
       const thesaurusDomain = await lastValueFrom(
-        service.getThesaurusByLang('inspire', 'fre')
+        service.getThesaurusByUri('http://inspire.ec.europa.eu/theme/')
       )
       expect(thesaurusDomain).toEqual([
-        { key: 'http://inspire.ec.europa.eu/theme/ad', label: 'Adresses' },
-        { key: 'http://inspire.ec.europa.eu/theme/el', label: 'Altitude' },
+        {
+          description:
+            'Localisation des propriétés fondée sur les identifiants des adresses, habituellement le nom de la rue, le numéro de la maison et le code postal.',
+          key: 'http://inspire.ec.europa.eu/theme/ad',
+          label: 'Adresses',
+        },
+        {
+          description:
+            "Modèles numériques pour l'altitude des surfaces terrestres, glaciaires et océaniques. Comprend l'altitude terrestre, la bathymétrie et la ligne de rivage.",
+          key: 'http://inspire.ec.europa.eu/theme/el',
+          label: 'Altitude',
+        },
       ])
+    })
+    describe('if translations are unavailable', () => {
+      it('uses default values', async () => {
+        service['langService']['iso3'] = 'ger'
+        const thesaurusDomain = await lastValueFrom(
+          service.getThesaurusByUri('http://inspire.ec.europa.eu/theme/')
+        )
+        expect(thesaurusDomain).toEqual([
+          {
+            description: 'localization of properties',
+            key: 'http://inspire.ec.europa.eu/theme/ad',
+            label: 'addresses',
+          },
+          {
+            description: 'digital terrain models',
+            key: 'http://inspire.ec.europa.eu/theme/el',
+            label: 'altitude',
+          },
+        ])
+      })
+    })
+    describe('getUserFeedbacks', () => {
+      it('should call getUserComments with correct UUID and map results', (done) => {
+        const mockUuid = '1234'
+        const mockFeedbacks = SOME_USER_FEEDBACKS
+
+        service.getUserFeedbacks(mockUuid).subscribe({
+          next: (results) => {
+            expect(results).toEqual(mockFeedbacks)
+            expect(userFeedbackApiService.getUserComments).toHaveBeenCalledWith(
+              mockUuid
+            )
+            done()
+          },
+          error: done,
+        })
+      })
+
+      it('should handle errors', (done) => {
+        const mockUuid = '1234'
+        const errorResponse = new Error('Failed to fetch')
+        userFeedbackApiService.getUserComments.mockReturnValue(
+          throwError(() => errorResponse)
+        )
+
+        service.getUserFeedbacks(mockUuid).subscribe({
+          next: (result) => {
+            expect(result).toBeUndefined()
+            done()
+          },
+          error: () => {
+            done('Expected success, but got error')
+          },
+        })
+      })
+    })
+
+    describe('postUserFeedbacks', () => {
+      it('should process and post user feedbacks correctly', (done) => {
+        const expected: UserFeedbackDTOApiModel = {
+          ...A_USER_FEEDBACK,
+          authorUserId: expect.any(Number),
+          date: expect.any(String),
+        }
+
+        service.postUserFeedbacks(A_USER_FEEDBACK).subscribe({
+          next: () => {
+            expect(userFeedbackApiService.newUserFeedback).toHaveBeenCalledWith(
+              expected
+            )
+            done()
+          },
+          error: done,
+        })
+      })
     })
   })
 })

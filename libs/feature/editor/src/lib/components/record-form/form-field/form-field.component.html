@@ -1,0 +1,97 @@
+<div class="flex flex-col h-full">
+  <ng-container *ngIf="withoutWrapper; else withGenericWrapper">
+    <ng-container *ngTemplateOutlet="fieldContent"></ng-container>
+  </ng-container>
+  <ng-template #withGenericWrapper>
+    <gn-ui-form-field-wrapper
+      [label]="config.labelKey | translate"
+      [hint]="config.hintKey | translate"
+    >
+      <ng-container *ngTemplateOutlet="fieldContent"></ng-container>
+    </gn-ui-form-field-wrapper>
+  </ng-template>
+</div>
+
+<ng-template #fieldContent>
+  <ng-container *ngIf="isTitle">
+    <div class="flex justify-between items-center gap-3">
+      <h2
+        #titleInput
+        class="grow text-3xl font-normal"
+        [gnUiEditableLabel]="true"
+        (editableLabelChanged)="formControl.setValue($event)"
+      >
+        {{ formControl.value }}
+      </h2>
+      <span
+        class="material-symbols-outlined gn-ui-icon-small m-2 cursor-pointer"
+        (click)="focusTitleInput()"
+        >edit</span
+      >
+      <span
+        class="material-symbols-outlined gn-ui-icon-small m-2"
+        [matTooltip]="config.hintKey | translate"
+        matTooltipPosition="above"
+      >
+        help
+      </span>
+    </div>
+  </ng-container>
+  <ng-container *ngIf="isAbstract">
+    <gn-ui-form-field-rich
+      class="h-[8rem]"
+      [control]="formControl"
+      [label]="config.labelKey | translate"
+      [hint]="config.hintKey | translate"
+    ></gn-ui-form-field-rich>
+  </ng-container>
+  <ng-container *ngIf="isLicenses">
+    <gn-ui-form-field-license
+      [control]="formControl"
+      [label]="config.labelKey | translate"
+    ></gn-ui-form-field-license>
+  </ng-container>
+  <ng-container *ngIf="isResourceUpdated">
+    <gn-ui-form-field-resource-updated
+      [control]="formControl"
+    ></gn-ui-form-field-resource-updated>
+  </ng-container>
+  <ng-container *ngIf="isUpdateFrequency">
+    <gn-ui-form-field-update-frequency
+      [control]="formControl"
+    ></gn-ui-form-field-update-frequency>
+  </ng-container>
+  <ng-container *ngIf="isSimpleField">
+    <gn-ui-form-field-simple
+      [type]="simpleType"
+      [control]="formControl"
+      [readonly]="isFieldLocked"
+      [invalid]="isFieldInvalid"
+    ></gn-ui-form-field-simple>
+  </ng-container>
+  <ng-container *ngIf="isFileField">
+    <gn-ui-form-field-file
+      [control]="formControl"
+      [readonly]="isFieldLocked"
+      [invalid]="isFieldInvalid"
+    ></gn-ui-form-field-file>
+  </ng-container>
+  <ng-container *ngIf="isArrayField">
+    <gn-ui-form-field-array></gn-ui-form-field-array>
+  </ng-container>
+  <ng-container *ngIf="isObjectField">
+    <gn-ui-form-field-object></gn-ui-form-field-object>
+  </ng-container>
+  <ng-container *ngIf="isSpatialExtentField">
+    <gn-ui-form-field-spatial-extent></gn-ui-form-field-spatial-extent>
+  </ng-container>
+  <ng-container *ngIf="isTemporalExtentField">
+    <gn-ui-form-field-temporal-extent></gn-ui-form-field-temporal-extent>
+  </ng-container>
+  <div
+    *ngIf="isFieldInvalid && config.invalidHintKey"
+    class="mt-2 text-pink-500 text-sm field-invalid-hint"
+  >
+    {{ config.invalidHintKey | translate }}
+  </div>
+</ng-template>

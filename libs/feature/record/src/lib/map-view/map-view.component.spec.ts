@@ -10,7 +10,6 @@ import {
   ComponentFixture,
   discardPeriodicTasks,
   fakeAsync,
-  inject,
   TestBed,
   tick,
 } from '@angular/core/testing'
@@ -68,15 +67,17 @@ jest.mock('@geonetwork-ui/util/app-config', () => ({
 
 class MdViewFacadeMock {
   mapApiLinks$ = new Subject()
-  geoDataLinks$ = new Subject()
+  geoDataLinksWithGeometry$ = new Subject()
+  metadata$ = of({ title: 'abcd' })
 }
 
 class MapUtilsServiceMock {
   getLayerExtent = jest.fn(function () {
-    return new Observable((observer) => {
-      this._observer = observer
+    return new Promise((resolve, reject) => {
+      this._resolve = resolve
+      this._reject = reject
       if (this._returnImmediately) {
-        this._observer.next(null)
+        this._resolve(null)
       }
     })
   })
@@ -86,8 +87,10 @@ class MapUtilsServiceMock {
     })
   })
   prioritizePageScroll = jest.fn()
+  getRecordExtent = jest.fn(() => [-30, -60, 30, 60])
   _returnImmediately = true
-  _observer = null
+  _resolve = null
+  _reject = null
 }
 
 const SAMPLE_GEOJSON = {
@@ -109,7 +112,7 @@ class DataServiceMock {
   getDownloadUrlFromEsriRest = jest.fn((url) => url + '?download')
   readAsGeoJson = jest.fn(({ url }) =>
     url.toString().indexOf('error') > -1
-      ? throwError(new Error('data loading error'))
+      ? throwError(() => new Error('data loading error'))
       : of(SAMPLE_GEOJSON).pipe(delay(100))
   )
 }
@@ -267,11 +270,12 @@ describe('MapViewComponent', () => {
     })
 
     describe('with no link compatible with MAP_API or GEODATA usage', () => {
-      beforeEach(() => {
+      beforeEach(fakeAsync(() => {
         mdViewFacade.mapApiLinks$.next([])
-        mdViewFacade.geoDataLinks$.next([])
+        mdViewFacade.geoDataLinksWithGeometry$.next([])
+        tick()
         fixture.detectChanges()
-      })
+      }))
       it('emits a map context with no layer', () => {
         expect(mapComponent.context).toEqual({
           layers: [],
@@ -298,7 +302,7 @@ describe('MapViewComponent', () => {
     })
 
     describe('with several links compatible with MAP_API usage', () => {
-      beforeEach(() => {
+      beforeEach(fakeAsync(() => {
         mdViewFacade.mapApiLinks$.next([
           {
             url: new URL('http://abcd.com/'),
@@ -313,9 +317,10 @@ describe('MapViewComponent', () => {
             accessServiceProtocol: 'wms',
           },
         ])
-        mdViewFacade.geoDataLinks$.next([])
+        mdViewFacade.geoDataLinksWithGeometry$.next([])
+        tick()
         fixture.detectChanges()
-      })
+      }))
       it('emits a map context with the first compatible link', () => {
         expect(mapComponent.context).toEqual({
           layers: [
@@ -360,7 +365,7 @@ describe('MapViewComponent', () => {
             accessServiceProtocol: 'wms',
           },
         ])
-        mdViewFacade.geoDataLinks$.next([
+        mdViewFacade.geoDataLinksWithGeometry$.next([
           {
             url: new URL('http://abcd.com/wfs'),
             name: 'featuretype',
@@ -371,6 +376,12 @@ describe('MapViewComponent', () => {
             url: new URL('http://abcd.com/data.geojson'),
             name: 'data.geojson',
             type: 'download',
+          },
+          {
+            url: new URL('http://abcd.com/data/ogcapi'),
+            name: 'ogc api',
+            type: 'service',
+            accessServiceProtocol: 'ogcFeatures',
           },
         ])
         fixture.detectChanges()
@@ -389,6 +400,10 @@ describe('MapViewComponent', () => {
             value: 2,
             label: 'data.geojson (geojson)',
           },
+          {
+            value: 3,
+            label: 'ogc api',
+          },
         ])
       })
       it('provides first (selected) link to the external viewer component', () => {
@@ -404,7 +419,7 @@ describe('MapViewComponent', () => {
     describe('with a link using WFS protocol', () => {
       beforeEach(fakeAsync(() => {
         mdViewFacade.mapApiLinks$.next([])
-        mdViewFacade.geoDataLinks$.next([
+        mdViewFacade.geoDataLinksWithGeometry$.next([
           {
             url: new URL('http://abcd.com/wfs'),
             name: 'featuretype',
@@ -438,7 +453,7 @@ describe('MapViewComponent', () => {
             accessServiceProtocol: 'wmts',
           },
         ])
-        mdViewFacade.geoDataLinks$.next([])
+        mdViewFacade.geoDataLinksWithGeometry$.next([])
         tick(200)
         fixture.detectChanges()
       }))
@@ -446,8 +461,9 @@ describe('MapViewComponent', () => {
         expect(mapComponent.context).toEqual({
           layers: [
             {
+              name: 'orthophoto',
               type: 'wmts',
-              options: expect.any(Object),
+              url: 'http://abcd.com/wmts',
             },
           ],
           view: expect.any(Object),
@@ -458,7 +474,7 @@ describe('MapViewComponent', () => {
     describe('with a link using ESRI:REST protocol', () => {
       beforeEach(fakeAsync(() => {
         mdViewFacade.mapApiLinks$.next([])
-        mdViewFacade.geoDataLinks$.next([
+        mdViewFacade.geoDataLinksWithGeometry$.next([
           {
             name: 'mes_hdf',
             url: new URL(
@@ -484,10 +500,37 @@ describe('MapViewComponent', () => {
       })
     })
 
+    describe('with a link using OGC API protocol', () => {
+      beforeEach(fakeAsync(() => {
+        mdViewFacade.mapApiLinks$.next([])
+        mdViewFacade.geoDataLinksWithGeometry$.next([
+          {
+            name: 'ogc layer',
+            url: new URL('http://abcd.com/data/ogcapi'),
+            type: 'service',
+            accessServiceProtocol: 'ogcFeatures',
+          },
+        ])
+        tick(200)
+        fixture.detectChanges()
+      }))
+      it('emits a map context with the the downloaded data from the ESRI REST API', () => {
+        expect(mapComponent.context).toEqual({
+          layers: [
+            {
+              type: 'geojson',
+              data: SAMPLE_GEOJSON,
+            },
+          ],
+          view: expect.any(Object),
+        })
+      })
+    })
+
     describe('with a link using WFS which returns an error', () => {
       beforeEach(() => {
         mdViewFacade.mapApiLinks$.next([])
-        mdViewFacade.geoDataLinks$.next([
+        mdViewFacade.geoDataLinksWithGeometry$.next([
           {
             url: new URL('http://abcd.com/wfs/error'),
             name: 'featuretype',
@@ -505,7 +548,7 @@ describe('MapViewComponent', () => {
       describe('during download', () => {
         beforeEach(fakeAsync(() => {
           mdViewFacade.mapApiLinks$.next([])
-          mdViewFacade.geoDataLinks$.next([
+          mdViewFacade.geoDataLinksWithGeometry$.next([
             {
               url: new URL('http://abcd.com/data.geojson'),
               name: 'data.geojson',
@@ -528,7 +571,7 @@ describe('MapViewComponent', () => {
       describe('after download', () => {
         beforeEach(fakeAsync(() => {
           mdViewFacade.mapApiLinks$.next([])
-          mdViewFacade.geoDataLinks$.next([
+          mdViewFacade.geoDataLinksWithGeometry$.next([
             {
               url: new URL('http://abcd.com/data.geojson'),
               name: 'data.geojson',
@@ -560,9 +603,9 @@ describe('MapViewComponent', () => {
     })
 
     describe('when receiving several metadata records', () => {
-      beforeEach(() => {
+      beforeEach(fakeAsync(() => {
         mdViewFacade.mapApiLinks$.next([])
-        mdViewFacade.geoDataLinks$.next([
+        mdViewFacade.geoDataLinksWithGeometry$.next([
           {
             url: new URL('http://abcd.com/data.geojson'),
             name: 'data.geojson',
@@ -577,9 +620,10 @@ describe('MapViewComponent', () => {
             accessServiceProtocol: 'wms',
           },
         ])
-        mdViewFacade.geoDataLinks$.next([])
+        mdViewFacade.geoDataLinksWithGeometry$.next([])
+        tick()
         fixture.detectChanges()
-      })
+      }))
       it('emits a map context with the link from the last record', () => {
         expect(mapComponent.context).toEqual({
           layers: [
@@ -611,7 +655,7 @@ describe('MapViewComponent', () => {
     })
 
     describe('when selecting a layer', () => {
-      beforeEach(() => {
+      beforeEach(fakeAsync(() => {
         mapUtilsService._returnImmediately = false
         mdViewFacade.mapApiLinks$.next([
           {
@@ -627,20 +671,22 @@ describe('MapViewComponent', () => {
             accessServiceProtocol: 'wms',
           },
         ])
-        mdViewFacade.geoDataLinks$.next([])
+        mdViewFacade.geoDataLinksWithGeometry$.next([])
         dropdownComponent.selectValue.emit(1)
+        tick()
         fixture.detectChanges()
-      })
+      }))
       describe('while extent is not ready', () => {
         it('does not emit a map context', () => {
           expect(mapComponent.context).toBeFalsy()
         })
       })
       describe('when extent is received', () => {
-        beforeEach(() => {
-          mapUtilsService._observer.next([-100, -200, 100, 200])
+        beforeEach(fakeAsync(() => {
+          mapUtilsService._resolve([-100, -200, 100, 200])
+          tick()
           fixture.detectChanges()
-        })
+        }))
         it('emits a new map context with the selected layer and the computed extent', () => {
           expect(mapComponent.context).toEqual({
             layers: [
@@ -665,11 +711,12 @@ describe('MapViewComponent', () => {
         })
       })
       describe('when extent could not be determined', () => {
-        beforeEach(inject([MapUtilsService], (mapUtils) => {
-          mapUtilsService._observer.next(null)
+        beforeEach(fakeAsync(() => {
+          mapUtilsService._resolve(null)
+          tick()
           fixture.detectChanges()
         }))
-        it('emits a new map context with the selected layer and extent null', () => {
+        it('emits a new map context with the selected layer and extent from the record', () => {
           expect(mapComponent.context).toEqual({
             layers: [
               {
@@ -679,7 +726,7 @@ describe('MapViewComponent', () => {
               },
             ],
             view: {
-              extent: null,
+              extent: [-30, -60, 30, 60],
             },
           })
         })
@@ -693,11 +740,12 @@ describe('MapViewComponent', () => {
         })
       })
       describe('when extent computation fails', () => {
-        beforeEach(inject([MapUtilsService], (mapUtils) => {
-          mapUtilsService._observer.error('extent computation failed')
+        beforeEach(fakeAsync(() => {
+          mapUtilsService._reject('extent computation failed')
+          tick()
           fixture.detectChanges()
         }))
-        it('emits a new map context with the selected layer and a default view', () => {
+        it('emits a new map context with the selected layer and extent from the record', () => {
           expect(mapComponent.context).toEqual({
             layers: [
               {
@@ -706,7 +754,7 @@ describe('MapViewComponent', () => {
                 type: 'wms',
               },
             ],
-            view: { extent: undefined },
+            view: { extent: [-30, -60, 30, 60] },
           })
         })
         it('provides selected link to the external viewer component', () => {
@@ -719,9 +767,11 @@ describe('MapViewComponent', () => {
         })
       })
       describe('selecting another layer, while extent is not ready', () => {
-        beforeEach(inject([MapUtilsService], (mapUtils) => {
-          mapUtilsService._observer.next([-10, -20, 10, 20])
+        beforeEach(fakeAsync(() => {
+          mapUtilsService._resolve([-30, -60, 30, 60])
+          tick()
           dropdownComponent.selectValue.emit(0)
+          tick()
           fixture.detectChanges()
         }))
         it('does not emit another map context', () => {
@@ -806,7 +856,7 @@ describe('MapViewComponent', () => {
     describe('changing the map context', () => {
       beforeEach(() => {
         jest.spyOn(component, 'resetSelection')
-        mdViewFacade.geoDataLinks$.next([])
+        mdViewFacade.geoDataLinksWithGeometry$.next([])
         mdViewFacade.mapApiLinks$.next([])
       })
       it('resets selection', () => {

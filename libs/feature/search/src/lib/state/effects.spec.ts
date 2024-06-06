@@ -42,7 +42,7 @@ import {
 } from '@geonetwork-ui/common/fixtures'
 import { HttpErrorResponse } from '@angular/common/http'
 import { delay } from 'rxjs/operators'
-import { FILTER_GEOMETRY } from '../feature-search.module'
+import { FILTER_GEOMETRY } from '../filter-geometry.token'
 import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
 import { TestScheduler } from 'rxjs/internal/testing/TestScheduler'
 import { FavoritesService } from '@geonetwork-ui/api/repository'
@@ -479,6 +479,21 @@ describe('Effects', () => {
             expect(repository.search).toHaveBeenCalledWith(
               expect.not.objectContaining({
                 filterGeometry: { type: 'Polygon', coordinates: [[]] },
+              })
+            )
+          })
+        })
+        describe('when geometry is undefined', () => {
+          beforeEach(() => {
+            effects['filterGeometry$'] = of(undefined) as any
+            effects = TestBed.inject(SearchEffects)
+            actions$ = of(new RequestMoreResults('main'))
+          })
+          it('skips the geometry in the search', async () => {
+            await firstValueFrom(effects.loadResults$)
+            expect(repository.search).toHaveBeenCalledWith(
+              expect.objectContaining({
+                filterGeometry: undefined,
               })
             )
           })

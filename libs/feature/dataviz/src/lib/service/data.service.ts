@@ -1,6 +1,12 @@
 import { Injectable } from '@angular/core'
 import { marker } from '@biesbjerg/ngx-translate-extract-marker'
-import { WfsEndpoint, WfsVersion } from '@camptocamp/ogc-client'
+import {
+  OgcApiCollectionInfo,
+  OgcApiEndpoint,
+  OgcApiRecord,
+  WfsEndpoint,
+  WfsVersion,
+} from '@camptocamp/ogc-client'
 import {
   BaseReader,
   FetchError,
@@ -9,8 +15,8 @@ import {
   SupportedTypes,
 } from '@geonetwork-ui/data-fetcher'
 import {
-  extensionToFormat,
   getFileFormat,
+  getFileFormatFromServiceOutput,
   getMimeTypeForFormat,
   ProxyService,
 } from '@geonetwork-ui/util/shared'
@@ -27,6 +33,7 @@ marker('wfs.unreachable.http')
 marker('wfs.unreachable.unknown')
 marker('wfs.featuretype.notfound')
 marker('wfs.geojsongml.notsupported')
+marker('ogc.unreachable.unknown')
 marker('dataset.error.network')
 marker('dataset.error.http')
 marker('dataset.error.parse')
@@ -45,7 +52,7 @@ interface WfsDownloadUrls {
 export class DataService {
   constructor(private proxy: ProxyService) {}
 
-  private getDownloadUrlsFromWfs(
+  getDownloadUrlsFromWfs(
     wfsUrl: string,
     featureTypeName: string
   ): Observable<WfsDownloadUrls> {
@@ -94,7 +101,7 @@ export class DataService {
           ),
           geojson: endpoint.supportsJson(featureType.name)
             ? endpoint.getFeatureUrl(featureType.name, {
-                outputFormat: 'application/json',
+                asJson: true,
                 outputCrs: 'EPSG:4326',
               })
             : null,
@@ -120,7 +127,7 @@ export class DataService {
     )
   }
 
-  private getDownloadUrlFromEsriRest(apiUrl: string, format: string): string {
+  getDownloadUrlFromEsriRest(apiUrl: string, format: string): string {
     return this.proxy.getProxiedUrl(
       `${apiUrl}/query?f=${format}&where=1=1&outFields=*`
     )
@@ -138,11 +145,56 @@ export class DataService {
       map((urls) =>
         Object.keys(urls).map((format) => ({
           ...wfsLink,
+          type: 'download',
           url: new URL(urls[format]),
-          mimeType: getMimeTypeForFormat(extensionToFormat(format)) || format,
+          mimeType: getMimeTypeForFormat(
+            getFileFormatFromServiceOutput(format)
+          ),
         }))
       )
     )
+  }
+
+  async getDownloadLinksFromOgcApiFeatures(
+    ogcApiLink: DatasetServiceDistribution
+  ): Promise<DatasetDistribution[]> {
+    const collectionInfo = await this.getDownloadUrlsFromOgcApi(
+      ogcApiLink.url.href
+    )
+    return Object.keys(collectionInfo.bulkDownloadLinks).map((downloadLink) => {
+      return {
+        ...ogcApiLink,
+        type: 'download',
+        url: new URL(collectionInfo.bulkDownloadLinks[downloadLink]),
+        mimeType: getMimeTypeForFormat(
+          getFileFormatFromServiceOutput(downloadLink)
+        ),
+      }
+    })
+  }
+
+  async getDownloadUrlsFromOgcApi(url: string): Promise<OgcApiCollectionInfo> {
+    const endpoint = new OgcApiEndpoint(this.proxy.getProxiedUrl(url))
+    return await endpoint.allCollections
+      .then((collections) => {
+        return endpoint.getCollectionInfo(collections[0].name)
+      })
+      .catch((error) => {
+        throw new Error(`ogc.unreachable.unknown`)
+      })
+  }
+
+  async getItemsFromOgcApi(url: string): Promise<OgcApiRecord> {
+    const endpoint = new OgcApiEndpoint(this.proxy.getProxiedUrl(url))
+    return await endpoint.featureCollections
+      .then((collections) => {
+        return collections.length
+          ? endpoint.getCollectionItem(collections[0], '1')
+          : null
+      })
+      .catch((error) => {
+        throw new Error(`ogc.unreachable.unknown`)
+      })
   }
 
   getDownloadLinksFromEsriRest(
@@ -153,7 +205,7 @@ export class DataService {
       url: new URL(
         this.getDownloadUrlFromEsriRest(esriRestLink.url.toString(), format)
       ),
-      mimeType: getMimeTypeForFormat(extensionToFormat(format)) || format,
+      mimeType: getMimeTypeForFormat(getFileFormatFromServiceOutput(format)),
     }))
   }
 
@@ -202,6 +254,21 @@ export class DataService {
         'geojson'
       )
       return from(openDataset(url, 'geojson')).pipe()
+    } else if (
+      link.type === 'service' &&
+      link.accessServiceProtocol === 'ogcFeatures'
+    ) {
+      return from(this.getDownloadUrlsFromOgcApi(link.url.href)).pipe(
+        switchMap((collectionInfo) => {
+          const geojsonUrl = collectionInfo.jsonDownloadLink
+          return openDataset(geojsonUrl, 'geojson')
+        }),
+        tap((url) => {
+          if (url === null) {
+            throw new Error('wfs.geojsongml.notsupported')
+          }
+        })
+      )
     }
     return throwError(() => 'protocol not supported')
   }

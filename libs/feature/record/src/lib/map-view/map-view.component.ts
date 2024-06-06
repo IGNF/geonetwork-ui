@@ -15,17 +15,19 @@ import {
   MapUtilsService,
 } from '@geonetwork-ui/feature/map'
 import { getOptionalMapConfig, MapConfig } from '@geonetwork-ui/util/app-config'
-import { getLinkLabel, ProxyService } from '@geonetwork-ui/util/shared'
+import { getLinkLabel } from '@geonetwork-ui/util/shared'
 import Feature from 'ol/Feature'
 import { Geometry } from 'ol/geom'
 import { StyleLike } from 'ol/style/Style'
 import {
   BehaviorSubject,
   combineLatest,
+  from,
   Observable,
   of,
   Subscription,
   throwError,
+  withLatestFrom,
 } from 'rxjs'
 import {
   catchError,
@@ -53,9 +55,11 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
   compatibleMapLinks$ = combineLatest([
     this.mdViewFacade.mapApiLinks$,
-    this.mdViewFacade.geoDataLinks$,
+    this.mdViewFacade.geoDataLinksWithGeometry$,
   ]).pipe(
-    map(([mapApiLinks, geoDataLinks]) => [...mapApiLinks, ...geoDataLinks])
+    map(([mapApiLinks, geoDataLinksWithGeometry]) => {
+      return [...mapApiLinks, ...geoDataLinksWithGeometry]
+    })
   )
 
   dropdownChoices$ = this.compatibleMapLinks$.pipe(
@@ -99,9 +103,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
   mapContext$ = this.currentLayers$.pipe(
     switchMap((layers) =>
-      this.mapUtils.getLayerExtent(layers[0]).pipe(
-        catchError((error) => {
-          console.warn(error) // FIXME: report this to the user somehow
+      from(this.mapUtils.getLayerExtent(layers[0])).pipe(
+        catchError(() => {
+          this.error = 'The layer has no extent'
           return of(undefined)
         }),
         map(
@@ -113,9 +117,23 @@ export class MapViewComponent implements OnInit, OnDestroy {
               },
             } as MapContextModel)
         ),
-        tap(() => this.resetSelection())
+        tap((res) => {
+          this.resetSelection()
+        })
       )
-    )
+    ),
+    withLatestFrom(this.mdViewFacade.metadata$),
+    map(([context, metadata]) => {
+      if (context.view.extent) return context
+      const extent = this.mapUtils.getRecordExtent(metadata)
+      return {
+        ...context,
+        view: {
+          ...context.view,
+          extent,
+        },
+      }
+    })
   )
 
   constructor(
@@ -123,7 +141,6 @@ export class MapViewComponent implements OnInit, OnDestroy {
     private mapManager: MapManagerService,
     private mapUtils: MapUtilsService,
     private dataService: DataService,
-    private proxy: ProxyService,
     private featureInfo: FeatureInfoService,
     private changeRef: ChangeDetectorRef,
     private styleService: MapStyleService
@@ -173,11 +190,16 @@ export class MapViewComponent implements OnInit, OnDestroy {
       link.type === 'service' &&
       link.accessServiceProtocol === 'wmts'
     ) {
-      return this.mapUtils.getWmtsLayerFromCapabilities(link)
+      return of({
+        url: link.url.toString(),
+        type: MapContextLayerTypeEnum.WMTS,
+        name: link.name,
+      })
     } else if (
       (link.type === 'service' &&
         (link.accessServiceProtocol === 'wfs' ||
-          link.accessServiceProtocol === 'esriRest')) ||
+          link.accessServiceProtocol === 'esriRest' ||
+          link.accessServiceProtocol === 'ogcFeatures')) ||
       link.type === 'download'
     ) {
       return this.dataService.readAsGeoJson(link).pipe(

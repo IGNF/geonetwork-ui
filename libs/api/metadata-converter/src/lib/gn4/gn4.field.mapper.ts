@@ -1,8 +1,10 @@
 import {
+  getArrayItem,
   getAsArray,
   getAsUrl,
   getFirstValue,
   mapContact,
+  mapKeywords,
   selectFallback,
   selectFallbackFields,
   selectField,
@@ -13,19 +15,21 @@ import {
 } from './atomic-operations'
 import { MetadataUrlService } from './metadata-url.service'
 import { Injectable } from '@angular/core'
-import { getStatusFromStatusCode } from '../iso19139/codelists/status.mapper'
-import { getUpdateFrequencyFromFrequencyCode } from '../iso19139/codelists/update-frequency.mapper'
+import { getStatusFromStatusCode } from '../iso19139/utils/status.mapper'
+import { getUpdateFrequencyFromFrequencyCode } from '../iso19139/utils/update-frequency.mapper'
 import {
-  AccessConstraintType,
   CatalogRecord,
+  Constraint,
   DatasetDistribution,
   DatasetDistributionType,
   DatasetDownloadDistribution,
   DatasetServiceDistribution,
+  DatasetSpatialExtent,
   OnlineLinkResource,
 } from '@geonetwork-ui/common/domain/model/record'
 import { matchProtocol } from '../common/distribution.mapper'
-import { LangService } from '@geonetwork-ui/util/i18n'
+import { Thesaurus } from './types'
+import { LANG_3_TO_2_MAPPER, LangService } from '@geonetwork-ui/util/i18n'
 
 type ESResponseSource = SourceWithUnknownProps
 
@@ -90,8 +94,8 @@ export class Gn4FieldMapper {
     },
     cl_topic: (output, source) => ({
       ...output,
-      themes: [
-        ...(output.themes || []),
+      topics: [
+        ...(output.topics || []),
         ...getAsArray(
           selectField<SourceWithUnknownProps[]>(source, 'cl_topic')
         ).map((topic) => selectTranslatedValue<string>(topic, this.lang3)),
@@ -116,8 +120,14 @@ export class Gn4FieldMapper {
     }),
     creationDateForResource: (output, source) => ({
       ...output,
-      datasetCreated: toDate(
+      resourceCreated: toDate(
         getFirstValue(selectField<string>(source, 'creationDateForResource'))
+      ),
+    }),
+    revisionDateForResource: (output, source) => ({
+      ...output,
+      resourceUpdated: toDate(
+        getFirstValue(selectField<string>(source, 'revisionDateForResource'))
       ),
     }),
     createDate: (output, source) => ({
@@ -128,6 +138,22 @@ export class Gn4FieldMapper {
       ...output,
       recordUpdated: toDate(selectField<string>(source, 'changeDate')),
     }),
+    publicationDateForResource: (output, source) => ({
+      ...output,
+      recordPublished: toDate(
+        selectField<string>(source, 'publicationDateForResource')
+      ),
+    }),
+    resourceLanguage: (output, source) => {
+      const langList = getAsArray(
+        selectField<string>(source, 'resourceLanguage')
+      )
+      const languages = langList.map((lang) => LANG_3_TO_2_MAPPER[lang])
+      return {
+        ...output,
+        languages,
+      }
+    },
     link: (output, source) => {
       const rawLinks = getAsArray(
         selectField<SourceWithUnknownProps[]>(source, 'link')
@@ -169,51 +195,56 @@ export class Gn4FieldMapper {
         output
       )
     },
-    tag: (output, source) => ({
+    allKeywords: (output, source) => ({
       ...output,
-      keywords: getAsArray(
-        selectField<SourceWithUnknownProps[]>(source, 'tag')
-      ).map((tag) => selectTranslatedValue<string>(tag, this.lang3)),
+      keywords: mapKeywords(
+        selectField<Thesaurus[]>(source, 'allKeywords'),
+        this.lang3
+      ),
     }),
     inspireTheme: (output, source) => ({
       ...output,
-      themes: [
-        ...(output.themes || []),
+      topics: [
+        ...(output.topics || []),
         ...getAsArray(selectField(source, 'inspireTheme_syn')),
       ],
     }),
     MD_ConstraintsUseLimitationObject: (output, source) =>
-      this.constraintField('MD_ConstraintsUseLimitationObject', output, source),
+      this.constraintField(
+        'other',
+        output,
+        getAsArray(selectField(source, 'MD_ConstraintsUseLimitationObject'))
+      ),
     MD_LegalConstraintsUseLimitationObject: (output, source) =>
       this.constraintField(
-        'MD_LegalConstraintsUseLimitationObject',
+        'legal',
         output,
-        source
+        getAsArray(
+          selectField(source, 'MD_LegalConstraintsUseLimitationObject')
+        )
       ),
     MD_LegalConstraintsOtherConstraintsObject: (output, source) =>
       this.constraintField(
-        'MD_LegalConstraintsOtherConstraintsObject',
+        'legal',
         output,
-        source
+        getAsArray(
+          selectField(source, 'MD_LegalConstraintsOtherConstraintsObject')
+        )
       ),
     MD_SecurityConstraintsUseLimitationObject: (output, source) =>
       this.constraintField(
-        'MD_SecurityConstraintsUseLimitationObject',
+        'security',
         output,
-        source
+        getAsArray(
+          selectField(source, 'MD_SecurityConstraintsUseLimitationObject')
+        )
       ),
-    licenseObject: (output, source) => ({
-      ...output,
-      licenses: getAsArray(
-        selectField<SourceWithUnknownProps[]>(source, 'licenseObject')
-      ).map((license) => {
-        const link = getAsUrl(selectField(license, 'link'))
-        return {
-          text: selectTranslatedValue<string>(license, this.lang3),
-          ...(link ? { link } : {}),
-        }
-      }),
-    }),
+    licenseObject: (output, source) =>
+      this.constraintField(
+        'license',
+        output,
+        getAsArray(selectField(source, 'licenseObject'))
+      ),
     lineageObject: (output, source) => ({
       ...output,
       lineage: selectTranslatedField(source, 'lineageObject', this.lang3),
@@ -258,57 +289,98 @@ export class Gn4FieldMapper {
         kind,
       }
     },
+    geom: (output, source) => {
+      const geoms = getAsArray(selectField(source, 'geom'))
+      const shapes = getAsArray(selectField(source, 'shape'))
+      const extentDescriptions = getAsArray(
+        selectField(source, 'extentDescriptionObject')
+      )
+      const spatialExtents = getAsArray(selectField(source, 'spatialExtents'))
+      return {
+        ...output,
+        spatialExtents: [
+          ...spatialExtents,
+          ...geoms.map((geom, index) => {
+            const description = selectTranslatedValue(
+              getArrayItem(extentDescriptions, index),
+              this.lang3
+            )
+            const geometry = shapes[index] ?? geom
+            return {
+              ...(description !== null ? { description } : null),
+              geometry,
+            } as DatasetSpatialExtent
+          }),
+        ],
+      }
+    },
+    resourceTemporalExtentDateRange: (output, source) => {
+      const ranges = getAsArray(
+        selectField(source, 'resourceTemporalExtentDateRange')
+      )
+      return {
+        ...output,
+        temporalExtents: ranges.map((range) => {
+          const start = selectField(range, 'gte')
+          const end = selectField(range, 'lte')
+          return {
+            ...(start !== null ? { start: toDate(start) } : null),
+            ...(end !== null ? { end: toDate(end) } : null),
+          }
+        }),
+      }
+    },
   }
 
   private genericField = (output) => output
 
-  private constraintField = (fieldName: string, output, source) => ({
-    ...output,
-    ...(fieldName.endsWith('UseLimitationObject')
-      ? {
-          legalConstraints:
-            fieldName === 'MD_LegalConstraintsUseLimitationObject'
-              ? [
-                  ...(output.legalConstraints || []),
-                  ...selectField<SourceWithUnknownProps[]>(
-                    source,
-                    fieldName
-                  ).map((source: SourceWithUnknownProps) =>
-                    selectTranslatedValue(source, this.lang3)
-                  ),
-                ]
-              : output.legalConstraints || [],
-          useLimitations: [
-            ...(output.useLimitations || []),
-            ...selectField<SourceWithUnknownProps[]>(source, fieldName).map(
-              (source: SourceWithUnknownProps) =>
-                selectTranslatedValue(source, this.lang3)
-            ),
-          ],
-        }
-      : {
-          accessConstraints: [
-            ...(output.accessConstraints || []),
-            ...selectField<SourceWithUnknownProps[]>(source, fieldName).map(
-              (field) => ({
-                text: selectTranslatedValue(field, this.lang3),
-                type: this.getConstraintsType(fieldName),
-              })
-            ),
-          ],
-        }),
-  })
-
-  private getConstraintsType(indexField: string): AccessConstraintType {
-    switch (indexField) {
-      case 'MD_LegalConstraintsUseLimitationObject':
-        return 'legal'
-      case 'MD_SecurityConstraintsUseLimitationObject':
-        return 'security'
-      case 'MD_ConstraintsUseLimitationObject':
-      default:
-        return 'other'
+  private constraintField = (
+    type: 'license' | 'legal' | 'security' | 'other',
+    output: Partial<CatalogRecord>,
+    constraintArray: SourceWithUnknownProps[]
+  ) => {
+    let outputField: string
+    switch (type) {
+      case 'license':
+        outputField = 'licenses'
+        break
+      case 'legal':
+        outputField = 'legalConstraints'
+        break
+      case 'security':
+        outputField = 'securityConstraints'
+        break
+      case 'other':
+        outputField = 'otherConstraints'
+        break
     }
+    const outputArray: Constraint[] =
+      outputField in output ? output[outputField] : []
+    outputArray.push(
+      ...constraintArray.map((item) => {
+        const text = selectTranslatedValue(item, this.lang3) as string
+        const url = getAsUrl(selectField(item, 'link'))
+        return {
+          text,
+          ...(url ? { url } : {}),
+        }
+      })
+    )
+    const result = {
+      ...output,
+      [outputField]: outputArray,
+    }
+    // avoid legal constraints being duplicates of licenses
+    if (
+      'legalConstraints' in result &&
+      (type === 'legal' || type === 'license')
+    ) {
+      result.legalConstraints = result.legalConstraints.filter(
+        (constraint) =>
+          !output.licenses?.some((license) => license.text === constraint.text)
+      )
+    }
+    return result
   }
 
   getMappingFn(fieldName: string) {

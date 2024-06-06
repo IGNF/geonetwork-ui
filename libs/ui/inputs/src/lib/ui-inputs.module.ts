@@ -20,16 +20,6 @@ import { UiWidgetsModule } from '@geonetwork-ui/ui/widgets'
 import { OverlayModule } from '@angular/cdk/overlay'
 import { MatCheckboxModule } from '@angular/material/checkbox'
 import { ViewportIntersectorComponent } from './viewport-intersector/viewport-intersector.component'
-import {
-  FormFieldArrayComponent,
-  FormFieldComponent,
-  FormFieldFileComponent,
-  FormFieldObjectComponent,
-  FormFieldRichComponent,
-  FormFieldSimpleComponent,
-  FormFieldSpatialExtentComponent,
-  FormFieldTemporalExtentComponent,
-} from './form-field'
 import { CheckToggleComponent } from './check-toggle/check-toggle.component'
 import { CopyTextButtonComponent } from './copy-text-button/copy-text-button.component'
 import { MatTooltipModule } from '@angular/material/tooltip'
@@ -41,33 +31,22 @@ import { MatFormFieldModule } from '@angular/material/form-field'
 import { MatInputModule } from '@angular/material/input'
 import { MatDatepickerModule } from '@angular/material/datepicker'
 import { MatNativeDateModule } from '@angular/material/core'
+import { EditableLabelDirective } from './editable-label/editable-label.directive'
+import { ImageInputComponent } from './image-input/image-input.component'
 
 @NgModule({
   declarations: [
-    DropdownSelectorComponent,
     AutocompleteComponent,
-    ButtonComponent,
     TextInputComponent,
     DragAndDropFileInputComponent,
-    TextAreaComponent,
     ChipsInputComponent,
     NavigationButtonComponent,
     StarToggleComponent,
     DropdownMultiselectComponent,
     ViewportIntersectorComponent,
-    FormFieldComponent,
-    FormFieldSimpleComponent,
-    FormFieldArrayComponent,
-    FormFieldObjectComponent,
-    FormFieldRichComponent,
-    FormFieldFileComponent,
-    FormFieldSpatialExtentComponent,
-    FormFieldTemporalExtentComponent,
-    CheckToggleComponent,
     CopyTextButtonComponent,
     CheckboxComponent,
     SearchInputComponent,
-    DateRangePickerComponent,
   ],
   imports: [
     CommonModule,
@@ -87,6 +66,13 @@ import { MatNativeDateModule } from '@angular/material/core'
     MatInputModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    EditableLabelDirective,
+    TextAreaComponent,
+    ButtonComponent,
+    ImageInputComponent,
+    DropdownSelectorComponent,
+    DateRangePickerComponent,
+    CheckToggleComponent,
   ],
   exports: [
     DropdownSelectorComponent,
@@ -100,12 +86,13 @@ import { MatNativeDateModule } from '@angular/material/core'
     StarToggleComponent,
     DropdownMultiselectComponent,
     ViewportIntersectorComponent,
-    FormFieldComponent,
     CheckToggleComponent,
     CopyTextButtonComponent,
     CheckboxComponent,
     SearchInputComponent,
     DateRangePickerComponent,
+    EditableLabelDirective,
+    ImageInputComponent,
   ],
 })
 export class UiInputsModule {}

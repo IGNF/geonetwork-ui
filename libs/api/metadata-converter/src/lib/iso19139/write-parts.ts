@@ -1,11 +1,12 @@
 import {
-  AccessConstraint,
   CatalogRecord,
+  Constraint,
   DatasetDistribution,
   DatasetRecord,
   DatasetServiceDistribution,
   Individual,
-  License,
+  Keyword,
+  KeywordThesaurus,
   RecordStatus,
   Role,
   ServiceEndpoint,
@@ -23,7 +24,6 @@ import {
   findChildOrCreate,
   findChildrenElement,
   findNestedChildOrCreate,
-  findNestedElement,
   findNestedElements,
   readAttribute,
   removeAllChildren,
@@ -45,8 +45,9 @@ import {
 } from '../function-utils'
 import format from 'date-fns/format'
 import { readKind } from './read-parts'
+import { namePartsToFull } from './utils/individual-name'
 
-function writeCharacterString(
+export function writeCharacterString(
   text: string
 ): ChainableFunction<XmlElement, XmlElement> {
   return tap(
@@ -54,7 +55,9 @@ function writeCharacterString(
   )
 }
 
-function writeLinkage(url: URL): ChainableFunction<XmlElement, XmlElement> {
+export function writeLinkage(
+  url: URL
+): ChainableFunction<XmlElement, XmlElement> {
   return tap(
     pipe(
       findNestedChildOrCreate('gmd:linkage', 'gmd:URL'),
@@ -63,7 +66,7 @@ function writeLinkage(url: URL): ChainableFunction<XmlElement, XmlElement> {
   )
 }
 
-function writeAnchor(
+export function writeAnchor(
   url: URL,
   text?: string
 ): ChainableFunction<XmlElement, XmlElement> {
@@ -76,7 +79,9 @@ function writeAnchor(
   )
 }
 
-function writeDateTime(date: Date): ChainableFunction<XmlElement, XmlElement> {
+export function writeDateTime(
+  date: Date
+): ChainableFunction<XmlElement, XmlElement> {
   return tap(
     pipe(
       findChildOrCreate('gco:DateTime'),
@@ -85,7 +90,9 @@ function writeDateTime(date: Date): ChainableFunction<XmlElement, XmlElement> {
   )
 }
 
-function writeDate(date: Date): ChainableFunction<XmlElement, XmlElement> {
+export function writeDate(
+  date: Date
+): ChainableFunction<XmlElement, XmlElement> {
   return tap(
     pipe(
       findChildOrCreate('gco:Date'),
@@ -94,7 +101,7 @@ function writeDate(date: Date): ChainableFunction<XmlElement, XmlElement> {
   )
 }
 
-function getProgressCode(status: RecordStatus): string {
+export function getProgressCode(status: RecordStatus): string {
   switch (status) {
     case 'completed':
       return 'completed'
@@ -113,7 +120,7 @@ function getProgressCode(status: RecordStatus): string {
   }
 }
 
-function getRoleCode(role: Role): string {
+export function getRoleCode(role: Role): string {
   switch (role) {
     case 'author':
       return 'author'
@@ -162,7 +169,7 @@ function getRoleCode(role: Role): string {
   }
 }
 
-function getDistributionProtocol(
+export function getDistributionProtocol(
   distribution: DatasetServiceDistribution
 ): string {
   switch (distribution.accessServiceProtocol.toLowerCase()) {
@@ -177,7 +184,7 @@ function getDistributionProtocol(
   }
 }
 
-function getMaintenanceFrequencyCode(
+export function getMaintenanceFrequencyCode(
   updateFrequency: UpdateFrequencyCode
 ): string | null {
   switch (updateFrequency) {
@@ -196,7 +203,7 @@ function getMaintenanceFrequencyCode(
   }
 }
 
-function getISODuration(updateFrequency: UpdateFrequencyCustom): string {
+export function getISODuration(updateFrequency: UpdateFrequencyCustom): string {
   const duration = {
     years: 0,
     months: 0,
@@ -210,7 +217,7 @@ function getISODuration(updateFrequency: UpdateFrequencyCustom): string {
       else duration.hours = Math.round(24 / updateFrequency.updatedTimes)
       break
     case 'week':
-      duration.days = Math.round(7 / updateFrequency.updatedTimes)
+      duration.days = Math.round(7 / updateFrequency.updatedTimes - 0.0001) // this is to make sure that '2 times per week' = 'every 3 days'
       break
     case 'month':
       if (updateFrequency.updatedTimes <= 1) duration.months = 1
@@ -225,19 +232,61 @@ function getISODuration(updateFrequency: UpdateFrequencyCustom): string {
   return `P${duration.years}Y${duration.months}M${duration.days}D${hours}`
 }
 
-function appendResponsibleParty(contact: Individual) {
-  const name =
-    contact.lastName && contact.firstName
-      ? `${contact.firstName} ${contact.lastName}`
-      : contact.lastName || contact.firstName || null
+export function appendResponsibleParty(contact: Individual) {
+  const fullName = namePartsToFull(contact.firstName, contact.lastName)
+
+  const createAddress = pipe(
+    createElement('gmd:address'),
+    createChild('gmd:CI_Address'),
+    appendChildren(
+      pipe(
+        createElement('gmd:electronicMailAddress'),
+        writeCharacterString(contact.email)
+      )
+    ),
+    contact.address
+      ? appendChildren(
+          pipe(
+            createElement('gmd:deliveryPoint'),
+            writeCharacterString(contact.address)
+          )
+        )
+      : noop
+  )
+
+  const createContact = pipe(
+    createElement('gmd:contactInfo'),
+    createChild('gmd:CI_Contact'),
+    contact.phone
+      ? appendChildren(
+          pipe(
+            createElement('gmd:phone'),
+            createChild('gmd:CI_Telephone'),
+            createChild('gmd:voice'),
+            writeCharacterString(contact.phone)
+          )
+        )
+      : noop,
+    appendChildren(createAddress),
+    'website' in contact.organization
+      ? appendChildren(
+          pipe(
+            createElement('gmd:onlineResource'),
+            createChild('gmd:CI_OnlineResource'),
+            writeLinkage(contact.organization.website)
+          )
+        )
+      : noop
+  )
+
   return appendChildren(
     pipe(
       createElement('gmd:CI_ResponsibleParty'),
-      name
+      fullName
         ? appendChildren(
             pipe(
               createElement('gmd:individualName'),
-              writeCharacterString(name)
+              writeCharacterString(fullName)
             )
           )
         : noop,
@@ -254,27 +303,7 @@ function appendResponsibleParty(contact: Individual) {
           createElement('gmd:organisationName'),
           writeCharacterString(contact.organization.name)
         ),
-        pipe(
-          createElement('gmd:contactInfo'),
-          createChild('gmd:CI_Contact'),
-          appendChildren(
-            pipe(
-              createElement('gmd:address'),
-              createChild('gmd:CI_Address'),
-              createChild('gmd:electronicMailAddress'),
-              writeCharacterString(contact.email)
-            )
-          ),
-          'website' in contact.organization
-            ? appendChildren(
-                pipe(
-                  createElement('gmd:onlineResource'),
-                  createChild('gmd:CI_OnlineResource'),
-                  writeLinkage(contact.organization.website)
-                )
-              )
-            : noop
-        ),
+        createContact,
         pipe(
           createElement('gmd:role'),
           createChild('gmd:CI_RoleCode'),
@@ -289,7 +318,10 @@ function appendResponsibleParty(contact: Individual) {
   )
 }
 
-function updateCitationDate(date: Date, type: 'revision' | 'creation') {
+export function updateCitationDate(
+  date: Date,
+  type: 'revision' | 'creation' | 'publication'
+) {
   return pipe(
     findNestedElements('gmd:date', 'gmd:CI_Date'),
     filterArray(
@@ -306,7 +338,10 @@ function updateCitationDate(date: Date, type: 'revision' | 'creation') {
   )
 }
 
-function appendCitationDate(date, type: 'revision' | 'creation') {
+export function appendCitationDate(
+  date: Date,
+  type: 'revision' | 'creation' | 'publication'
+) {
   return appendChildren(
     pipe(
       createElement('gmd:date'),
@@ -327,82 +362,90 @@ function appendCitationDate(date, type: 'revision' | 'creation') {
   )
 }
 
-function removeKeywords(type: string | null) {
-  return removeChildren(
-    pipe(
-      findNestedElements('gmd:descriptiveKeywords'),
-      filterArray(
-        pipe(
-          findNestedElement(
-            'gmd:MD_Keywords',
-            'gmd:type',
-            'gmd:MD_KeywordTypeCode'
-          ),
-          readAttribute('codeListValue'),
-          // if a specific type is targeted, compare with it; otherwise remove keywords if they have no type defined
-          map((typeValue) => (type !== null ? type === typeValue : true))
+export function removeKeywords() {
+  return removeChildren(pipe(findNestedElements('gmd:descriptiveKeywords')))
+}
+
+// returns a <gmd:thesaurusName> element
+export function createThesaurus(thesaurus: KeywordThesaurus) {
+  return pipe(
+    createElement('gmd:thesaurusName'),
+    createChild('gmd:CI_Citation'),
+    appendChildren(
+      pipe(
+        createElement('gmd:title'),
+        writeCharacterString(thesaurus.name || thesaurus.id)
+      ),
+      pipe(
+        createElement('gmd:identifier'),
+        createChild('gmd:MD_Identifier'),
+        appendChildren(
+          pipe(
+            createElement('gmd:code'),
+            thesaurus.url
+              ? writeAnchor(thesaurus.url, thesaurus.id)
+              : writeCharacterString(thesaurus.id)
+          )
         )
       )
     )
   )
 }
 
-function appendKeywords(keywords: string[], type: string | null) {
+export function appendKeywords(keywords: Keyword[]) {
+  // keywords are grouped by thesaurus if they have one, otherwise by type
+  const keywordsByThesaurus: Keyword[][] = keywords.reduce((acc, keyword) => {
+    const thesaurusId = keyword.thesaurus?.id
+    const type = keyword.type
+    let existingGroup = acc.find((group) =>
+      thesaurusId
+        ? group[0].thesaurus?.id === thesaurusId
+        : group[0].type === type && !group[0].thesaurus
+    )
+    if (!existingGroup) {
+      existingGroup = []
+      acc.push(existingGroup)
+    }
+    existingGroup.push(keyword)
+    return acc
+  }, [])
   return appendChildren(
-    pipe(
-      createElement('gmd:descriptiveKeywords'),
-      createChild('gmd:MD_Keywords'),
-      type !== null
-        ? appendChildren(
+    ...keywordsByThesaurus.map((keywords) =>
+      pipe(
+        createElement('gmd:descriptiveKeywords'),
+        createChild('gmd:MD_Keywords'),
+        appendChildren(
+          pipe(
+            createElement('gmd:type'),
+            createChild('gmd:MD_KeywordTypeCode'),
+            addAttribute(
+              'codeList',
+              'http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#MD_KeywordTypeCode'
+            ),
+            addAttribute('codeListValue', keywords[0].type)
+          )
+        ),
+        keywords[0].thesaurus
+          ? appendChildren(createThesaurus(keywords[0].thesaurus))
+          : noop,
+        appendChildren(
+          ...keywords.map((keyword) =>
             pipe(
-              createElement('gmd:type'),
-              createChild('gmd:MD_KeywordTypeCode'),
-              addAttribute(
-                'codeList',
-                'http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#MD_KeywordTypeCode'
-              ),
-              addAttribute('codeListValue', type)
+              createElement('gmd:keyword'),
+              writeCharacterString(keyword.label)
             )
           )
-        : noop,
-      appendChildren(
-        ...keywords.map((keyword) =>
-          pipe(createElement('gmd:keyword'), writeCharacterString(keyword))
         )
       )
     )
   )
 }
 
-function removeAccessConstraints() {
-  const securityConstraintsFilter = pipe(
-    findChildrenElement('gmd:MD_SecurityConstraints'),
-    (array) => array.length > 0
-  )
-
-  // remove legal constraints that *only* have 'otherRestrictions'
-  const otherConstraintsFilter = pipe(
-    findNestedElements(
-      'gmd:MD_LegalConstraints',
-      'gmd:accessConstraints',
-      'gmd:MD_RestrictionCode'
-    ),
-    mapArray(readAttribute('codeListValue')),
-    (restrictionCodes) =>
-      restrictionCodes.every((code) => code === 'otherRestrictions')
-  )
-  return removeChildren(
-    pipe(
-      findChildrenElement('gmd:resourceConstraints'),
-      filterArray(
-        (el) => securityConstraintsFilter(el) || otherConstraintsFilter(el)
-      )
-    )
-  )
-}
-
-function createAccessConstraint(constraint: AccessConstraint) {
-  if (constraint.type === 'security') {
+export function createConstraint(
+  constraint: Constraint,
+  type: 'legal' | 'security' | 'other'
+) {
+  if (type === 'security') {
     return pipe(
       createElement('gmd:resourceConstraints'),
       createChild('gmd:MD_SecurityConstraints'),
@@ -422,29 +465,41 @@ function createAccessConstraint(constraint: AccessConstraint) {
         )
       )
     )
+  } else if (type === 'legal') {
+    return pipe(
+      createElement('gmd:resourceConstraints'),
+      createChild('gmd:MD_LegalConstraints'),
+      appendChildren(
+        pipe(
+          createElement('gmd:accessConstraints'),
+          createChild('gmd:MD_RestrictionCode'),
+          addAttribute(
+            'codeList',
+            'http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#MD_RestrictionCode'
+          ),
+          addAttribute('codeListValue', 'otherRestrictions')
+        ),
+        pipe(
+          createElement('gmd:otherConstraints'),
+          writeCharacterString(constraint.text)
+        )
+      )
+    )
   }
+
   return pipe(
     createElement('gmd:resourceConstraints'),
-    createChild('gmd:MD_LegalConstraints'),
+    createChild('gmd:MD_Constraints'),
     appendChildren(
       pipe(
-        createElement('gmd:accessConstraints'),
-        createChild('gmd:MD_RestrictionCode'),
-        addAttribute(
-          'codeList',
-          'http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#MD_RestrictionCode'
-        ),
-        addAttribute('codeListValue', 'otherRestrictions')
-      ),
-      pipe(
-        createElement('gmd:otherConstraints'),
+        createElement('gmd:useLimitation'),
         writeCharacterString(constraint.text)
       )
     )
   )
 }
 
-function removeUseLimitations() {
+export function removeOtherConstraints() {
   return removeChildren(
     pipe(
       findChildrenElement('gmd:resourceConstraints'),
@@ -458,16 +513,41 @@ function removeUseLimitations() {
   )
 }
 
-function createUseLimitation(useLimitation: string) {
-  return pipe(
-    createElement('gmd:resourceConstraints'),
-    createChild('gmd:MD_Constraints'),
-    createChild('gmd:useLimitation'),
-    writeCharacterString(useLimitation)
+export function removeSecurityConstraints() {
+  return removeChildren(
+    pipe(
+      findChildrenElement('gmd:resourceConstraints'),
+      filterArray(
+        pipe(
+          findNestedElements('gmd:MD_SecurityConstraints', 'gmd:useLimitation'),
+          (array) => array.length > 0
+        )
+      )
+    )
   )
 }
 
-function removeLicenses() {
+export function removeLegalConstraints() {
+  return removeChildren(
+    pipe(
+      findChildrenElement('gmd:resourceConstraints'),
+      filterArray(
+        pipe(
+          findNestedElements(
+            'gmd:MD_LegalConstraints',
+            'gmd:accessConstraints',
+            'gmd:MD_RestrictionCode'
+          ),
+          mapArray(readAttribute('codeListValue')),
+          (restrictionCodes) =>
+            restrictionCodes.every((code) => code !== 'license')
+        )
+      )
+    )
+  )
+}
+
+export function removeLicenses() {
   return removeChildren(
     pipe(
       findChildrenElement('gmd:resourceConstraints'),
@@ -487,7 +567,7 @@ function removeLicenses() {
   )
 }
 
-function createLicense(license: License) {
+export function createLicense(license: Constraint) {
   return pipe(
     createElement('gmd:resourceConstraints'),
     createChild('gmd:MD_LegalConstraints'),
@@ -520,44 +600,52 @@ function createLicense(license: License) {
   )
 }
 
-function removeDistributions() {
+export function removeDistributions() {
   return pipe(removeChildrenByName('gmd:distributionInfo'))
 }
 
-function createDistribution(distribution: DatasetDistribution) {
-  const appendDistributionFormat =
-    'mimeType' in distribution
-      ? appendChildren(
-          pipe(
-            createElement('gmd:distributionFormat'),
-            createChild('gmd:MD_Format'),
-            appendChildren(
-              pipe(
-                createElement('gmd:name'),
-                writeCharacterString(distribution.mimeType)
-              ),
-              pipe(
-                createElement('gmd:version'),
-                writeCharacterString('1.0') // hardcoding this as it most likely won't be used but is mandatory
-              )
-            )
-          )
+function appendDistributionFormat(mimeType: string) {
+  return appendChildren(
+    pipe(
+      createElement('gmd:distributionFormat'),
+      createChild('gmd:MD_Format'),
+      appendChildren(
+        pipe(createElement('gmd:name'), writeCharacterString(mimeType)),
+        pipe(
+          createElement('gmd:version'),
+          writeCharacterString('1.0') // hardcoding this as it most likely won't be used but is mandatory
         )
-      : noop
+      )
+    )
+  )
+}
 
-  let linkageUrl, name, functionCode, protocol
+export function createDistributionInfo() {
+  return pipe(
+    createElement('gmd:distributionInfo'),
+    createChild('gmd:MD_Distribution')
+  )
+}
+
+// apply to MD_Distribution
+export function appendDistribution(
+  distribution: DatasetDistribution,
+  appendFormatFn: (
+    mimeType: string
+  ) => ChainableFunction<XmlElement, XmlElement>
+) {
+  let name: string
+  let functionCode: string
+  let protocol: string
   if (distribution.type === 'service') {
-    linkageUrl = distribution.url.toString()
     name = distribution.identifierInService // this is for GeoNetwork to know the layer name
     functionCode = 'download'
     protocol = getDistributionProtocol(distribution)
   } else if (distribution.type === 'download') {
-    linkageUrl = distribution.url.toString()
     name = distribution.name
     functionCode = 'download'
     protocol = 'WWW:DOWNLOAD'
   } else {
-    linkageUrl = distribution.url.toString()
     name = distribution.name
     functionCode = 'information'
     protocol = 'WWW:LINK'
@@ -568,7 +656,7 @@ function createDistribution(distribution: DatasetDistribution) {
       createChild('gmd:MD_DigitalTransferOptions'),
       createChild('gmd:onLine'),
       createChild('gmd:CI_OnlineResource'),
-      writeLinkage(linkageUrl),
+      writeLinkage(distribution.url),
       'description' in distribution
         ? appendChildren(
             pipe(
@@ -597,9 +685,7 @@ function createDistribution(distribution: DatasetDistribution) {
     )
   )
   return pipe(
-    createElement('gmd:distributionInfo'),
-    createChild('gmd:MD_Distribution'),
-    appendDistributionFormat,
+    'mimeType' in distribution ? appendFormatFn(distribution.mimeType) : noop,
     appendTransferOptions
   )
 }
@@ -608,7 +694,7 @@ function createDistribution(distribution: DatasetDistribution) {
  * Looks for srv:SV_ServiceIdentification or gmd:MD_DataIdentification element
  * depending on record type, create if missing
  */
-function findOrCreateIdentification() {
+export function findOrCreateIdentification() {
   return (rootEl: XmlElement) => {
     const kind = readKind(rootEl)
     let eltName = 'gmd:MD_DataIdentification'
@@ -617,7 +703,7 @@ function findOrCreateIdentification() {
   }
 }
 
-function findOrCreateDistribution() {
+export function findOrCreateDistribution() {
   return (rootEl: XmlElement) => {
     return findNestedChildOrCreate(
       'gmd:distributionInfo',
@@ -712,10 +798,25 @@ export function writeStatus(record: DatasetRecord, rootEl: XmlElement) {
 
 export function writeContacts(record: CatalogRecord, rootEl: XmlElement) {
   pipe(
-    findOrCreateIdentification(),
-    removeChildrenByName('gmd:pointOfContact'),
+    removeChildrenByName('gmd:contact'),
     appendChildren(
       ...record.contacts.map((contact) =>
+        pipe(createElement('gmd:contact'), appendResponsibleParty(contact))
+      )
+    )
+  )(rootEl)
+}
+
+export function writeContactsForResource(
+  record: CatalogRecord,
+  rootEl: XmlElement
+) {
+  pipe(
+    findOrCreateIdentification(),
+    removeChildrenByName('gmd:pointOfContact'),
+    removeChildrenByName('gmd:contact'),
+    appendChildren(
+      ...record.contactsForResource.map((contact) =>
         pipe(
           createElement('gmd:pointOfContact'),
           appendResponsibleParty(contact)
@@ -728,27 +829,24 @@ export function writeContacts(record: CatalogRecord, rootEl: XmlElement) {
 export function writeKeywords(record: CatalogRecord, rootEl: XmlElement) {
   pipe(
     findOrCreateIdentification(),
-    removeKeywords(null),
-    appendKeywords(record.keywords, null)
+    removeKeywords(),
+    appendKeywords(record.keywords)
   )(rootEl)
 }
 
-export function writeThemes(record: CatalogRecord, rootEl: XmlElement) {
+export function writeTopics(record: CatalogRecord, rootEl: XmlElement) {
   pipe(
     findOrCreateIdentification(),
-    removeKeywords('theme'),
-    appendKeywords(record.themes, 'theme')
-  )(rootEl)
-}
-
-export function writeAccessConstraints(
-  record: CatalogRecord,
-  rootEl: XmlElement
-) {
-  pipe(
-    findOrCreateIdentification(),
-    removeAccessConstraints(),
-    appendChildren(...record.accessConstraints.map(createAccessConstraint))
+    removeChildrenByName('gmd:topicCategory'),
+    appendChildren(
+      ...record.topics.map((topic) =>
+        pipe(
+          createElement('gmd:topicCategory'),
+          createChild('gmd:MD_TopicCategoryCode'),
+          setTextContent(topic)
+        )
+      )
+    )
   )(rootEl)
 }
 
@@ -760,11 +858,42 @@ export function writeLicenses(record: CatalogRecord, rootEl: XmlElement) {
   )(rootEl)
 }
 
-export function writeUseLimitations(record: CatalogRecord, rootEl: XmlElement) {
+export function writeLegalConstraints(
+  record: CatalogRecord,
+  rootEl: XmlElement
+) {
   pipe(
     findOrCreateIdentification(),
-    removeUseLimitations(),
-    appendChildren(...record.useLimitations.map(createUseLimitation))
+    removeLegalConstraints(),
+    appendChildren(
+      ...record.legalConstraints.map((c) => createConstraint(c, 'legal'))
+    )
+  )(rootEl)
+}
+
+export function writeSecurityConstraints(
+  record: CatalogRecord,
+  rootEl: XmlElement
+) {
+  pipe(
+    findOrCreateIdentification(),
+    removeSecurityConstraints(),
+    appendChildren(
+      ...record.securityConstraints.map((c) => createConstraint(c, 'security'))
+    )
+  )(rootEl)
+}
+
+export function writeOtherConstraints(
+  record: CatalogRecord,
+  rootEl: XmlElement
+) {
+  pipe(
+    findOrCreateIdentification(),
+    removeOtherConstraints(),
+    appendChildren(
+      ...record.otherConstraints.map((c) => createConstraint(c, 'other'))
+    )
   )(rootEl)
 }
 
@@ -798,26 +927,47 @@ export function writeUpdateFrequency(
   )(rootEl)
 }
 
-export function writeDatasetCreated(record: DatasetRecord, rootEl: XmlElement) {
-  if (!('datasetCreated' in record)) return
+export function writeResourceCreated(
+  record: DatasetRecord,
+  rootEl: XmlElement
+) {
+  if (!('resourceCreated' in record)) return
   pipe(
     findOrCreateIdentification(),
     findNestedChildOrCreate('gmd:citation', 'gmd:CI_Citation'),
     fallback(
-      updateCitationDate(record.datasetCreated, 'creation'),
-      appendCitationDate(record.datasetCreated, 'creation')
+      updateCitationDate(record.resourceCreated, 'creation'),
+      appendCitationDate(record.resourceCreated, 'creation')
     )
   )(rootEl)
 }
 
-export function writeDatasetUpdated(record: DatasetRecord, rootEl: XmlElement) {
-  if (!('datasetUpdated' in record)) return
+export function writeResourceUpdated(
+  record: DatasetRecord,
+  rootEl: XmlElement
+) {
+  if (!('resourceUpdated' in record)) return
   pipe(
     findOrCreateIdentification(),
     findNestedChildOrCreate('gmd:citation', 'gmd:CI_Citation'),
     fallback(
-      updateCitationDate(record.datasetUpdated, 'revision'),
-      appendCitationDate(record.datasetUpdated, 'revision')
+      updateCitationDate(record.resourceUpdated, 'revision'),
+      appendCitationDate(record.resourceUpdated, 'revision')
+    )
+  )(rootEl)
+}
+
+export function writeResourcePublished(
+  record: DatasetRecord,
+  rootEl: XmlElement
+) {
+  if (!('resourcePublished' in record)) return
+  pipe(
+    findOrCreateIdentification(),
+    findNestedChildOrCreate('gmd:citation', 'gmd:CI_Citation'),
+    fallback(
+      updateCitationDate(record.resourcePublished, 'publication'),
+      appendCitationDate(record.resourcePublished, 'publication')
     )
   )(rootEl)
 }
@@ -875,7 +1025,14 @@ export function writeGraphicOverviews(
 export function writeDistributions(record: DatasetRecord, rootEl: XmlElement) {
   pipe(
     removeDistributions(),
-    appendChildren(...record.distributions.map(createDistribution))
+    appendChildren(
+      ...record.distributions.map((d) =>
+        pipe(
+          createDistributionInfo(),
+          appendDistribution(d, appendDistributionFormat)
+        )
+      )
+    )
   )(rootEl)
 }
 
@@ -892,7 +1049,7 @@ export function writeLineage(record: DatasetRecord, rootEl: XmlElement) {
   )(rootEl)
 }
 
-function getServiceEndpointProtocol(endpoint: ServiceEndpoint): string {
+export function getServiceEndpointProtocol(endpoint: ServiceEndpoint): string {
   switch (endpoint.protocol.toLowerCase()) {
     case 'wfs':
       return 'OGC:WFS'
@@ -905,7 +1062,7 @@ function getServiceEndpointProtocol(endpoint: ServiceEndpoint): string {
   }
 }
 
-function createOnlineResource(onlineResource: ServiceOnlineResource) {
+export function createOnlineResource(onlineResource: ServiceOnlineResource) {
   let linkageUrl, functionCode, protocol
   if (onlineResource.type === 'endpoint') {
     linkageUrl = onlineResource.endpointUrl.toString()

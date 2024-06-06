@@ -41,6 +41,7 @@ describe('datasets', () => {
         .find('[data-cy=filters-expand]')
         .filter(':visible')
         .should('have.length', 1)
+      cy.screenshot({ capture: 'viewport' })
     })
     it('should sort by relevance initially', () => {
       cy.get('@sortBy')
@@ -64,7 +65,7 @@ describe('datasets', () => {
         .invoke('attr', 'src')
         .should(
           'eql',
-          'https://www.geocat.ch/geonetwork/srv/api/records/a8b5e6c0-c21d-4c32-b8f9-10830215890a/attachments/SEN_CartesThematiquesSols.png'
+          'https://geocat-dev.dev.bgdi.ch/geonetwork/srv/api/records/9e1ea778-d0ce-4b49-90b7-37bc0e448300/attachments/test.png'
         )
       cy.get('@results')
         .eq(1)
@@ -109,6 +110,7 @@ describe('datasets', () => {
           .find('a')
           .invoke('attr', 'href')
           .should('include', 'catalog.signin')
+        cy.screenshot({ capture: 'viewport' })
       })
     })
     describe('when logged in', () => {
@@ -125,6 +127,7 @@ describe('datasets', () => {
           .then((text) => {
             cy.get('@initialCount').should('not.eq', text)
           })
+        cy.screenshot({ capture: 'viewport' })
       })
     })
   })
@@ -157,6 +160,12 @@ describe('datasets', () => {
     }
 
     beforeEach(() => {
+      // this will enable all available filters
+      cy.intercept('GET', '/assets/configuration/default.toml', {
+        fixture: 'config-with-all-filters.toml',
+      })
+      cy.visit('/search')
+
       // expand filters
       cy.get('datahub-search-filters')
         .find('[data-cy=filters-expand]')
@@ -164,7 +173,7 @@ describe('datasets', () => {
         .click()
     })
     it('should display all filters', () => {
-      cy.get('@filters').filter(':visible').should('have.length', 6)
+      cy.get('@filters').filter(':visible').should('have.length', 10)
       cy.get('@filters')
         .children()
         .then(($dropdowns) =>
@@ -179,7 +188,12 @@ describe('datasets', () => {
           'topic',
           'isSpatial',
           'license',
+          'inspireKeyword',
+          'keyword',
+          'resourceType',
+          'representationType',
         ])
+      cy.screenshot({ capture: 'viewport' })
     })
 
     describe('publisher filter', () => {
@@ -273,6 +287,7 @@ describe('datasets', () => {
           'Bundesamt für Raumentwicklung (1)',
           "Canton du Valais - Service de l'environnement (SEN) - Protection des sols (1)",
           'Cellule informatique et géomatique (SPW - Intérieur et Action sociale - Direction fonctionnelle et d’appui) (1)',
+          'Coordination, Services et Informations Géographiques (COSIG), swisstopo (1)',
           "Direction de l'Action sociale (SPW - Intérieur et Action sociale - Département de l'Action sociale - Direction de l'Action sociale) (1)",
           'DREAL (1)',
           "DREAL HdF (Direction Régionale de l'Environnement de l'Aménagement et du Logement des Hauts de France) (1)",
@@ -283,6 +298,7 @@ describe('datasets', () => {
           'Service public de Wallonie (SPW) (2)',
           "Société Publique de Gestion de l'Eau (SPGE) (1)",
         ])
+        cy.screenshot({ capture: 'viewport' })
       })
     })
 
@@ -351,6 +367,72 @@ describe('datasets', () => {
       })
     })
 
+    describe('inspire keyword filter', () => {
+      beforeEach(() => {
+        cy.get('@filters').eq(6).click()
+        getFilterOptions()
+      })
+      it('should have options', () => {
+        cy.get('@options').should('have.length.above', 0)
+        cy.get('@optionsLabel')
+          .invoke('slice', 0, 3)
+          .should('eql', [
+            'Environmental monitoring facilities (2)',
+            'Land use (1)',
+            'Production and industrial facilities (1)',
+          ])
+      })
+      it('should not have duplicates', () => {
+        cy.get<string[]>('@optionsLabelWithoutCount').then(checkHasDuplicates)
+      })
+    })
+
+    describe('keyword filter', () => {
+      beforeEach(() => {
+        cy.get('@filters').eq(7).click()
+        getFilterOptions()
+      })
+      it('should have options', () => {
+        cy.get('@options').should('have.length.above', 0)
+        cy.get('@optionsLabel')
+          .invoke('slice', 0, 3)
+          .should('eql', [
+            'DONNEE OUVERTE (3)',
+            'HAUTS-DE-FRANCE (3)',
+            'Open Data (3)',
+          ])
+      })
+      it('should not have duplicates', () => {
+        cy.get<string[]>('@optionsLabelWithoutCount').then(checkHasDuplicates)
+      })
+    })
+
+    describe('resource type filter', () => {
+      beforeEach(() => {
+        cy.get('@filters').eq(8).click()
+        getFilterOptions()
+      })
+      it('should have options', () => {
+        cy.get('@options').should('have.length.above', 0)
+      })
+      it('should not have duplicates', () => {
+        cy.get<string[]>('@optionsLabelWithoutCount').then(checkHasDuplicates)
+      })
+    })
+
+    describe('representation type filter', () => {
+      beforeEach(() => {
+        cy.get('@filters').eq(9).click()
+        getFilterOptions()
+      })
+      it('should have options', () => {
+        cy.get('@options').should('have.length.above', 0)
+      })
+      it('should not have duplicates', () => {
+        cy.get<string[]>('@optionsLabelWithoutCount').then(checkHasDuplicates)
+      })
+    })
+
     describe('multiple filters', () => {
       beforeEach(() => {
         cy.get('datahub-search-filters').scrollIntoView()
@@ -364,7 +446,7 @@ describe('datasets', () => {
         // filter by theme
         cy.get('@filters').eq(3).click()
         getFilterOptions()
-        cy.get('@options').last().click()
+        cy.get('@options').eq(-2).click()
         cy.get('body').click()
       })
       it('shows only one result', () => {
@@ -403,12 +485,7 @@ describe('datasets', () => {
             'eql',
             'Cartographie des sols agricoles de la plaine du Rhône'
           )
-        cy.get('gn-ui-results-list-item')
-          .eq(1)
-          .find('[data-cy=recordTitle]')
-          .invoke('text')
-          .invoke('trim')
-          .should('eql', 'Alpine Convention')
+        cy.screenshot({ capture: 'viewport' })
       })
     })
   })
@@ -489,6 +566,7 @@ describe('datasets', () => {
         cy.get('gn-ui-progress-bar')
           .eq(0)
           .should('have.attr', 'ng-reflect-value', 100)
+        cy.screenshot({ capture: 'viewport' })
       })
     })
   })

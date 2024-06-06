@@ -1,5 +1,5 @@
 import { DatasetRecord } from '@geonetwork-ui/common/domain/model/record'
-import { deepFreeze } from './utils/freeze'
+import { deepFreeze } from './utils'
 
 export const DATASET_RECORDS: DatasetRecord[] = deepFreeze([
   {
@@ -49,8 +49,8 @@ export const DATASET_RECORDS: DatasetRecord[] = deepFreeze([
     status: 'ongoing',
     recordCreated: new Date('2022-02-01T15:12:00'),
     recordUpdated: new Date('2022-02-01T15:12:00'),
-    datasetCreated: new Date('2022-09-01T14:18:19'),
-    datasetUpdated: new Date('2022-12-04T15:12:00'),
+    resourceCreated: new Date('2022-09-01T14:18:19'),
+    resourceUpdated: new Date('2022-12-04T15:12:00'),
     title: 'A very interesting dataset (un jeu de données très intéressant)',
     abstract: `# Introduction
 This dataset has been established for testing purposes.
@@ -69,8 +69,24 @@ Cette section contient des *caractères internationaux* (ainsi que des "caractè
         url: new URL('http://my-org.net/two.png'),
       },
     ],
-    keywords: ['international', 'test', '_another_keyword_'],
-    themes: ['testData', 'exampleData'],
+    keywords: [
+      {
+        thesaurus: { id: 'geonetwork.thesaurus.local' },
+        type: 'other',
+        label: 'international',
+      },
+      {
+        thesaurus: { id: 'geonetwork.thesaurus.local' },
+        type: 'other',
+        label: 'test',
+      },
+      {
+        thesaurus: { id: 'geonetwork.thesaurus.local' },
+        type: 'other',
+        label: '_another_keyword_',
+      },
+    ],
+    topics: ['testData', 'exampleData'],
     spatialRepresentation: 'grid',
     distributions: [
       {
@@ -101,6 +117,14 @@ Cette section contient des *caractères internationaux* (ainsi que des "caractè
         description: 'This WFS service offers direct download capability',
         identifierInService: 'my:featuretype',
       },
+      {
+        type: 'service',
+        url: new URL('https://my-org.net/ogc'),
+        accessServiceProtocol: 'ogcFeatures',
+        name: 'my:featuretype',
+        description: 'This OGC service offers direct download capability',
+        identifierInService: 'my:featuretype',
+      },
     ],
     lineage: `This record was edited manually to test the conversion processes
 
@@ -115,7 +139,7 @@ As such, **it is not very interesting at all.**`,
         url: new URL('https://data.rennesmetropole.fr/pages/licence/'),
       },
     ],
-    accessConstraints: [
+    legalConstraints: [
       {
         text: "Dataset access isn't possible since it does not really exist",
         type: 'other',
@@ -125,12 +149,15 @@ As such, **it is not very interesting at all.**`,
         type: 'security',
       },
     ],
+    securityConstraints: [],
+    otherConstraints: [],
     spatialExtents: [],
     temporalExtents: [],
     updateFrequency: {
       updatedTimes: 3,
       per: 'month',
     },
+    languages: ['en'],
   },
   {
     uniqueIdentifier: '7d002c4c-92ef-4b9f-a568-d732f740b99e',
@@ -168,13 +195,33 @@ Malgré l'attention portée à la création de ces données, il est rappelé que
       },
     ],
     keywords: [
-      'planification',
-      'PLU',
-      "Plan local d'urbanisme",
-      'données ouvertes',
-      'Avrigny*60036',
+      {
+        thesaurus: { id: 'geonetwork.thesaurus.local' },
+        type: 'other',
+        label: 'planification',
+      },
+      {
+        thesaurus: { id: 'geonetwork.thesaurus.local' },
+        type: 'other',
+        label: 'PLU',
+      },
+      {
+        thesaurus: { id: 'geonetwork.thesaurus.local' },
+        type: 'other',
+        label: "Plan local d'urbanisme",
+      },
+      {
+        thesaurus: { id: 'geonetwork.thesaurus.local' },
+        type: 'other',
+        label: 'données ouvertes',
+      },
+      {
+        thesaurus: { id: 'geonetwork.thesaurus.local' },
+        type: 'other',
+        label: 'Avrigny*60036',
+      },
     ],
-    themes: ['Usage des sols', "document d'urbanisme"],
+    topics: ['Usage des sols', "document d'urbanisme"],
     spatialRepresentation: 'vector',
     distributions: [
       {
@@ -189,7 +236,9 @@ Malgré l'attention portée à la création de ces données, il est rappelé que
     ],
     lineage: `Document d’urbanisme numérisé conformément aux prescriptions nationales du CNIG par le Service d'Information Géographique de l'Agglomération de la Région de Compiègne.
 Ce lot de données produit en 2019, a été numérisé à partir du PCI Vecteur de 2019 et contrôlé par le Service d'Information Géographique de l'Agglomération de la Région de Compiègne.`,
-    accessConstraints: [],
+    legalConstraints: [],
+    securityConstraints: [],
+    otherConstraints: [],
     useLimitations: ["Aucune condition ne s'applique", 'Licence Ouverte 2.0'],
     licenses: [
       {
@@ -200,5 +249,6 @@ Ce lot de données produit en 2019, a été numérisé à partir du PCI Vecteur 
     temporalExtents: [],
     status: 'completed',
     updateFrequency: 'unknown',
+    languages: ['fr', 'de'],
   },
 ])

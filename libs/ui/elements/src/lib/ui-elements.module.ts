@@ -12,13 +12,12 @@ import { ApiCardComponent } from './api-card/api-card.component'
 import { UiWidgetsModule } from '@geonetwork-ui/ui/widgets'
 import { UiLayoutModule } from '@geonetwork-ui/ui/layout'
 import { TranslateModule } from '@ngx-translate/core'
-import { LinkCardComponent } from './link-card/link-card.component'
 import { RelatedRecordCardComponent } from './related-record-card/related-record-card.component'
 import { MetadataContactComponent } from './metadata-contact/metadata-contact.component'
 import { MetadataCatalogComponent } from './metadata-catalog/metadata-catalog.component'
 import { MetadataQualityComponent } from './metadata-quality/metadata-quality.component'
 import { MetadataQualityItemComponent } from './metadata-quality-item/metadata-quality-item.component'
-import { SearchResultsErrorComponent } from './search-results-error/search-results-error.component'
+import { ErrorComponent } from './error/error.component'
 import { PaginationComponent } from './pagination/pagination.component'
 import { ThumbnailComponent } from './thumbnail/thumbnail.component'
 import { UiInputsModule } from '@geonetwork-ui/ui/inputs'
@@ -31,6 +30,8 @@ import { MaxLinesComponent } from './max-lines/max-lines.component'
 import { RecordApiFormComponent } from './record-api-form/record-api-form.component'
 import { MarkdownParserComponent } from './markdown-parser/markdown-parser.component'
 import { ImageOverlayPreviewComponent } from './image-overlay-preview/image-overlay-preview.component'
+import { UserFeedbackItemComponent } from './user-feedback-item/user-feedback-item.component'
+import { TimeSincePipe } from './user-feedback-item/time-since.pipe'
 
 @NgModule({
   imports: [
@@ -45,6 +46,9 @@ import { ImageOverlayPreviewComponent } from './image-overlay-preview/image-over
     UiInputsModule,
     FormsModule,
     NgOptimizedImage,
+    MarkdownParserComponent,
+    ThumbnailComponent,
+    TimeSincePipe,
   ],
   declarations: [
     MetadataInfoComponent,
@@ -52,22 +56,20 @@ import { ImageOverlayPreviewComponent } from './image-overlay-preview/image-over
     DownloadItemComponent,
     DownloadsListComponent,
     ApiCardComponent,
-    LinkCardComponent,
     RelatedRecordCardComponent,
     MetadataContactComponent,
     MetadataCatalogComponent,
     MetadataQualityComponent,
     MetadataQualityItemComponent,
-    SearchResultsErrorComponent,
+    ErrorComponent,
     PaginationComponent,
-    ThumbnailComponent,
     AvatarComponent,
     UserPreviewComponent,
     GnUiLinkifyDirective,
     PaginationButtonsComponent,
     MaxLinesComponent,
     RecordApiFormComponent,
-    MarkdownParserComponent,
+    UserFeedbackItemComponent,
     ImageOverlayPreviewComponent,
   ],
   exports: [
@@ -76,20 +78,21 @@ import { ImageOverlayPreviewComponent } from './image-overlay-preview/image-over
     DownloadItemComponent,
     DownloadsListComponent,
     ApiCardComponent,
-    LinkCardComponent,
     RelatedRecordCardComponent,
     MetadataContactComponent,
     MetadataCatalogComponent,
     MetadataQualityComponent,
     MetadataQualityItemComponent,
-    SearchResultsErrorComponent,
+    ErrorComponent,
     PaginationComponent,
     ThumbnailComponent,
     AvatarComponent,
     UserPreviewComponent,
     PaginationButtonsComponent,
+    MaxLinesComponent,
     RecordApiFormComponent,
     MarkdownParserComponent,
+    UserFeedbackItemComponent,
     ImageOverlayPreviewComponent,
   ],
 })

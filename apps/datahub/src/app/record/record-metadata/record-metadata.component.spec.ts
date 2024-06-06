@@ -10,10 +10,7 @@ import { By } from '@angular/platform-browser'
 import { SourcesService } from '@geonetwork-ui/feature/catalog'
 import { MapManagerService } from '@geonetwork-ui/feature/map'
 import { SearchService } from '@geonetwork-ui/feature/search'
-import {
-  ErrorType,
-  SearchResultsErrorComponent,
-} from '@geonetwork-ui/ui/elements'
+import { ErrorComponent, ErrorType } from '@geonetwork-ui/ui/elements'
 import { TranslateModule } from '@ngx-translate/core'
 import { BehaviorSubject, of } from 'rxjs'
 import { RecordMetadataComponent } from './record-metadata.component'
@@ -25,6 +22,7 @@ import {
   DatasetRecord,
   DatasetServiceDistribution,
   Individual,
+  Keyword,
   Organization,
 } from '@geonetwork-ui/common/domain/model/record'
 
@@ -41,6 +39,7 @@ class MdViewFacadeMock {
   mapApiLinks$ = new BehaviorSubject([])
   dataLinks$ = new BehaviorSubject([])
   geoDataLinks$ = new BehaviorSubject([])
+  geoDataLinksWithGeometry$ = new BehaviorSubject([])
   downloadLinks$ = new BehaviorSubject([])
   apiLinks$ = new BehaviorSubject([])
   otherLinks$ = new BehaviorSubject([])
@@ -117,7 +116,7 @@ export class MockRelatedComponent {}
 export class MockMetadataInfoComponent {
   @Input() metadata: Partial<DatasetRecord>
   @Input() incomplete: boolean
-  @Output() keyword = new EventEmitter<string>()
+  @Output() keyword = new EventEmitter<Keyword>()
 }
 
 @Component({
@@ -176,7 +175,7 @@ describe('RecordMetadataComponent', () => {
         MockDataOtherlinksComponent,
         MockDataApisComponent,
         MockRelatedComponent,
-        SearchResultsErrorComponent,
+        ErrorComponent,
         MockMetadataInfoComponent,
         MockMetadataCatalogComponent,
         MockMetadataContactComponent,
@@ -379,6 +378,7 @@ describe('RecordMetadataComponent', () => {
     })
     describe('when a GEODATA link present', () => {
       beforeEach(() => {
+        facade.geoDataLinksWithGeometry$.next(['link'])
         facade.geoDataLinks$.next(['link'])
         fixture.detectChanges()
         mapTab = fixture.debugElement.queryAll(By.css('mat-tab'))[0]
@@ -401,7 +401,7 @@ describe('RecordMetadataComponent', () => {
       beforeEach(() => {
         facade.mapApiLinks$.next(['link'])
         facade.dataLinks$.next(null)
-        facade.geoDataLinks$.next(null)
+        facade.geoDataLinksWithGeometry$.next(null)
         fixture.detectChanges()
         tableTab = fixture.debugElement.queryAll(By.css('mat-tab'))[1]
         chartTab = fixture.debugElement.queryAll(By.css('mat-tab'))[2]
@@ -593,9 +593,13 @@ describe('RecordMetadataComponent', () => {
 
   describe('#onInfoKeywordClick', () => {
     it('call searchService for any', () => {
-      component.onInfoKeywordClick('any')
+      component.onInfoKeywordClick({
+        thesaurus: { id: 'geonetwork.thesaurus.local' },
+        type: 'other',
+        label: 'international',
+      })
       expect(searchService.updateFilters).toHaveBeenCalledWith({
-        any: 'any',
+        any: 'international',
       })
     })
   })
@@ -618,9 +622,9 @@ describe('RecordMetadataComponent', () => {
   describe('error handling', () => {
     describe('normal', () => {
       it('does not show errors', () => {
-        const result = fixture.debugElement.query(
-          By.directive(SearchResultsErrorComponent)
-        )
+        facade.otherLinks$.next([''])
+        fixture.detectChanges()
+        const result = fixture.debugElement.query(By.directive(ErrorComponent))
         expect(result).toBeFalsy()
       })
     })
@@ -630,9 +634,7 @@ describe('RecordMetadataComponent', () => {
         fixture.detectChanges()
       })
       it('shows error', () => {
-        const result = fixture.debugElement.query(
-          By.directive(SearchResultsErrorComponent)
-        )
+        const result = fixture.debugElement.query(By.directive(ErrorComponent))
 
         expect(result).toBeTruthy()
         expect(result.componentInstance.type).toBe(ErrorType.RECORD_NOT_FOUND)
@@ -648,13 +650,29 @@ describe('RecordMetadataComponent', () => {
         fixture.detectChanges()
       })
       it('shows error', () => {
-        const result = fixture.debugElement.query(
-          By.directive(SearchResultsErrorComponent)
-        )
+        const result = fixture.debugElement.query(By.directive(ErrorComponent))
 
         expect(result).toBeTruthy()
         expect(result.componentInstance.type).toBe(ErrorType.RECEIVED_ERROR)
         expect(result.componentInstance.error).toBe('This is an Error!')
+      })
+    })
+
+    describe('When there are no link (download, api or other links)', () => {
+      beforeEach(() => {
+        facade.apiLinks$.next([])
+        facade.downloadLinks$.next([])
+        facade.otherLinks$.next([])
+        fixture.detectChanges()
+      })
+      it('shows the no link error block', () => {
+        const result = fixture.debugElement.query(
+          By.css('[data-test="dataset-has-no-link-block"]')
+        )
+        expect(result).toBeTruthy()
+        expect(result.componentInstance.type).toBe(
+          ErrorType.DATASET_HAS_NO_LINK
+        )
       })
     })
   })

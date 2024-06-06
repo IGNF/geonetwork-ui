@@ -32,8 +32,7 @@ export class MetadataQualityComponent implements OnChanges {
 
   get calculatedQualityScore(): number {
     return Math.round(
-      (this.items.filter(({ value }) => value === true).length * 100) /
-        this.items.length
+      (this.items.filter(({ value }) => value).length * 100) / this.items.length
     )
   }
 
@@ -56,7 +55,7 @@ export class MetadataQualityComponent implements OnChanges {
     this.items = []
     this.add('title', !!this.metadata?.title)
     this.add('description', !!this.metadata?.abstract)
-    this.add('topic', this.metadata?.themes?.length > 0)
+    this.add('topic', this.metadata?.topics?.length > 0)
     this.add('keywords', this.metadata?.keywords?.length > 0)
     this.add('legalConstraints', this.metadata?.legalConstraints?.length > 0)
     this.add('organisation', !!contact?.organization)

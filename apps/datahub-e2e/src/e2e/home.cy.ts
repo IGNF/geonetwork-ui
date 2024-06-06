@@ -20,6 +20,10 @@ describe('home', () => {
     })
     it('should display the "show more" button', () => {
       cy.get('[data-cy="addMoreBtn"]').should('be.visible')
+      cy.get('body').then((body$) => {
+        cy.viewport(body$.width(), body$.height())
+        cy.screenshot({ capture: 'viewport' })
+      })
     })
     it('should display the orga and dataset link buttons', () => {
       cy.get('gn-ui-figure').should('have.length', 2)
@@ -92,7 +96,12 @@ describe('home', () => {
         .invoke('text')
         .as('favoriteTitle')
       cy.get('@favoriteItem').find('gn-ui-favorite-star button').click()
-      cy.wait(100)
+
+      // wait for the favorite count to change before filtering
+      cy.get('@favoriteItem')
+        .find('[data-test=favorite-count]')
+        .invoke('text')
+        .should('eq', '1')
 
       // show my favorites only
       cy.get('datahub-header-badge-button[label$=favorites] button').click({
@@ -108,6 +117,7 @@ describe('home', () => {
         .then(function (resultTitle) {
           expect(resultTitle).to.eql(this.favoriteTitle)
         })
+      cy.screenshot({ capture: 'viewport' })
     })
   })
 })
