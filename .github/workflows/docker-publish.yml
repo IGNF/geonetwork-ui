@@ -7,11 +7,11 @@ name: Docker
 
 on:
   push:
-    branches: [ "datahub-current" ]
+    branches: ['datahub-ign-2905']
     # Publish semver tags as releases.
-    tags: [ 'v*.*.*' ]
+    tags: ['v*.*.*']
   pull_request:
-    branches: [ "datahub-current" ]
+    branches: ['datahub-ign-2905']
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -20,10 +20,8 @@ env:
   IMAGE_NAME: ${{ github.repository }}
   APP_NAME: datahub
 
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -94,12 +92,12 @@ jobs:
       # repository is public to avoid leaking data.  If you would like to publish
       # transparency data even for private images, pass --force to cosign below.
       # https://github.com/sigstore/cosign
-      # - name: Sign the published Docker image
-      #   if: ${{ github.event_name != 'pull_request' }}
-      #   env:
-          # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
-      #     TAGS: ${{ steps.meta.outputs.tags }}
-      #     DIGEST: ${{ steps.build-and-push.outputs.digest }}
-        # This step uses the identity token to provision an ephemeral certificate
-        # against the sigstore community Fulcio instance.
-      #   run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+      #- name: Sign the published Docker image
+      #  if: ${{ github.event_name != 'pull_request' }}
+      #  env:
+      # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
+      #    TAGS: ${{ steps.meta.outputs.tags }}
+      #    DIGEST: ${{ steps.build-and-push.outputs.digest }}
+      # This step uses the identity token to provision an ephemeral certificate
+      # against the sigstore community Fulcio instance.
+      #  run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}

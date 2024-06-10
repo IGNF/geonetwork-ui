@@ -94,6 +94,9 @@ import { MatTabsModule } from '@angular/material/tabs'
 import { UiWidgetsModule } from '@geonetwork-ui/ui/widgets'
 import { RecordUserFeedbacksComponent } from './record/record-user-feedbacks/record-user-feedbacks.component'
 import { LetDirective } from '@ngrx/component'
+import { MatButtonToggleModule } from '@angular/material/button-toggle'
+import { DsfrHeaderModule } from '@edugouvfr/ngx-dsfr'
+import { DsfrFooterModule } from '@edugouvfr/ngx-dsfr'
 
 export const metaReducers: MetaReducer[] = !environment.production ? [] : []
 
@@ -166,6 +169,9 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     BlockListComponent,
     PreviousNextButtonsComponent,
     LetDirective,
+    MatButtonToggleModule,
+    DsfrHeaderModule,
+    DsfrFooterModule,
   ],
   providers: [
     importProvidersFrom(FeatureAuthModule),

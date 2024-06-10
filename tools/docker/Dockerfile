@@ -21,8 +21,4 @@ ENV CUSTOM_SCRIPTS_DIRECTORY ""
 
 COPY dist/apps/${APP_NAME} /opt/catalogue/
 
-COPY tools/docker/docker-entrypoint-ign.sh /opt/catalogue/
-
 EXPOSE 8080
-
-ENTRYPOINT ["sh", "/opt/catalogue/docker-entrypoint-ign.sh", "nginx", "-g", "daemon off;"]

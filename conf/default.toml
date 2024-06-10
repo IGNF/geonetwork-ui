@@ -44,16 +44,16 @@ proxy_path = ""
 #  - for font families: https://developer.mozilla.org/en-US/docs/Web/CSS/font-family
 #  - for background: https://developer.mozilla.org/en-US/docs/Web/CSS/background
 [theme]
-primary_color = "#c82850"
-secondary_color = "#001638"
-main_color = "#555" # All-purpose text color
+primary_color = "#000091"
+secondary_color = "#cacafb"
+main_color = "#212029" # All-purpose text color
 background_color = "#fdfbff"
 
 # These optional parameters indicate which background should be used for the main header and the text color used
 # on top of the background. The color should be chosen to contrast well with the background (defaults to white).
 # Note: The search header does not use the header_foreground_color as it allows futher customisation via HTML.
-# header_background = "center /cover url('assets/img/header_bg.webp')" or "var(--color-gray-500)"
-# header_foreground_color = 'white'
+header_background = "var(--color-white)"
+header_foreground_color = '#212029'
 
 # This optional parameter allows to override the fallback image that should be used for thumbnails,
 # if the metadata record has no thumbnail image url or it is broken.
@@ -81,7 +81,7 @@ background_color = "#fdfbff"
 # The advanced search filters available to the user can be customized with this setting.
 # The following fields can be used for filtering: 'publisher', 'format', 'publicationYear', 'standard', 'inspireKeyword', 'keyword', 'topic', 'isSpatial', 'license', 'resourceType', 'representationType'
 # any other field will be ignored
-# advanced_filters = ['publisher', 'format', 'publicationYear', 'topic', 'isSpatial', 'license']
+advanced_filters = ['publisher', 'topic', 'publicationYear', 'format', 'documentStandard', 'inspireKeyword', 'isSpatial', 'license']
 
 # One or several search presets can be defined here; every search preset is composed of:
 # - a name (which can be a translation key)
@@ -112,7 +112,7 @@ background_color = "#fdfbff"
 # This section contains settings used for fine-tuning the metadata quality experience
 [metadata-quality]
 # By default the widget is not activated to enable it, just add this parameter.
-# enabled = true
+enabled = true
 # If u want to use metadata quality widget this configuration is required
 
 ### MAP SETTINGS
@@ -189,3 +189,7 @@ background_color = "#fdfbff"
 #     Welcome to <span class="text-primary">Organization</span>'s<br>
 #     wonderful <span style="font-size: 1.2em;">data catalogue</span>
 #     """
+[translations.fr]
+search.filters.title= "Affiner votre recherche"
+datahub.header.title.html="<div>Catalogue de données et de services</div>"
+datahub.header.datasets="Données et services"
