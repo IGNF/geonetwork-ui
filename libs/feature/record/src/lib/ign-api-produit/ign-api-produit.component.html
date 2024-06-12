@@ -23,16 +23,11 @@
         >datahub.search.filter.generatedByWfs</span
       >
     </div>
-    <div  *ngFor="let link of liste$ | async">
-      <a [href] = "link['href']">Télécharger</a>
+    <div  *ngFor="let entry of liste$ | async">
+      <a [href] = "entry['link'][0]['href']">{{entry['link'][0]['href'].split("/").slice(-1)}}  <mat-icon class="!w-7 !h-7 card-icon text-3xl material-symbols-outlined">
+        cloud_download
+      </mat-icon></a>
       </div>
-  </div>
-  <div class="shrink-1 w-14 flex flex-col justify-center items-center">
-    <mat-icon class="!w-8 !h-8 card-icon text-3xl material-symbols-outlined">
-      cloud_download
-    </mat-icon>
-    </div>
-
-    
+  </div>   
 
   </a>
