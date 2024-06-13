@@ -1,5 +1,5 @@
-<a
-  class="group flex justify-between card-shadow px-6 py-5 cursor-pointer"
+<div
+  class="group flex justify-between card-shadow px-6 py-5"
   rel="noopener"
 >
   <div class="grow-1 w-full overflow-hidden">
@@ -24,7 +24,7 @@
       >
     </div>
     <div  *ngFor="let link of liste$ | async">
-      <a [href] = "link['href']">Télécharger</a>
+      <a [href] = "link['href']" >Télécharger</a>
       </div>
   </div>
   <div class="shrink-1 w-14 flex flex-col justify-center items-center">
@@ -35,4 +35,4 @@
 
     
 
-  </a>
+  </div>
