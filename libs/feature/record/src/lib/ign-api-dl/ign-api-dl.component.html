@@ -62,18 +62,9 @@
               class="sticky z-10 top-0 text-sm leading-6 font-semibold text-slate-700 bg-white p-0 dark:bg-slate-900 dark:text-slate-300"
             >
               <div
-              *ngIf="pageSize$.value < (numberFilteredProduct$ | async)"
                 class="py-2 pr-2 text-xl border-b border-slate-200 dark:border-slate-400/20"
               >
-                
-                Produits ({{pageSize$.value}}/{{numberFilteredProduct$ | async }}):
-              </div>
-              <div
-              *ngIf="pageSize$.value > (numberFilteredProduct$ | async)"
-                class="py-2 pr-2 text-xl border-b border-slate-200 dark:border-slate-400/20"
-              >
-                
-                Produits ({{numberFilteredProduct$ | async }}/{{numberFilteredProduct$ | async }}):
+                Produits ({{ numberFilteredProduct$ | async }}):
               </div>
             </tr>
           </thead>
@@ -92,7 +83,6 @@
             </tr>
             <tr>
               <button
-              *ngIf="pageSize$.value < (numberFilteredProduct$ | async)"
                 (click)="moreResult()"
                 class="bg-primary-opacity-50 inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded capitalize text-primary-lightest hover:bg-primary transition-colors"
               >
