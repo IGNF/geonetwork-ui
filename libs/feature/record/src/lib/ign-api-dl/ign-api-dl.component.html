@@ -56,9 +56,17 @@
     </div>
     <div class="bg-white rounded-lg h-min">
       <div
+        *ngIf="numberFilteredProduct$ | async as numberFilteredProduct"
         class="py-2 pr-2 text-xl border-b border-slate-200 dark:border-slate-400/20"
       >
-        Produits ({{ numberFilteredProduct$ | async }}):
+        <div *ngIf="size$.value < numberFilteredProduct">
+          Produits ({{ size$.value }}/{{ numberFilteredProduct$ | async }}):
+        </div>
+        <div *ngIf="size$.value > numberFilteredProduct">
+          Produits ({{ numberFilteredProduct$ | async }}/{{
+            numberFilteredProduct$ | async
+          }}):
+        </div>
       </div>
       <div class="overflow-scroll bg-white-300 m-2" style="height: 380px">
         <div *ngFor="let link of listFilteredProduct$ | async">
@@ -73,10 +81,11 @@
         </div>
 
         <button
+          *ngIf="size$.value < (numberFilteredProduct$ | async)"
           (click)="moreResult()"
           class="bg-primary-opacity-50 inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded capitalize text-primary-lightest hover:bg-primary transition-colors"
         >
-          <p class="text-[13px] uppercase" translate>Plus de résultats</p>
+          <p class="text-[13px] uppercase" translate>results.showMore</p>
         </button>
       </div>
     </div>

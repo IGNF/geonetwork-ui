@@ -67,13 +67,15 @@ export interface Field {
 export class IgnApiDlComponent implements OnInit {
   isOpen = false
   collapsed = false
-  initialPageSize = '50'
+  initialPageSize = '200'
   apiBaseUrl: string
   editionDate$ = new BehaviorSubject('')
   zone$ = new BehaviorSubject('')
   format$ = new BehaviorSubject('')
   crs$ = new BehaviorSubject('')
   pageSize$ = new BehaviorSubject(this.initialPageSize)
+  page$ = new BehaviorSubject('0')
+  size$ = new BehaviorSubject(this.initialPageSize)
 
   url =
     'https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
@@ -101,8 +103,9 @@ export class IgnApiDlComponent implements OnInit {
     this.editionDate$,
     this.crs$,
     this.pageSize$,
+    this.page$,
   ]).pipe(
-    map(([zone, format, editionDate, crs, pageSize]) => {
+    map(([zone, format, editionDate, crs, pageSize, page]) => {
       let outputUrl
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
@@ -111,7 +114,8 @@ export class IgnApiDlComponent implements OnInit {
           format: format,
           editionDate: editionDate,
           crs: crs,
-          pageSize: pageSize
+          pageSize: pageSize,
+          page: page,
         } // initialisation des paramètres de filtres
         for (const [key, value] of Object.entries(params)) {
           if (value && value !== 'null') {
@@ -131,7 +135,7 @@ export class IgnApiDlComponent implements OnInit {
     mergeMap((url) => {
       return this.getFilteredProduct$(url).pipe(
         map((response) => response['entry']),
-        tap(el=>console.log(el))
+        tap((el) => console.log(el))
       )
     })
   )
@@ -153,22 +157,22 @@ export class IgnApiDlComponent implements OnInit {
 
   setEditionDate(value: string) {
     this.editionDate$.next(value)
-    this.resetPageSize()
+    this.resetPage()
   }
 
   setZone(value: string) {
     this.zone$.next(value)
-    this.resetPageSize()
+    this.resetPage()
   }
 
   setCrs(value: string) {
     this.crs$.next(value)
-    this.resetPageSize()
+    this.resetPage()
   }
 
   setFormat(value: string) {
     this.format$.next(value)
-    this.resetPageSize()
+    this.resetPage()
   }
 
   resetUrl() {
@@ -176,14 +180,17 @@ export class IgnApiDlComponent implements OnInit {
     this.zone$.next('null')
     this.format$.next('null')
     this.crs$.next('null')
+    this.page$.next('0')
+    this.size$.next(this.initialPageSize)
   }
-  moreResult():void{
-    const size = Number(this.pageSize$.value) + 50
-    this.pageSize$.next(String(size))
-    console.log(size)
+  moreResult(): void {
+    const page = Number(this.page$.value) + 1
+    const size = (page + 1) * Number(this.initialPageSize)
+    this.size$.next(String(size))
+    this.page$.next(String(page))
   }
-  resetPageSize():void{
-    this.pageSize$.next(this.initialPageSize)
+  resetPage(): void {
+    this.page$.next('0')
   }
 
   async getFields() {
