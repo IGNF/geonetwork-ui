@@ -65,7 +65,7 @@ header_foreground_color = '#212029'
 # fonts_stylesheet_url = "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Permanent+Marker&display=swap"
 
 # Use it to set custom location for the favicon; by default, the path `/favicon.ico` will be used
-# favicon = "assets/favicon.ico"
+favicon = "/assets/img/favicon.ico"
 
 ### SEARCH SETTINGS
 
@@ -81,7 +81,7 @@ header_foreground_color = '#212029'
 # The advanced search filters available to the user can be customized with this setting.
 # The following fields can be used for filtering: 'publisher', 'format', 'publicationYear', 'standard', 'inspireKeyword', 'keyword', 'topic', 'isSpatial', 'license', 'resourceType', 'representationType'
 # any other field will be ignored
-advanced_filters = ['publisher', 'topic', 'publicationYear', 'format', 'documentStandard', 'inspireKeyword', 'isSpatial', 'license']
+advanced_filters = ['publisher', 'topic', 'publicationYear', 'format', 'inspireKeyword', 'isSpatial', 'license']
 
 # One or several search presets can be defined here; every search preset is composed of:
 # - a name (which can be a translation key)
