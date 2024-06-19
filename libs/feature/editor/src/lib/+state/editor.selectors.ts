@@ -9,6 +9,11 @@ export const selectRecord = createSelector(
   (state: EditorState) => state.record
 )
 
+export const selectRecordSource = createSelector(
+  selectEditorState,
+  (state: EditorState) => state.recordSource
+)
+
 export const selectRecordSaving = createSelector(
   selectEditorState,
   (state: EditorState) => state.saving
@@ -24,6 +29,11 @@ export const selectRecordChangedSinceSave = createSelector(
   (state: EditorState) => state.changedSinceSave
 )
 
+export const selectRecordAlreadySavedOnce = createSelector(
+  selectEditorState,
+  (state: EditorState) => state.alreadySavedOnce
+)
+
 export const selectRecordFieldsConfig = createSelector(
   selectEditorState,
   (state: EditorState) => state.fieldsConfig
@@ -34,6 +44,6 @@ export const selectRecordFields = createSelector(
   (state: EditorState) =>
     state.fieldsConfig.map((fieldConfig) => ({
       config: fieldConfig,
-      value: state.record?.[fieldConfig.model] || null,
+      value: state.record?.[fieldConfig.model] ?? null,
     }))
 )
