@@ -267,6 +267,7 @@
   "record.externalViewer.open": "Ouvrir dans le visualiseur externe",
   "record.metadata.about": "Description",
   "record.metadata.api": "API",
+  "record.metadata.api.gpfdl": "Téléchargement de données",
   "record.metadata.api.form.closeButton": "Fermer",
   "record.metadata.api.form.closeForm": "Fermer le panneau de personnalisation",
   "record.metadata.api.form.create": "Paramétrer votre requête",

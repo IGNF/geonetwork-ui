@@ -11,11 +11,21 @@
   <div class="">
     <div class="flex flex-row justify-between">
       <span
+       *ngIf="link.accessServiceProtocol !== 'GPFDL'"
         class="bg-primary-opacity-50 uppercase inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded text-primary-lightest group-hover:bg-primary transition-colors"
         [ngClass]="{
           '!bg-primary': currentlyActive
         }"
         >{{ link.accessServiceProtocol }}</span
+      >
+      <span
+       *ngIf="link.accessServiceProtocol === 'GPFDL'"
+        class="bg-primary-opacity-50 uppercase inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded text-primary-lightest group-hover:bg-primary transition-colors"
+        [ngClass]="{
+          '!bg-primary': currentlyActive
+        }"
+        translate
+        > record.metadata.api.gpfdl</span
       >
       <gn-ui-copy-text-button
         *ngIf="!displayApiFormButton"
