@@ -146,7 +146,7 @@ enabled = true
 
 # Optional; if true, the default basemap will not be added to the map.
 # Use [[map_layer]] sections to define your own custom layers (see below)
-# do_not_use_default_basemap = false
+do_not_use_default_basemap = true
 
 # One or several layers (as background or overlay) can be added to the map with the following properties:
 # - type (mandatory): Indicates the layer type. Possible values are 'xyz', 'wms', 'wfs', 'geojson'.
@@ -171,6 +171,11 @@ enabled = true
 #   "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [125.6, 10.1]}}]
 # }
 # """
+[[map_layer]]
+type = 'wms'
+url = 'https://data.geopf.fr/wms-r'
+name = 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2'
+attributions = 'Géoservices © IGN-France'
 
 ### TRANSLATIONS
 
