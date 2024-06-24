@@ -175,7 +175,6 @@ do_not_use_default_basemap = true
 type = 'wms'
 url = 'https://data.geopf.fr/wms-r'
 name = 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2'
-attributions = 'Géoservices © IGN-France'
 
 ### TRANSLATIONS
 
