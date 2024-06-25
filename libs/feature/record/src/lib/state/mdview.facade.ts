@@ -61,7 +61,14 @@ export class MdViewFacade {
 
   apiLinks$ = this.allLinks$.pipe(
     map((links) =>
-      links.filter((link) => this.linkClassifier.hasUsage(link, LinkUsage.API)).sort((dd1, dd2) => {return (dd2 as DatasetServiceDistribution).accessServiceProtocol == 'GPFDL'? 1 : 0})
+      links
+        .filter((link) => this.linkClassifier.hasUsage(link, LinkUsage.API))
+        .sort((dd1, dd2) => {
+          return (dd2 as DatasetServiceDistribution).accessServiceProtocol ===
+            'GPFDL'
+            ? 1
+            : -1
+        })
     )
   )
 
