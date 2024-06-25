@@ -21,6 +21,7 @@ import { fromFetch } from 'rxjs/fetch'
 import { HttpClient } from '@angular/common/http'
 import { Choice, DropdownChoice } from '@geonetwork-ui/ui/inputs'
 import axios from 'axios'
+import { MatLabel } from '@angular/material/form-field'
 
 export interface Label {
   label: string
@@ -69,7 +70,8 @@ export class IgnApiDlComponent implements OnInit {
   collapsed = false
   initialPageSize = '200'
   apiBaseUrl: string
-  editionDate$ = new BehaviorSubject('')
+  bottomEditionDate$ = new BehaviorSubject('')
+  topEditionDate$ = new BehaviorSubject('')
   zone$ = new BehaviorSubject('')
   format$ = new BehaviorSubject('')
   crs$ = new BehaviorSubject('')
@@ -83,6 +85,7 @@ export class IgnApiDlComponent implements OnInit {
   bucketPromisesZone: Choice[]
   bucketPromisesFormat: Choice[]
   bucketPromisesCrs: Choice[]
+  bucketPromisesEditionDate: Choice[]
 
   constructor(protected http: HttpClient) {}
 
@@ -95,12 +98,13 @@ export class IgnApiDlComponent implements OnInit {
     this.bucketPromisesZone = [{ value: '', label: 'ZONE' }]
     this.bucketPromisesFormat = [{ value: '', label: 'FORMAT' }]
     this.bucketPromisesCrs = [{ value: '', label: 'CRS' }]
+    this.bucketPromisesEditionDate = [{ value: '', label: 'DATE' }]
   }
 
   apiQueryUrl$ = combineLatest([
     this.zone$,
     this.format$,
-    this.editionDate$,
+    this.topEditionDate$,
     this.crs$,
     this.pageSize$,
     this.page$,
@@ -155,9 +159,19 @@ export class IgnApiDlComponent implements OnInit {
     return produit['format'][0]['label']
   }
 
-  setEditionDate(value: string) {
-    this.editionDate$.next(value)
-    this.resetPage()
+  setBottomEditionDate(value: string) {
+    console.log('je suis la value du bottom', value)
+    if (value.match(/[0-9]{4}-[0-1][0-9]-[0-3][0-9]/)) {
+      this.bottomEditionDate$.next(value)
+      this.resetPage()
+    }
+  }
+  setTopEditionDate(value: string) {
+    console.log('je suis la value du top ', value)
+    if (value.match(/[0-9]{4}-[0-1][0-9]-[0-3][0-9]/)) {
+      this.topEditionDate$.next(value)
+      this.resetPage()
+    }
   }
 
   setZone(value: string) {
@@ -198,6 +212,7 @@ export class IgnApiDlComponent implements OnInit {
     this.choices = firstResponse.data.entry.filter(
       (element) => element['id'] == this.apiBaseUrl
     )[0]
+
     this.bucketPromisesZone = this.choices.zone.map((bucket) => ({
       value: bucket.label,
       label: bucket.term,

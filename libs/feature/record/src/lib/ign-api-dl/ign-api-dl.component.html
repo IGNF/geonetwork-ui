@@ -45,13 +45,31 @@
       <div class="flex flex-col gap-3">
         <!--<p class="text-sm" translate>record.metadata.api.form.type</p>-->
         <gn-ui-dropdown-selector
-          #format
+          #crs
           [title]="'CRS'"
           [choices]="bucketPromisesCrs"
           (selectValue)="setCrs($event)"
           [selected]="crs$ | async"
         >
         </gn-ui-dropdown-selector>
+      </div>
+      <div class="flex flex-col gap-3">
+        <!--<p class="text-sm" translate>record.metadata.api.form.type</p>-->
+        <input
+          type="date"
+          ng-model="bottomEditionDate$"
+          #editionDate
+          [title]="'DATE MINIMUM'"
+        />
+      </div>
+      <div class="flex flex-col gap-3">
+        <!--<p class="text-sm" translate>record.metadata.api.form.type</p>-->
+        <input
+          type="date"
+          ng-model="topEditionDate$"
+          #editionDate
+          [title]="'DATE MAXIMUM'"
+        />
       </div>
     </div>
     <div class="bg-white rounded-lg h-min">
@@ -94,7 +112,6 @@
             <tr>
               <button
                 *ngIf="size$.value < (numberFilteredProduct$ | async)"
-
                 (click)="moreResult()"
                 class="bg-primary-opacity-50 inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded capitalize text-primary-lightest hover:bg-primary transition-colors"
               >
