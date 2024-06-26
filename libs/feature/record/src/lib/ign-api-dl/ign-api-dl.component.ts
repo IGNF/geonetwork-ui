@@ -76,7 +76,7 @@ export class IgnApiDlComponent implements OnInit {
   pageSize$ = new BehaviorSubject(this.initialPageSize)
   page$ = new BehaviorSubject('0')
   size$ = new BehaviorSubject(this.initialPageSize)
-
+  // a passer en config
   url =
     'https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
   choices: any
@@ -125,7 +125,6 @@ export class IgnApiDlComponent implements OnInit {
           }
         }
         outputUrl = url.toString()
-        console.log(outputUrl)
       }
       return outputUrl
     })
@@ -134,8 +133,7 @@ export class IgnApiDlComponent implements OnInit {
   listFilteredProduct$ = this.apiQueryUrl$.pipe(
     mergeMap((url) => {
       return this.getFilteredProduct$(url).pipe(
-        map((response) => response['entry']),
-        tap((el) => console.log(el))
+        map((response) => response['entry'])
       )
     })
   )
@@ -193,11 +191,38 @@ export class IgnApiDlComponent implements OnInit {
     this.page$.next('0')
   }
 
-  async getFields() {
-    const [firstResponse] = await Promise.all([axios.get(this.url)])
-    this.choices = firstResponse.data.entry.filter(
+  async getCapabilities() {
+    let page = 0
+    let choicesTest = null
+    let [response] = await Promise.all([
+      axios.get(this.url.concat(`&pageSize=200&page=${page}`)),
+    ])
+    choicesTest = response.data.entry.filter(
       (element) => element['id'] == this.apiBaseUrl
     )[0]
+    console.log(choicesTest)
+
+    if (choicesTest) {
+      return choicesTest
+    } else {
+      console.log('avant while')
+
+      while (choicesTest === undefined || response.data.pageCount > page) {
+        console.log('hello')
+        ;[response] = await Promise.all([
+          axios.get(this.url.concat(`&pageSize=200&page=${page}`)),
+        ])
+        choicesTest = response.data.entry.filter(
+          (element) => element['id'] == this.apiBaseUrl
+        )[0]
+        page += 1
+      }
+    }
+    return choicesTest
+  }
+  async getFields() {
+    this.choices = await this.getCapabilities()
+
     this.bucketPromisesZone = this.choices.zone.map((bucket) => ({
       value: bucket.label,
       label: bucket.term,
@@ -218,5 +243,7 @@ export class IgnApiDlComponent implements OnInit {
     }))
     this.bucketPromisesCrs.sort((a, b) => (a.label > b.label ? 1 : -1))
     this.bucketPromisesCrs.unshift({ value: 'null', label: 'CRS' })
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   }
 }
