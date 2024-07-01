@@ -28,6 +28,8 @@ import { FeatureDatavizModule } from '@geonetwork-ui/feature/dataviz'
 import { DataViewPermalinkComponent } from './data-view-permalink/data-view-permalink.component'
 import { DataViewWebComponentComponent } from './data-view-web-component/data-view-web-component.component'
 import { DataViewShareComponent } from './data-view-share/data-view-share.component'
+import { MatDatepickerModule } from '@angular/material/datepicker'
+import { MatFormFieldModule } from '@angular/material/form-field'
 
 @NgModule({
   declarations: [
@@ -37,8 +39,8 @@ import { DataViewShareComponent } from './data-view-share/data-view-share.compon
     DataViewPermalinkComponent,
     DataViewWebComponentComponent,
     DataViewShareComponent,
-    IgnApiDlComponent,
     IgnApiProduitComponent,
+    IgnApiDlComponent,
   ],
   imports: [
     CommonModule,
@@ -56,6 +58,8 @@ import { DataViewShareComponent } from './data-view-share/data-view-share.compon
     TranslateModule,
     TableComponent,
     FeatureDatavizModule,
+    MatFormFieldModule,
+    MatDatepickerModule,
   ],
   providers: [MdViewFacade],
   exports: [
@@ -65,6 +69,8 @@ import { DataViewShareComponent } from './data-view-share/data-view-share.compon
     DataViewWebComponentComponent,
     DataViewShareComponent,
     IgnApiDlComponent,
+    MatFormFieldModule,
+    MatDatepickerModule,
   ],
 })
 export class FeatureRecordModule {}

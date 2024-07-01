@@ -9,19 +9,14 @@ import {
   BehaviorSubject,
   Observable,
   combineLatest,
-  filter,
-  first,
-  iif,
   map,
   mergeMap,
-  switchMap,
   tap,
 } from 'rxjs'
-import { fromFetch } from 'rxjs/fetch'
 import { HttpClient } from '@angular/common/http'
-import { Choice, DropdownChoice } from '@geonetwork-ui/ui/inputs'
+import { Choice } from '@geonetwork-ui/ui/inputs'
 import axios from 'axios'
-import { MatLabel } from '@angular/material/form-field'
+import { DatePickerComponent } from '@geonetwork-ui/ui/inputs'
 
 export interface Label {
   label: string

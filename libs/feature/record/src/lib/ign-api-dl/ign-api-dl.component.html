@@ -14,6 +14,20 @@
       </button>
     </div>
     <div class="flex flex-row flex-wrap justify-between flex-grow gap-5">
+      <mat-form-field>
+        <mat-label>Enter a date range</mat-label>
+        <mat-date-range-input [rangePicker]="picker">
+          <input matStartDate placeholder="Start date" />
+          <input matEndDate placeholder="End date" />
+        </mat-date-range-input>
+        <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint>
+        <mat-datepicker-toggle
+          matIconSuffix
+          [for]="picker"
+        ></mat-datepicker-toggle>
+        <mat-date-range-picker #picker></mat-date-range-picker>
+      </mat-form-field>
+
       <div class="flex flex-col gap-3">
         <!--<p class="text-sm" translate>record.metadata.api.form.type</p>-->
         <gn-ui-dropdown-selector
