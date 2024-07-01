@@ -21,14 +21,14 @@ export class ApiCardComponent implements OnInit, OnChanges {
   @Input() currentLink: DatasetServiceDistribution
   displayApiFormButton: boolean
   currentlyActive = false
-    @Output() openRecordApiForm: EventEmitter<DatasetServiceDistribution> =
+  @Output() openRecordApiForm: EventEmitter<DatasetServiceDistribution> =
     new EventEmitter<DatasetServiceDistribution>()
 
   ngOnInit() {
     this.displayApiFormButton =
       this.link.accessServiceProtocol === 'ogcFeatures' ||
       this.link.accessServiceProtocol === 'wfs' ||
-    this.link.accessServiceProtocol === 'GPFDL'
+      this.link.accessServiceProtocol === 'GPFDL'
   }
 
   ngOnChanges(changes: SimpleChanges) {
