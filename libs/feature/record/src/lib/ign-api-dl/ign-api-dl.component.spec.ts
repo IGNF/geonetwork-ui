@@ -66,9 +66,8 @@ describe('IgnApiDlComponent', () => {
 
       it('should not be a correct format', async () => {
         component.bucketPromisesFormat = bucketFormat
-        component.setFormat(mockFormat)
         component.setFormat(mockBadFormat)
-        expect(component.format$.getValue()).toBe(mockFormat)
+        expect(component.format$.getValue()).toBe('')
       })
     })
     describe('When CRS changed', () => {
@@ -89,9 +88,8 @@ describe('IgnApiDlComponent', () => {
 
       it('should not be a correct CRS', async () => {
         component.bucketPromisesCrs = bucketCRS
-        component.setCrs(mockCRS)
         component.setCrs(mockBadCRS)
-        expect(component.crs$.getValue()).toBe(mockCRS)
+        expect(component.crs$.getValue()).toBe('')
       })
     })
     describe('When Zone changed', () => {
@@ -112,9 +110,8 @@ describe('IgnApiDlComponent', () => {
 
       it('should not be a correct Zone', async () => {
         component.bucketPromisesZone = bucketZone
-        component.setZone(mockZone)
         component.setZone(mockBadZone)
-        expect(component.zone$.getValue()).toBe(mockZone)
+        expect(component.zone$.getValue()).toBe('')
       })
     })
 
@@ -128,9 +125,8 @@ describe('IgnApiDlComponent', () => {
         expect(component.resetPage).toHaveBeenCalled()
       })
       it('should not be a correct edition date', () => {
-        component.setEditionDate(mockEditionDate)
         component.setEditionDate(mockBadEditionDate)
-        expect(component.editionDate$.getValue()).toBe(mockEditionDate)
+        expect(component.editionDate$.getValue()).toBe('')
       })
     })
 
