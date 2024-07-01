@@ -1,0 +1,8 @@
+<div id="record-page">
+  <datahub-header-record
+    [metadata]="mdViewFacade.metadata$ | async"
+  ></datahub-header-record>
+  <datahub-record-metadata
+    [metadataQualityDisplay]="metadataQualityDisplay"
+  ></datahub-record-metadata>
+</div>
