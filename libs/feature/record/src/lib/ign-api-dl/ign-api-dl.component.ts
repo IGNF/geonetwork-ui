@@ -200,15 +200,11 @@ export class IgnApiDlComponent implements OnInit {
     choicesTest = response.data.entry.filter(
       (element) => element['id'] == this.apiBaseUrl
     )[0]
-    console.log(choicesTest)
 
     if (choicesTest) {
       return choicesTest
     } else {
-      console.log('avant while')
-
-      while (choicesTest === undefined || response.data.pageCount > page) {
-        console.log('hello')
+      while (choicesTest === undefined && response.data.pageCount > page) {
         ;[response] = await Promise.all([
           axios.get(this.url.concat(`&pageSize=200&page=${page}`)),
         ])
