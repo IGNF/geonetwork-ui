@@ -16,7 +16,8 @@ import {
 import { HttpClient } from '@angular/common/http'
 import { Choice } from '@geonetwork-ui/ui/inputs'
 import axios from 'axios'
-import { DatePickerComponent } from '@geonetwork-ui/ui/inputs'
+import { FormGroup, FormControl } from '@angular/forms'
+import { MatDatepickerInputEvent } from '@angular/material/datepicker'
 
 export interface Label {
   label: string
@@ -65,14 +66,15 @@ export class IgnApiDlComponent implements OnInit {
   collapsed = false
   initialPageSize = '200'
   apiBaseUrl: string
-  bottomEditionDate$ = new BehaviorSubject('')
-  topEditionDate$ = new BehaviorSubject('')
   zone$ = new BehaviorSubject('')
   format$ = new BehaviorSubject('')
   crs$ = new BehaviorSubject('')
   pageSize$ = new BehaviorSubject(this.initialPageSize)
   page$ = new BehaviorSubject('0')
   size$ = new BehaviorSubject(this.initialPageSize)
+  editionStartDate = new BehaviorSubject('')
+  startDate$: BehaviorSubject<Date> = new BehaviorSubject(null)
+  endDate$: BehaviorSubject<Date> = new BehaviorSubject(null)
 
   url =
     'https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
@@ -99,19 +101,26 @@ export class IgnApiDlComponent implements OnInit {
   apiQueryUrl$ = combineLatest([
     this.zone$,
     this.format$,
-    this.topEditionDate$,
     this.crs$,
     this.pageSize$,
     this.page$,
+    this.startDate$,
+    this.endDate$,
   ]).pipe(
-    map(([zone, format, editionDate, crs, pageSize, page]) => {
+    map(([zone, format, crs, pageSize, page, startDate, endDate]) => {
       let outputUrl
+      console.log(startDate, endDate)
+
+      console.log(this.apiBaseUrl)
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
         const params = {
           zone: zone,
           format: format,
-          editionDate: editionDate,
+          editionDateFrom: startDate
+            ? startDate.toISOString().slice(0, 10)
+            : null,
+          editionDateTo: endDate ? endDate.toISOString().slice(0, 10) : null,
           crs: crs,
           pageSize: pageSize,
           page: page,
@@ -138,6 +147,7 @@ export class IgnApiDlComponent implements OnInit {
       )
     })
   )
+
   numberFilteredProduct$ = this.apiQueryUrl$.pipe(
     mergeMap((url) => {
       return this.getFilteredProduct$(url).pipe(
@@ -146,27 +156,20 @@ export class IgnApiDlComponent implements OnInit {
     })
   )
 
+  startDateSelected(event: MatDatepickerInputEvent<Date>) {
+    this.startDate$.next(event.value)
+  }
+
+  endDateSelected(event: MatDatepickerInputEvent<Date>) {
+    this.endDate$.next(event.value)
+  }
+
   getFilteredProduct$(url): Observable<any> {
     return this.http.get(url)
   }
 
   getLinkFormat(produit): string {
     return produit['format'][0]['label']
-  }
-
-  setBottomEditionDate(value: string) {
-    console.log('je suis la value du bottom', value)
-    if (value.match(/[0-9]{4}-[0-1][0-9]-[0-3][0-9]/)) {
-      this.bottomEditionDate$.next(value)
-      this.resetPage()
-    }
-  }
-  setTopEditionDate(value: string) {
-    console.log('je suis la value du top ', value)
-    if (value.match(/[0-9]{4}-[0-1][0-9]-[0-3][0-9]/)) {
-      this.topEditionDate$.next(value)
-      this.resetPage()
-    }
   }
 
   setZone(value: string) {
@@ -190,6 +193,8 @@ export class IgnApiDlComponent implements OnInit {
     this.format$.next('null')
     this.crs$.next('null')
     this.page$.next('0')
+    this.endDate$.next(null)
+    this.startDate$.next(null)
     this.size$.next(this.initialPageSize)
   }
   moreResult(): void {

@@ -14,20 +14,34 @@
       </button>
     </div>
     <div class="flex flex-row flex-wrap justify-between flex-grow gap-5">
-      <mat-form-field>
-        <mat-label>Enter a date range</mat-label>
-        <mat-date-range-input [rangePicker]="picker">
-          <input matStartDate placeholder="Start date" />
-          <input matEndDate placeholder="End date" />
-        </mat-date-range-input>
-        <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint>
-        <mat-datepicker-toggle
-          matIconSuffix
-          [for]="picker"
-        ></mat-datepicker-toggle>
-        <mat-date-range-picker #picker></mat-date-range-picker>
-      </mat-form-field>
-
+      <div class="flex flex-col gap-3">
+        <div
+          class="flex items-center justify-center w-64 h-11 rounded-lg border border-gray-300 bg-white"
+        >
+          <div class="w-48 flex justify-between">
+            <mat-date-range-input [rangePicker]="picker" class="w-full">
+              <input
+                class="w-24 text-black font-basierCircle text-base font-medium text-center"
+                matStartDate
+                placeholder="Start date"
+                (dateInput)="startDateSelected($event)"
+                [value]="startDate$ | async"
+              />
+              <input
+                class="w-24 text-black font-basierCircle text-base font-medium text-center"
+                matEndDate
+                placeholder="End date"
+                (dateInput)="endDateSelected($event)"
+                [value]="endDate$ | async"
+              />
+            </mat-date-range-input>
+          </div>
+          <mat-datepicker-toggle matSuffix [for]="picker">
+            <mat-icon>calendar_today</mat-icon>
+          </mat-datepicker-toggle>
+          <mat-date-range-picker #picker></mat-date-range-picker>
+        </div>
+      </div>
       <div class="flex flex-col gap-3">
         <!--<p class="text-sm" translate>record.metadata.api.form.type</p>-->
         <gn-ui-dropdown-selector
@@ -66,24 +80,6 @@
           [selected]="crs$ | async"
         >
         </gn-ui-dropdown-selector>
-      </div>
-      <div class="flex flex-col gap-3">
-        <!--<p class="text-sm" translate>record.metadata.api.form.type</p>-->
-        <input
-          type="date"
-          ng-model="bottomEditionDate$"
-          #editionDate
-          [title]="'DATE MINIMUM'"
-        />
-      </div>
-      <div class="flex flex-col gap-3">
-        <!--<p class="text-sm" translate>record.metadata.api.form.type</p>-->
-        <input
-          type="date"
-          ng-model="topEditionDate$"
-          #editionDate
-          [title]="'DATE MAXIMUM'"
-        />
       </div>
     </div>
     <div class="bg-white rounded-lg h-min">
