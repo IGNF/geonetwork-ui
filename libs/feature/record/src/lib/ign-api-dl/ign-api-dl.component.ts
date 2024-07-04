@@ -154,23 +154,33 @@ export class IgnApiDlComponent implements OnInit {
   }
 
   setEditionDate(value: string) {
-    this.editionDate$.next(value)
-    this.resetPage()
+    if (value.match(/[0-9]{4}-[0-1][0-9]-[0-3][0-9]/)) {
+      this.editionDate$.next(value)
+      this.resetPage()
+    }
   }
 
   setZone(value: string) {
-    this.zone$.next(value)
-    this.resetPage()
+    if (this.bucketPromisesZone.map((choice) => choice.value).includes(value)) {
+      this.zone$.next(value)
+      this.resetPage()
+    }
   }
 
   setCrs(value: string) {
-    this.crs$.next(value)
-    this.resetPage()
+    if (this.bucketPromisesCrs.map((choice) => choice.value).includes(value)) {
+      this.crs$.next(value)
+      this.resetPage()
+    }
   }
 
   setFormat(value: string) {
-    this.format$.next(value)
-    this.resetPage()
+    if (
+      this.bucketPromisesFormat.map((choice) => choice.value).includes(value)
+    ) {
+      this.format$.next(value)
+      this.resetPage()
+    }
   }
 
   resetUrl() {
