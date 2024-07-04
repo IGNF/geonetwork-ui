@@ -1,7 +1,17 @@
 import { Injectable } from '@angular/core'
-import { SearchApiService } from '@geonetwork-ui/data-access/gn4'
+import {
+  RecordsApiService,
+  SearchApiService,
+} from '@geonetwork-ui/data-access/gn4'
 import { ElasticsearchService } from './elasticsearch'
-import { Observable, of, switchMap } from 'rxjs'
+import {
+  combineLatest,
+  from,
+  Observable,
+  of,
+  switchMap,
+  throwError,
+} from 'rxjs'
 import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
 import {
   SearchParams,
@@ -12,19 +22,23 @@ import {
   AggregationsParams,
   FieldFilters,
 } from '@geonetwork-ui/common/domain/model/search'
-import { map } from 'rxjs/operators'
+import { catchError, map, tap } from 'rxjs/operators'
 import {
+  findConverterForDocument,
   Gn4Converter,
   Gn4SearchResults,
+  Iso19139Converter,
 } from '@geonetwork-ui/api/metadata-converter'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
+import { HttpErrorResponse } from '@angular/common/http'
 
 @Injectable()
 export class Gn4Repository implements RecordsRepositoryInterface {
   constructor(
     private gn4SearchApi: SearchApiService,
     private gn4SearchHelper: ElasticsearchService,
-    private gn4Mapper: Gn4Converter
+    private gn4Mapper: Gn4Converter,
+    private gn4RecordsApi: RecordsApiService
   ) {}
 
   search({
@@ -84,9 +98,7 @@ export class Gn4Repository implements RecordsRepositoryInterface {
       .pipe(map((results: Gn4SearchResults) => results.hits.total?.value || 0))
   }
 
-  getByUniqueIdentifier(
-    uniqueIdentifier: string
-  ): Observable<CatalogRecord | null> {
+  getRecord(uniqueIdentifier: string): Observable<CatalogRecord | null> {
     return this.gn4SearchApi
       .search(
         'bucket',
@@ -164,5 +176,144 @@ export class Gn4Repository implements RecordsRepositoryInterface {
           }))
         )
       )
+  }
+
+  /**
+   * Returns null if the record is not found
+   */
+  private loadRecordAsXml(uniqueIdentifier: string): Observable<string | null> {
+    return this.gn4RecordsApi
+      .getRecordAs(
+        uniqueIdentifier,
+        undefined,
+        false,
+        undefined,
+        undefined,
+        undefined,
+        'application/xml',
+        'response',
+        undefined,
+        { httpHeaderAccept: 'text/xml,application/xml' as 'application/xml' } // this is to make sure that the response is parsed as text
+      )
+      .pipe(
+        map((response) => response.body),
+        catchError((error: HttpErrorResponse) =>
+          error.status === 404 ? of(null) : throwError(() => error)
+        )
+      )
+  }
+
+  private getLocalStorageKeyForRecord(uniqueIdentifier: string) {
+    return `geonetwork-ui-draft-${uniqueIdentifier}`
+  }
+
+  openRecordForEdition(
+    uniqueIdentifier: string
+  ): Observable<[CatalogRecord, string, boolean] | null> {
+    const draft$ = of(
+      window.localStorage.getItem(
+        this.getLocalStorageKeyForRecord(uniqueIdentifier)
+      )
+    )
+    const recordAsXml$ = this.loadRecordAsXml(uniqueIdentifier)
+    return combineLatest([draft$, recordAsXml$]).pipe(
+      switchMap(([draft, recordAsXml]) => {
+        const xml = draft ?? recordAsXml
+        const isSavedAlready = recordAsXml !== null
+        return findConverterForDocument(xml)
+          .readRecord(xml)
+          .then(
+            (record) =>
+              [record, xml, isSavedAlready] as [CatalogRecord, string, boolean]
+          )
+      })
+    )
+  }
+
+  private serializeRecordToXml(
+    record: CatalogRecord,
+    referenceRecordSource?: string
+  ): Observable<string> {
+    // if there's a reference record, use that standard; otherwise, use iso19139
+    const converter = referenceRecordSource
+      ? findConverterForDocument(referenceRecordSource)
+      : new Iso19139Converter()
+    return from(converter.writeRecord(record, referenceRecordSource))
+  }
+
+  saveRecord(
+    record: CatalogRecord,
+    referenceRecordSource?: string
+  ): Observable<string> {
+    return this.serializeRecordToXml(record, referenceRecordSource).pipe(
+      switchMap((recordXml) =>
+        this.gn4RecordsApi
+          .insert(
+            'METADATA',
+            undefined,
+            undefined,
+            undefined,
+            true,
+            undefined,
+            'OVERWRITE',
+            undefined,
+            undefined,
+            undefined,
+            '_none_',
+            undefined,
+            undefined,
+            undefined,
+            recordXml
+          )
+          .pipe(
+            map((response) => {
+              const metadataId = Object.keys(response.metadataInfos)[0]
+              return response.metadataInfos[metadataId][0].uuid
+            })
+          )
+      )
+    )
+  }
+
+  saveRecordAsDraft(
+    record: CatalogRecord,
+    referenceRecordSource?: string
+  ): Observable<string> {
+    return this.serializeRecordToXml(record, referenceRecordSource).pipe(
+      tap((recordXml) =>
+        window.localStorage.setItem(
+          this.getLocalStorageKeyForRecord(record.uniqueIdentifier),
+          recordXml
+        )
+      )
+    )
+  }
+
+  clearRecordDraft(uniqueIdentifier: string): void {
+    window.localStorage.removeItem(
+      this.getLocalStorageKeyForRecord(uniqueIdentifier)
+    )
+  }
+
+  recordHasDraft(uniqueIdentifier: string): boolean {
+    return (
+      window.localStorage.getItem(
+        this.getLocalStorageKeyForRecord(uniqueIdentifier)
+      ) !== null
+    )
+  }
+
+  // generated by copilot
+  getAllDrafts(): Observable<CatalogRecord[]> {
+    const items = { ...window.localStorage }
+    const drafts = Object.keys(items)
+      .filter((key) => key.startsWith('geonetwork-ui-draft-'))
+      .map((key) => window.localStorage.getItem(key))
+      .filter((draft) => draft !== null)
+    return from(
+      Promise.all(
+        drafts.map((draft) => findConverterForDocument(draft).readRecord(draft))
+      )
+    )
   }
 }

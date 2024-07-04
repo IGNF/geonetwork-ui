@@ -11,6 +11,7 @@ describe('Editor Selectors', () => {
       editor: {
         ...initialEditorState,
         record: DATASET_RECORDS[0],
+        recordSource: '<xml>blabla</xml>',
         saveError: 'something went wrong',
         saving: false,
         changedSinceSave: true,
@@ -22,6 +23,11 @@ describe('Editor Selectors', () => {
     it('selectRecord() should return the current loaded record', () => {
       const result = EditorSelectors.selectRecord(state)
       expect(result).toBe(DATASET_RECORDS[0])
+    })
+
+    it('selectRecordSource() should return the source of the current record', () => {
+      const result = EditorSelectors.selectRecordSource(state)
+      expect(result).toBe('<xml>blabla</xml>')
     })
 
     it('selectRecordSaving() should return the current "saving" state', () => {
@@ -39,43 +45,79 @@ describe('Editor Selectors', () => {
       expect(result).toBe(true)
     })
 
+    it('selectRecordAlreadySavedOnce() should return the current "alreadySavedOnce" state', () => {
+      const result = EditorSelectors.selectRecordAlreadySavedOnce(state)
+      expect(result).toBe(false)
+    })
+
     it('selectRecordFieldsConfig() should return the current "fieldsConfig" state', () => {
       const result = EditorSelectors.selectRecordFieldsConfig(state)
       expect(result).toEqual(DEFAULT_FIELDS)
     })
 
-    it('selectRecordFields() should return the config and value for each field', () => {
-      const result = EditorSelectors.selectRecordFields(state)
-      expect(result).toEqual([
-        {
+    describe('selectRecordFields', () => {
+      it('should return the config and value for each field', () => {
+        const result = EditorSelectors.selectRecordFields(state)
+        expect(result).toEqual([
+          {
+            config: DEFAULT_FIELDS[0],
+            value: DATASET_RECORDS[0].title,
+          },
+          {
+            config: DEFAULT_FIELDS[1],
+            value: DATASET_RECORDS[0].abstract,
+          },
+          {
+            config: DEFAULT_FIELDS[2],
+            value: DATASET_RECORDS[0].uniqueIdentifier,
+          },
+          {
+            config: DEFAULT_FIELDS[3],
+            value: DATASET_RECORDS[0].recordUpdated,
+          },
+          {
+            config: DEFAULT_FIELDS[4],
+            value: DATASET_RECORDS[0].licenses,
+          },
+          {
+            config: DEFAULT_FIELDS[5],
+            value: DATASET_RECORDS[0].resourceUpdated,
+          },
+          {
+            config: DEFAULT_FIELDS[6],
+            value: DATASET_RECORDS[0].updateFrequency,
+          },
+          {
+            config: DEFAULT_FIELDS[7],
+            value: DATASET_RECORDS[0].temporalExtents,
+          },
+          {
+            config: DEFAULT_FIELDS[8],
+            value: DATASET_RECORDS[0].keywords,
+          },
+        ])
+      })
+      it('should not coerce falsy values to null', () => {
+        const result = EditorSelectors.selectRecordFields({
+          ...state,
+          editor: {
+            ...state.editor,
+            record: {
+              ...DATASET_RECORDS[0],
+              abstract: '',
+              title: '',
+            },
+          },
+        })
+        expect(result).toContainEqual({
           config: DEFAULT_FIELDS[0],
-          value: DATASET_RECORDS[0].title,
-        },
-        {
+          value: '',
+        })
+        expect(result).toContainEqual({
           config: DEFAULT_FIELDS[1],
-          value: DATASET_RECORDS[0].abstract,
-        },
-        {
-          config: DEFAULT_FIELDS[2],
-          value: DATASET_RECORDS[0].uniqueIdentifier,
-        },
-        {
-          config: DEFAULT_FIELDS[3],
-          value: DATASET_RECORDS[0].recordUpdated,
-        },
-        {
-          config: DEFAULT_FIELDS[4],
-          value: DATASET_RECORDS[0].licenses,
-        },
-        {
-          config: DEFAULT_FIELDS[5],
-          value: DATASET_RECORDS[0].resourceUpdated,
-        },
-        {
-          config: DEFAULT_FIELDS[6],
-          value: DATASET_RECORDS[0].updateFrequency,
-        },
-      ])
+          value: '',
+        })
+      })
     })
   })
 })

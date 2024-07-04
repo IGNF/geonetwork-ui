@@ -25,12 +25,9 @@ export class IgnApiProduitComponent implements OnInit {
   liste$: Observable<any>
 
   ngOnInit(): void {
-    this.liste$ = this.http.get(this.link['id']).pipe(
-      map(
-        (response) => response['entry']
-        // tap(el=> console.log(el)),
-      )
-    )
+    this.liste$ = this.http
+      .get(this.link['id'])
+      .pipe(map((response) => response['entry']))
   }
 
   downloadListe(): void {
@@ -44,7 +41,6 @@ export class IgnApiProduitComponent implements OnInit {
   }
 
   download(url): void {
-    console.log(url)
     this.http.get(url).subscribe()
   }
 }
