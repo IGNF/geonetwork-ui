@@ -189,6 +189,13 @@ export class IgnApiDlComponent implements OnInit {
     this.size$.next(String(size))
     this.page$.next(String(page))
   }
+
+  lessResult(): void {
+    const page = Number(this.page$.value) - 1
+    const size = (page + 1) * Number(this.initialPageSize)
+    this.size$.next(String(size))
+    this.page$.next(String(page))
+  }
   resetPage(): void {
     this.page$.next('0')
   }

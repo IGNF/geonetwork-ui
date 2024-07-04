@@ -93,12 +93,18 @@
             </tr>
             <tr>
               <button
-                *ngIf="size$.value < (numberFilteredProduct$ | async)"
-
-                (click)="moreResult()"
-                class="bg-primary-opacity-50 inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded capitalize text-primary-lightest hover:bg-primary transition-colors"
+                (click)="lessResult()"
+                [disabled]="size$.value === initialPageSize"
+                class="bg-primary-opacity-50 inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded capitalize text-primary-lightest hover:bg-primary transition-colors float-left"
               >
-                <p class="text-[13px] uppercase" translate>results.showMore</p>
+                <p class="text-[13px] uppercase" translate>Page précédente</p>
+              </button>
+              <button
+                (click)="moreResult()"
+                [disabled]="size$.value >= (numberFilteredProduct$ | async)"
+                class="bg-primary-opacity-50 inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded capitalize text-primary-lightest hover:bg-primary transition-colors float-right"
+              >
+                <p class="text-[13px] uppercase" translate>Page suivante</p>
               </button>
             </tr>
           </tbody>
