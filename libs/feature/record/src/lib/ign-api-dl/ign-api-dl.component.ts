@@ -5,21 +5,9 @@ import {
   OnInit,
 } from '@angular/core'
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
-import {
-  BehaviorSubject,
-  Observable,
-  combineLatest,
-  filter,
-  first,
-  iif,
-  map,
-  mergeMap,
-  switchMap,
-  tap,
-} from 'rxjs'
-import { fromFetch } from 'rxjs/fetch'
+import { BehaviorSubject, Observable, combineLatest, map, mergeMap } from 'rxjs'
 import { HttpClient } from '@angular/common/http'
-import { Choice, DropdownChoice } from '@geonetwork-ui/ui/inputs'
+import { Choice } from '@geonetwork-ui/ui/inputs'
 import axios from 'axios'
 
 export interface Label {
@@ -67,15 +55,15 @@ export interface Field {
 export class IgnApiDlComponent implements OnInit {
   isOpen = false
   collapsed = false
-  initialPageSize = '200'
+  initialLimit = '50'
   apiBaseUrl: string
   editionDate$ = new BehaviorSubject('')
   zone$ = new BehaviorSubject('')
   format$ = new BehaviorSubject('')
   crs$ = new BehaviorSubject('')
-  pageSize$ = new BehaviorSubject(this.initialPageSize)
-  page$ = new BehaviorSubject('0')
-  size$ = new BehaviorSubject(this.initialPageSize)
+  limit$ = new BehaviorSubject(this.initialLimit)
+  page$ = new BehaviorSubject('1')
+  size$ = new BehaviorSubject(this.initialLimit)
   // a passer en config
   url =
     'https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
@@ -91,10 +79,10 @@ export class IgnApiDlComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.getFields()
     this.bucketPromisesZone = [{ value: '', label: 'ZONE' }]
     this.bucketPromisesFormat = [{ value: '', label: 'FORMAT' }]
     this.bucketPromisesCrs = [{ value: '', label: 'CRS' }]
+    this.getFields()
   }
 
   apiQueryUrl$ = combineLatest([
@@ -102,10 +90,10 @@ export class IgnApiDlComponent implements OnInit {
     this.format$,
     this.editionDate$,
     this.crs$,
-    this.pageSize$,
+    this.limit$,
     this.page$,
   ]).pipe(
-    map(([zone, format, editionDate, crs, pageSize, page]) => {
+    map(([zone, format, editionDate, crs, limit, page]) => {
       let outputUrl
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
@@ -114,7 +102,7 @@ export class IgnApiDlComponent implements OnInit {
           format: format,
           editionDate: editionDate,
           crs: crs,
-          pageSize: pageSize,
+          limit: limit,
           page: page,
         } // initialisation des paramètres de filtres
         for (const [key, value] of Object.entries(params)) {
@@ -125,15 +113,21 @@ export class IgnApiDlComponent implements OnInit {
           }
         }
         outputUrl = url.toString()
+      } else {
+        console.error('erreur apibaseUrl null')
       }
       return outputUrl
     })
+    // startWith(() => this.apiBaseUrl)
   )
 
   listFilteredProduct$ = this.apiQueryUrl$.pipe(
     mergeMap((url) => {
+      console.log(url)
+
       return this.getFilteredProduct$(url).pipe(
         map((response) => response['entry'])
+        // startWith([])
       )
     })
   )
@@ -141,6 +135,7 @@ export class IgnApiDlComponent implements OnInit {
     mergeMap((url) => {
       return this.getFilteredProduct$(url).pipe(
         map((response) => response['totalentries'])
+        // startWith(0)
       )
     })
   )
@@ -189,11 +184,11 @@ export class IgnApiDlComponent implements OnInit {
     this.format$.next('null')
     this.crs$.next('null')
     this.page$.next('0')
-    this.size$.next(this.initialPageSize)
+    this.size$.next(this.initialLimit)
   }
   moreResult(): void {
     const page = Number(this.page$.value) + 1
-    const size = (page + 1) * Number(this.initialPageSize)
+    const size = (page + 1) * Number(this.initialLimit)
     this.size$.next(String(size))
     this.page$.next(String(page))
   }
@@ -203,52 +198,52 @@ export class IgnApiDlComponent implements OnInit {
 
   async getCapabilities() {
     let page = 0
-    let choicesTest = null
-    let [response] = await Promise.all([
-      axios.get(this.url.concat(`&pageSize=200&page=${page}`)),
-    ])
-    choicesTest = response.data.entry.filter(
-      (element) => element['id'] == this.apiBaseUrl
-    )[0]
+    let choicesTest = undefined
+    let pageCount = 1
 
-    if (choicesTest) {
-      return choicesTest
-    } else {
-      while (choicesTest === undefined && response.data.pageCount > page) {
-        ;[response] = await Promise.all([
-          axios.get(this.url.concat(`&pageSize=200&page=${page}`)),
-        ])
-        choicesTest = response.data.entry.filter(
-          (element) => element['id'] == this.apiBaseUrl
-        )[0]
-        page += 1
-      }
+    while (choicesTest === undefined && pageCount > page) {
+      const response = await axios.get(
+        this.url.concat(`&limit=200&page=${page}`)
+      )
+
+      choicesTest = response.data.entry.filter(
+        (element) => element['id'] == this.apiBaseUrl
+      )[0]
+      page += 1
+      pageCount = response.data.pagecount
     }
+
     return choicesTest
   }
   async getFields() {
     this.choices = await this.getCapabilities()
 
-    this.bucketPromisesZone = this.choices.zone.map((bucket) => ({
+    const tempZone = this.choices.zone.map((bucket) => ({
       value: bucket.label,
       label: bucket.term,
     }))
-    this.bucketPromisesZone.sort((a, b) => (a.label > b.label ? 1 : -1))
-    this.bucketPromisesZone.unshift({ value: 'null', label: 'ZONE' })
+    tempZone.sort((a, b) => (a.label > b.label ? 1 : -1))
+    tempZone.unshift({ value: 'null', label: 'ZONE' })
 
-    this.bucketPromisesFormat = this.choices.format.map((bucket) => ({
-      value: bucket.label,
-      label: bucket.term,
-    }))
-    this.bucketPromisesFormat.sort((a, b) => (a.label > b.label ? 1 : -1))
-    this.bucketPromisesFormat.unshift({ value: 'null', label: 'FORMAT' })
+    this.bucketPromisesZone = tempZone
 
-    this.bucketPromisesCrs = this.choices.category.map((bucket) => ({
+    const tempFormat = this.choices.format.map((bucket) => ({
       value: bucket.label,
       label: bucket.term,
     }))
-    this.bucketPromisesCrs.sort((a, b) => (a.label > b.label ? 1 : -1))
-    this.bucketPromisesCrs.unshift({ value: 'null', label: 'CRS' })
+    tempFormat.sort((a, b) => (a.label > b.label ? 1 : -1))
+    tempFormat.unshift({ value: 'null', label: 'FORMAT' })
+
+    this.bucketPromisesFormat = tempFormat
+
+    const tempCrs = this.choices.category.map((bucket) => ({
+      value: bucket.label,
+      label: bucket.label,
+    }))
+    tempCrs.sort((a, b) => (a.label > b.label ? 1 : -1))
+    tempCrs.unshift({ value: 'null', label: 'CRS' })
+
+    this.bucketPromisesCrs = tempCrs
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   }
