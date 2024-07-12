@@ -214,16 +214,22 @@ export class IgnApiDlComponent implements OnInit {
     if (choicesTest) {
       return choicesTest
     } else {
-      while (choicesTest === undefined && response.data.pageCount > page) {
+      console.log(page)
+
+      while (choicesTest === undefined || response.data.pageCount > page) {
+        console.log(choicesTest)
         ;[response] = await Promise.all([
           axios.get(this.url.concat(`&pageSize=200&page=${page}`)),
         ])
+        console.log(response.data.entry)
+
         choicesTest = response.data.entry.filter(
           (element) => element['id'] == this.apiBaseUrl
         )[0]
         page += 1
       }
     }
+
     return choicesTest
   }
   async getFields() {
