@@ -4,7 +4,7 @@
 >
   <div class="grow-1 w-full overflow-hidden">
     <div
-      class="text-21 text-black truncate font-title w-11/12"
+      class="text-16 text-black truncate font-title w-11/12"
       [title]="link['title'] || link.name"
     >
       {{ link['title'] || link.name }}
@@ -23,11 +23,15 @@
         >datahub.search.filter.generatedByWfs</span
       >
     </div>
-    <div  *ngFor="let entry of liste$ | async">
-      <a [href] = "entry['link'][0]['href']">{{entry['link'][0]['href'].split("/").slice(-1)}}  <mat-icon class="!w-7 !h-7 card-icon text-3xl material-symbols-outlined">
-        cloud_download
-      </mat-icon></a>
-      </div>
-  </div>   
-
-  </a>
+    <div *ngFor="let entry of liste$ | async">
+      <a [href]="entry['link'][0]['href']"
+        >{{ entry['link'][0]['href'].split('/').slice(-1) }}
+        <mat-icon
+          class="!w-7 !h-7 card-icon text-3xl material-symbols-outlined"
+        >
+          cloud_download
+        </mat-icon></a
+      >
+    </div>
+  </div>
+</a>

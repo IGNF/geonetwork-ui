@@ -3,7 +3,7 @@ import { select, Store } from '@ngrx/store'
 import * as EditorActions from './editor.actions'
 import * as EditorSelectors from './editor.selectors'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
-import { filter, Observable } from 'rxjs'
+import { filter } from 'rxjs'
 import { Actions, ofType } from '@ngrx/effects'
 
 @Injectable()
@@ -12,6 +12,10 @@ export class EditorFacade {
   private actions$ = inject(Actions)
 
   record$ = this.store.pipe(select(EditorSelectors.selectRecord))
+  recordSource$ = this.store.pipe(select(EditorSelectors.selectRecordSource))
+  alreadySavedOnce$ = this.store.pipe(
+    select(EditorSelectors.selectRecordAlreadySavedOnce)
+  )
   saving$ = this.store.pipe(select(EditorSelectors.selectRecordSaving))
   saveError$ = this.store.pipe(
     select(EditorSelectors.selectRecordSaveError),
@@ -22,9 +26,16 @@ export class EditorFacade {
     select(EditorSelectors.selectRecordChangedSinceSave)
   )
   recordFields$ = this.store.pipe(select(EditorSelectors.selectRecordFields))
+  draftSaveSuccess$ = this.actions$.pipe(ofType(EditorActions.draftSaveSuccess))
 
-  openRecord(record: CatalogRecord) {
-    this.store.dispatch(EditorActions.openRecord({ record }))
+  openRecord(
+    record: CatalogRecord,
+    recordSource: string,
+    alreadySavedOnce: boolean
+  ) {
+    this.store.dispatch(
+      EditorActions.openRecord({ record, recordSource, alreadySavedOnce })
+    )
   }
 
   saveRecord() {

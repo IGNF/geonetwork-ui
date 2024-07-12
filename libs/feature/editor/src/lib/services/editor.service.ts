@@ -1,50 +1,23 @@
-import { Inject, Injectable, Optional } from '@angular/core'
-import {
-  findConverterForDocument,
-  Iso19139Converter,
-} from '@geonetwork-ui/api/metadata-converter'
-import { Configuration } from '@geonetwork-ui/data-access/gn4'
-import { from, Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
-import { HttpClient } from '@angular/common/http'
+import { Injectable } from '@angular/core'
+import { Observable, switchMap } from 'rxjs'
+import { map, tap } from 'rxjs/operators'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { EditorFieldsConfig } from '../models/fields.model'
 import { evaluate } from '../expressions'
+import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
 
 @Injectable({
   providedIn: 'root',
 })
 export class EditorService {
-  private apiUrl = `${this.apiConfiguration?.basePath || '/geonetwork/srv/api'}`
+  constructor(private recordsRepository: RecordsRepositoryInterface) {}
 
-  constructor(
-    private http: HttpClient,
-    @Optional()
-    @Inject(Configuration)
-    private apiConfiguration: Configuration
-  ) {}
-
-  // TODO: use the catalog repository instead
-  loadRecordByUuid(uuid: string): Observable<CatalogRecord> {
-    return this.http
-      .get(`${this.apiUrl}/records/${uuid}/formatters/xml`, {
-        responseType: 'text',
-        headers: {
-          Accept: 'application/xml',
-        },
-      })
-      .pipe(
-        switchMap((response) =>
-          findConverterForDocument(response).readRecord(response.toString())
-        )
-      )
-  }
-
-  // returns the record as it was when saved
+  // returns the record as it was when saved, alongside its source
   saveRecord(
     record: CatalogRecord,
-    fieldsConfig: EditorFieldsConfig
-  ): Observable<CatalogRecord> {
+    fieldsConfig: EditorFieldsConfig,
+    generateNewUniqueIdentifier = false
+  ): Observable<[CatalogRecord, string]> {
     const savedRecord = { ...record }
 
     // run onSave processes
@@ -58,22 +31,28 @@ export class EditorService {
       }
     }
 
-    // TODO: use the catalog repository instead
-    // TODO: use converter based on the format of the record before change
-    return from(new Iso19139Converter().writeRecord(savedRecord)).pipe(
-      switchMap((recordXml) =>
-        this.http.put(
-          `${this.apiUrl}/records?metadataType=METADATA&uuidProcessing=OVERWRITE&transformWith=_none_&publishToAll=on`,
-          recordXml,
-          {
-            headers: {
-              'Content-Type': 'application/xml',
-            },
-            withCredentials: true,
-          }
-        )
+    // if we want a new unique identifier, clear the existing one
+    if (generateNewUniqueIdentifier) {
+      savedRecord.uniqueIdentifier = null
+    }
+
+    return this.recordsRepository.saveRecord(savedRecord).pipe(
+      switchMap((uniqueIdentifier) =>
+        this.recordsRepository.openRecordForEdition(uniqueIdentifier)
       ),
-      map(() => savedRecord)
+      tap(() => {
+        // if saving was successful, the original draft can be discarded
+        this.recordsRepository.clearRecordDraft(record.uniqueIdentifier)
+      }),
+      map(([record, recordSource]) => [record, recordSource])
     )
+  }
+
+  // emits and completes once saving is done
+  // note: onSave processes are not run for drafts
+  saveRecordAsDraft(record: CatalogRecord): Observable<void> {
+    return this.recordsRepository
+      .saveRecordAsDraft(record)
+      .pipe(map(() => undefined))
   }
 }
