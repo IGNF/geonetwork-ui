@@ -45,7 +45,7 @@ proxy_path = ""
 #  - for background: https://developer.mozilla.org/en-US/docs/Web/CSS/background
 [theme]
 primary_color = "#000091"
-secondary_color = "#cacafb"
+secondary_color = "#6a6af4"
 main_color = "#212029" # All-purpose text color
 background_color = "#fdfbff"
 
@@ -65,7 +65,7 @@ header_foreground_color = '#212029'
 # fonts_stylesheet_url = "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Permanent+Marker&display=swap"
 
 # Use it to set custom location for the favicon; by default, the path `/favicon.ico` will be used
-favicon = "/assets/img/favicon.ico"
+favicon = "/catalogue/assets/img/favicon.ico"
 
 ### SEARCH SETTINGS
 
