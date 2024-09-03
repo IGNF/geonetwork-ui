@@ -1,23 +1,24 @@
+import { CommonModule } from '@angular/common'
 import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { MatIconModule } from '@angular/material/icon'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
+import {
+  FieldSort,
+  SortByField,
+} from '@geonetwork-ui/common/domain/model/search'
+import { BadgeComponent, UiInputsModule } from '@geonetwork-ui/ui/inputs'
+import {
+  InteractiveTableColumnComponent,
+  InteractiveTableComponent,
+} from '@geonetwork-ui/ui/layout'
 import {
   FileFormat,
   getBadgeColor,
   getFileFormat,
   getFormatPriority,
 } from '@geonetwork-ui/util/shared'
-import { BadgeComponent, UiInputsModule } from '@geonetwork-ui/ui/inputs'
-import {
-  InteractiveTableColumnComponent,
-  InteractiveTableComponent,
-} from '@geonetwork-ui/ui/layout'
-import { MatIconModule } from '@angular/material/icon'
 import { TranslateModule } from '@ngx-translate/core'
-import { CommonModule } from '@angular/common'
-import {
-  FieldSort,
-  SortByField,
-} from '@geonetwork-ui/common/domain/model/search'
+import { ActionMenuComponent } from './action-menu/action-menu.component'
 
 @Component({
   selector: 'gn-ui-results-table',
@@ -32,17 +33,23 @@ import {
     MatIconModule,
     TranslateModule,
     BadgeComponent,
+    ActionMenuComponent,
   ],
 })
 export class ResultsTableComponent {
   @Input() records: CatalogRecord[] = []
   @Input() selectedRecordsIdentifiers: string[] = []
   @Input() sortOrder: SortByField = null
-  @Input() recordHasDraft: (record: CatalogRecord) => boolean = () => false
+  @Input() hasDraft: (record: CatalogRecord) => boolean = () => false
+  @Input() canDuplicate: (record: CatalogRecord) => boolean = () => true
+  @Input() isUnsavedDraft: (record: CatalogRecord) => boolean = () => true
+  @Input() canDelete: (record: CatalogRecord) => boolean = () => true
 
   // emits the column (field) as well as the order
   @Output() sortByChange = new EventEmitter<[string, 'asc' | 'desc']>()
   @Output() recordClick = new EventEmitter<CatalogRecord>()
+  @Output() duplicateRecord = new EventEmitter<CatalogRecord>()
+  @Output() deleteRecord = new EventEmitter<CatalogRecord>()
   @Output() recordsSelectedChange = new EventEmitter<
     [CatalogRecord[], boolean]
   >()
@@ -54,10 +61,6 @@ export class ResultsTableComponent {
       day: 'numeric',
       timeZone: 'UTC',
     })
-  }
-
-  getStatus(isPublishedToAll: boolean | unknown) {
-    return isPublishedToAll ? 'published' : 'not published'
   }
 
   getRecordFormats(record: CatalogRecord): FileFormat[] {
@@ -87,6 +90,14 @@ export class ResultsTableComponent {
 
   handleRecordClick(item: unknown) {
     this.recordClick.emit(item as CatalogRecord)
+  }
+
+  handleDuplicate(item: unknown) {
+    this.duplicateRecord.emit(item as CatalogRecord)
+  }
+
+  handleDelete(item: unknown) {
+    this.deleteRecord.emit(item as CatalogRecord)
   }
 
   setSortBy(col: string, order: 'asc' | 'desc') {

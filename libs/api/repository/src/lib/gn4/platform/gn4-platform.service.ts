@@ -1,11 +1,10 @@
 import { Injectable } from '@angular/core'
-import { Observable, combineLatest, of, switchMap } from 'rxjs'
+import { combineLatest, Observable, of, switchMap } from 'rxjs'
 import { catchError, map, shareReplay, tap } from 'rxjs/operators'
 import {
   MeApiService,
   RegistriesApiService,
   SiteApiService,
-  ThesaurusInfoApiModel,
   ToolsApiService,
   UserfeedbackApiService,
   UsersApiService,
@@ -25,6 +24,7 @@ import {
   KeywordApiResponse,
   ThesaurusApiResponse,
 } from '@geonetwork-ui/api/metadata-converter'
+import { KeywordType } from '@geonetwork-ui/common/domain/model/thesaurus'
 
 const minApiVersion = '4.2.2'
 
@@ -146,25 +146,36 @@ export class Gn4PlatformService implements PlatformServiceInterface {
     )
     .pipe(
       map((thesaurus) => {
-        // FIXME: find a better way to exclude place keywords
-        // thesaurus[0].filter((thes) => thes.dname !== 'place')
         return thesaurus[0] as ThesaurusApiResponse[]
       }),
       shareReplay(1)
     )
 
-  searchKeywords(query: string): Observable<Keyword[]> {
-    const keywords$: Observable<KeywordApiResponse[]> =
-      this.registriesApiService.searchKeywords(
-        query,
-        this.langService.iso3,
-        10,
-        0,
-        null,
-        null,
-        null,
-        `*${query}*`
-      ) as Observable<KeywordApiResponse[]>
+  searchKeywords(
+    query: string,
+    keywordTypes: KeywordType[]
+  ): Observable<Keyword[]> {
+    const keywords$: Observable<KeywordApiResponse[]> = this.allThesaurus$.pipe(
+      switchMap((thesaurus) => {
+        const selectedThesauri = []
+        keywordTypes.map((keywordType) => {
+          selectedThesauri.push(
+            ...thesaurus.filter((thes) => thes.dname === keywordType)
+          )
+        })
+
+        return this.registriesApiService.searchKeywords(
+          query,
+          this.langService.iso3,
+          10,
+          0,
+          null,
+          selectedThesauri.map((thes) => thes.key),
+          null,
+          `*${query}*`
+        ) as Observable<KeywordApiResponse[]>
+      })
+    )
 
     return combineLatest([keywords$, this.allThesaurus$]).pipe(
       map(([keywords, thesaurus]) => {
@@ -181,17 +192,16 @@ export class Gn4PlatformService implements PlatformServiceInterface {
     if (this.keywordsByThesauri[uri]) {
       return this.keywordsByThesauri[uri]
     }
-    const keywords$: Observable<KeywordApiResponse[]> =
-      this.registriesApiService.searchKeywords(
-        null,
-        this.langService.iso3,
-        1000,
-        0,
-        null,
-        null,
-        null,
-        `${uri}*`
-      ) as Observable<KeywordApiResponse[]>
+    const keywords$ = this.registriesApiService.searchKeywords(
+      null,
+      this.langService.iso3,
+      1000,
+      0,
+      null,
+      null,
+      null,
+      `${uri}*`
+    ) as Observable<KeywordApiResponse[]>
 
     this.keywordsByThesauri[uri] = combineLatest([
       keywords$,
@@ -208,6 +218,38 @@ export class Gn4PlatformService implements PlatformServiceInterface {
     )
 
     return this.keywordsByThesauri[uri]
+  }
+
+  searchKeywordsInThesaurus(query: string, thesaurusId: string) {
+    return this.allThesaurus$.pipe(
+      switchMap((thesauri) => {
+        const strippedThesaurusId = thesaurusId.replace(
+          'geonetwork.thesaurus.',
+          ''
+        )
+        if (!thesauri.find((thes) => thes.key === strippedThesaurusId))
+          return of([])
+        return this.registriesApiService
+          .searchKeywords(
+            query,
+            this.langService.iso3,
+            100,
+            0,
+            null,
+            [strippedThesaurusId],
+            null
+          )
+          .pipe(
+            map((keywords: KeywordApiResponse[]) =>
+              this.mapper.keywordsFromApi(
+                keywords,
+                thesauri,
+                this.langService.iso3
+              )
+            )
+          )
+      })
+    )
   }
 
   getUserFeedbacks(uuid: string): Observable<UserFeedback[]> {

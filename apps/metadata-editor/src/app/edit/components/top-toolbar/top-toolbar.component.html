@@ -1,4 +1,4 @@
-<div class="flex flex-row items-center w-full">
+<div class="flex flex-row items-center w-full border-b-[1px]">
   <gn-ui-button type="light">
     <mat-icon class="material-symbols-outlined">side_navigation</mat-icon>
   </gn-ui-button>
@@ -8,11 +8,26 @@
   <gn-ui-button type="light">
     <mat-icon class="material-symbols-outlined">download</mat-icon>
   </gn-ui-button>
-  <gn-ui-button type="light">
-    <mat-icon class="material-symbols-outlined">undo</mat-icon>
-  </gn-ui-button>
+  <ng-container *ngrxLet="saveStatus$ as saveStatus">
+    <gn-ui-button
+      type="light"
+      (buttonClick)="confirmUndo()"
+      [disabled]="saveStatus !== 'draft_changes_pending'"
+      [matTooltip]="
+        (saveStatus === 'draft_changes_pending'
+          ? 'editor.record.undo.tooltip.enabled'
+          : 'editor.record.undo.tooltip.disabled'
+        ) | translate
+      "
+      data-cy="undo-button"
+    >
+      <mat-icon class="material-symbols-outlined">undo</mat-icon>
+    </gn-ui-button>
+  </ng-container>
   <div
     class="grow flex flex-row items-center justify-center gap-1 text-[14px]"
+    data-cy="save-status"
+    [attr.data-cy-value]="saveStatus$ | async"
     [ngSwitch]="saveStatus$ | async"
   >
     <ng-container *ngSwitchCase="'draft_only'">

@@ -32,7 +32,7 @@ import { ProxyService } from '@geonetwork-ui/util/shared'
 import { WmsEndpoint, WmtsEndpoint } from '@camptocamp/ogc-client'
 import { LONLAT_CRS_CODES } from '../constant/projections'
 import { fromEPSGCode, register } from 'ol/proj/proj4'
-import proj4 from 'proj4/dist/proj4'
+import proj4 from 'proj4'
 import { defaults as defaultControls } from 'ol/control/defaults'
 
 const FEATURE_PROJECTION = 'EPSG:3857'
@@ -220,11 +220,15 @@ export class MapUtilsService {
     if (!('spatialExtents' in record) || record.spatialExtents.length === 0) {
       return null
     }
-    // transform an array of geojson geometries into a bbox
+    // extend all the spatial extents into an including bbox
     const totalExtent = record.spatialExtents.reduce(
       (prev, curr) => {
-        const geom = GEOJSON.readGeometry(curr.geometry)
-        return extend(prev, geom.getExtent())
+        if ('bbox' in curr) return extend(prev, curr.bbox)
+        else if ('geometry' in curr) {
+          const geom = GEOJSON.readGeometry(curr.geometry)
+          return extend(prev, geom.getExtent())
+        }
+        return prev
       },
       [Infinity, Infinity, -Infinity, -Infinity]
     )

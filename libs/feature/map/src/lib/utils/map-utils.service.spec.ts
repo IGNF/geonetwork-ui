@@ -1,6 +1,6 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { TestBed } from '@angular/core/testing'
-import { FEATURE_COLLECTION_POLYGON_FIXTURE_4326 } from '@geonetwork-ui/common/fixtures'
+import { polygonFeatureCollectionFixture } from '@geonetwork-ui/common/fixtures'
 import Feature from 'ol/Feature'
 import { Polygon } from 'ol/geom'
 import ImageLayer from 'ol/layer/Image'
@@ -9,7 +9,6 @@ import Map from 'ol/Map'
 import ImageWMS from 'ol/source/ImageWMS'
 import TileWMS from 'ol/source/TileWMS'
 import XYZ from 'ol/source/XYZ'
-import { firstValueFrom } from 'rxjs'
 import {
   dragPanCondition,
   MapUtilsService,
@@ -22,15 +21,11 @@ import {
   MouseWheelZoom,
   PinchRotate,
 } from 'ol/interaction'
-import {
-  CatalogRecord,
-  DatasetServiceDistribution,
-} from '@geonetwork-ui/common/domain/model/record'
+import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import MapBrowserEvent from 'ol/MapBrowserEvent'
-import type { MapContextLayerWmtsModel } from '../map-context/map-context.model'
 import * as olProjProj4 from 'ol/proj/proj4'
 import * as olProj from 'ol/proj'
-import { get } from 'ol/proj'
+import { fromLonLat, get } from 'ol/proj'
 
 jest.mock('@camptocamp/ogc-client', () => ({
   WmsEndpoint: class {
@@ -107,7 +102,7 @@ describe('MapUtilsService', () => {
   })
 
   describe('#readFeatureCollection', () => {
-    const collection = FEATURE_COLLECTION_POLYGON_FIXTURE_4326
+    const collection = polygonFeatureCollectionFixture()
     let olFeatures, featureSample: Feature<Polygon>
     describe('when no option', () => {
       beforeEach(() => {
@@ -209,7 +204,7 @@ describe('MapUtilsService', () => {
       beforeEach(() => {
         layer = {
           type: 'geojson',
-          data: FEATURE_COLLECTION_POLYGON_FIXTURE_4326,
+          data: polygonFeatureCollectionFixture(),
         }
       })
       it('returns an observable emitting the aggregated extent', async () => {
@@ -248,6 +243,9 @@ describe('MapUtilsService', () => {
         jest
           .spyOn(olProj, 'transformExtent')
           .mockImplementation((extent) => extent)
+      })
+      afterEach(() => {
+        jest.restoreAllMocks()
       })
 
       describe('extent available in capabilities', () => {
@@ -327,13 +325,47 @@ describe('MapUtilsService', () => {
     })
   })
 
-  describe('getRecordExtent', () => {
+  describe('#getRecordExtent', () => {
     it('should return null if spatialExtents is not present or is an empty array', () => {
       const record1: Partial<CatalogRecord> = {}
       const record2: Partial<CatalogRecord> = { spatialExtents: [] }
 
       expect(service.getRecordExtent(record1)).toBeNull()
       expect(service.getRecordExtent(record2)).toBeNull()
+    })
+
+    it('should return the projected extent of included extents', () => {
+      const record: Partial<CatalogRecord> = {
+        spatialExtents: [
+          {
+            bbox: [1, 5, 3, 7],
+          },
+          {
+            bbox: [2, 3, 5, 6],
+          },
+          {
+            bbox: [6, 3, 8, 5],
+          },
+          {
+            geometry: {
+              coordinates: [
+                [
+                  [4, 4],
+                  [7, 4],
+                  [7, 8],
+                  [4, 8],
+                  [4, 4],
+                ],
+              ],
+              type: 'Polygon',
+            },
+          },
+        ],
+      }
+      expect(service.getRecordExtent(record)).toEqual([
+        ...fromLonLat([1, 3]),
+        ...fromLonLat([8, 8]),
+      ])
     })
   })
 

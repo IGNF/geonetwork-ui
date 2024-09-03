@@ -1,17 +1,23 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { EditPageComponent } from './edit-page.component'
 import { ActivatedRoute, Router } from '@angular/router'
-import { EditorFacade } from '@geonetwork-ui/feature/editor'
-import { NO_ERRORS_SCHEMA } from '@angular/core'
-import { DATASET_RECORDS } from '@geonetwork-ui/common/fixtures'
+import {
+  datasetRecordsFixture,
+  editorConfigFixture,
+} from '@geonetwork-ui/common/fixtures'
 import { BehaviorSubject, Subject } from 'rxjs'
 import { NotificationsService } from '@geonetwork-ui/feature/notifications'
+import { EditorFacade } from '@geonetwork-ui/feature/editor'
+import { MockBuilder } from 'ng-mocks'
 import { TranslateModule } from '@ngx-translate/core'
+import { HttpClientModule } from '@angular/common/http'
+import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
+import { PageSelectorComponent } from './components/page-selector/page-selector.component'
 
 const getRoute = () => ({
   snapshot: {
     data: {
-      record: [DATASET_RECORDS[0], '<xml>blabla</xml>', false],
+      record: [datasetRecordsFixture()[0], '<xml>blabla</xml>', false],
     },
     routeConfig: {
       path: '/edit/:uuid',
@@ -24,14 +30,19 @@ class RouterMock {
 }
 
 class EditorFacadeMock {
-  record$ = new BehaviorSubject(DATASET_RECORDS[0])
+  record$ = new BehaviorSubject(datasetRecordsFixture()[0])
   openRecord = jest.fn()
   saveError$ = new Subject<string>()
   saveSuccess$ = new Subject()
   draftSaveSuccess$ = new Subject()
+  editorConfig$ = new BehaviorSubject(editorConfigFixture())
 }
 class NotificationsServiceMock {
   showNotification = jest.fn()
+}
+
+class PlatformServiceMock {
+  getMe = jest.fn()
 }
 
 describe('EditPageComponent', () => {
@@ -40,10 +51,18 @@ describe('EditPageComponent', () => {
   let facade: EditorFacade
   let notificationsService: NotificationsService
 
+  beforeEach(() => {
+    return MockBuilder(EditPageComponent)
+  })
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [EditPageComponent, TranslateModule.forRoot()],
-      schemas: [NO_ERRORS_SCHEMA],
+      imports: [
+        EditPageComponent,
+        TranslateModule.forRoot(),
+        PageSelectorComponent,
+        HttpClientModule,
+      ],
       providers: [
         {
           provide: ActivatedRoute,
@@ -60,6 +79,10 @@ describe('EditPageComponent', () => {
         {
           provide: Router,
           useClass: RouterMock,
+        },
+        {
+          provide: PlatformServiceInterface,
+          useClass: PlatformServiceMock,
         },
       ],
     }).compileComponents()
@@ -81,7 +104,7 @@ describe('EditPageComponent', () => {
     })
     it('calls openRecord', () => {
       expect(facade.openRecord).toHaveBeenCalledWith(
-        DATASET_RECORDS[0],
+        datasetRecordsFixture()[0],
         '<xml>blabla</xml>',
         false
       )
@@ -129,7 +152,9 @@ describe('EditPageComponent', () => {
       const router = TestBed.inject(Router)
       const navigateSpy = jest.spyOn(router, 'navigate')
       ;(facade.draftSaveSuccess$ as any).next()
-      expect(navigateSpy).toHaveBeenCalledWith(['edit', 'my-dataset-001'])
+      expect(navigateSpy).toHaveBeenCalledWith(['edit', 'my-dataset-001'], {
+        replaceUrl: true,
+      })
     })
   })
 
@@ -141,7 +166,7 @@ describe('EditPageComponent', () => {
       const router = TestBed.inject(Router)
       const navigateSpy = jest.spyOn(router, 'navigate')
       ;(facade.record$ as any).next({
-        ...DATASET_RECORDS[0],
+        ...datasetRecordsFixture()[0],
         uniqueIdentifier: 'new-uuid',
       })
       expect(navigateSpy).toHaveBeenCalledWith(['edit', 'new-uuid'])
