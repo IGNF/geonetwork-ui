@@ -22,3 +22,5 @@ ENV CUSTOM_SCRIPTS_DIRECTORY ""
 COPY dist/apps/${APP_NAME} /opt/catalogue/
 
 EXPOSE 8080
+
+ENTRYPOINT ["sh", "/docker-entrypoint-ign.sh"]
