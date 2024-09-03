@@ -21,6 +21,7 @@ ENV ASSETS_DIRECTORY_OVERRIDE ""
 ENV CUSTOM_SCRIPTS_DIRECTORY ""
 
 COPY dist/apps/${APP_NAME} /opt/catalogue/
+CMD chmod u+w /opt/catalogue/assets/configuration/default.toml
 
 EXPOSE 8080
 
