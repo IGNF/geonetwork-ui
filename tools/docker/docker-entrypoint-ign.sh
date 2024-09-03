@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 APP_FILES_PATH=/opt/catalogue/
 CONFIG_FILE_PATH=assets/configuration/
 CONFIG_FILE_NAME=default.toml
@@ -11,4 +13,5 @@ fi
 
 echo "[INFO] docker-entrypoint-ign.sh ended successfully."
 
-exec "$@"
+# Start Apache in foreground
+/usr/sbin/apachectl -D FOREGROUND
