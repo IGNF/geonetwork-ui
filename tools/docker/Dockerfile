@@ -8,6 +8,7 @@ FROM ${registry}/library/php:8.1-apache
 COPY tools/docker/apache/apache-vhost.conf /etc/apache2/sites-available/000-default.conf
 COPY tools/docker/apache/apache-security.conf /etc/apache2/conf-enabled/security.conf
 COPY tools/docker/apache/apache-ports.conf /etc/apache2/ports.conf
+COPY tools/docker/docker-entrypoint-ign.sh /
 
 RUN a2enmod rewrite remoteip alias headers
 
