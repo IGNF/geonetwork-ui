@@ -21,7 +21,7 @@ ENV ASSETS_DIRECTORY_OVERRIDE ""
 ENV CUSTOM_SCRIPTS_DIRECTORY ""
 
 COPY dist/apps/${APP_NAME} /opt/catalogue/
-RUN chmod -R 775 /opt/catalogue/assets/configuration
+RUN chmod +x /docker-entrypoint-ign.sh
 
 USER www-data
 
