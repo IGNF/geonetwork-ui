@@ -11,7 +11,6 @@ then
   sed "s%geonetwork4_api_url = \".*\"%geonetwork4_api_url = \"${GN4_API_URL}\"%" ${APP_FILES_PATH}${CONFIG_FILE_PATH}${CONFIG_FILE_NAME} > /tmp/${CONFIG_FILE_NAME} && cat /tmp/${CONFIG_FILE_NAME} > ${APP_FILES_PATH}${CONFIG_FILE_PATH}${CONFIG_FILE_NAME}
   rm /tmp/${CONFIG_FILE_NAME}
   chmod -R 644 ${APP_FILES_PATH}${CONFIG_FILE_PATH}
-  chown -R www-data:www-data ${APP_FILES_PATH}${CONFIG_FILE_PATH}
 fi
 
 echo "[INFO] docker-entrypoint-ign.sh ended successfully."
