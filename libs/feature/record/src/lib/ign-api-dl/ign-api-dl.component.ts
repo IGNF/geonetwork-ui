@@ -194,8 +194,6 @@ export class IgnApiDlComponent implements OnInit {
   }
   resetPage(): void {
     this.page$.next('0')
-    this.pageSize$.next(this.initialPageSize)
-    this.size$.next(this.initialPageSize)
   }
 
   async getCapabilities() {
