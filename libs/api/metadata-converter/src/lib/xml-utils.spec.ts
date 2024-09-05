@@ -1,10 +1,11 @@
+import { XmlElement } from '@rgrove/parse-xml'
 import {
   getRootElement,
   parseXmlString,
+  readText,
   renameElements,
   xmlToString,
 } from './xml-utils'
-import { XmlElement } from '@rgrove/parse-xml'
 
 describe('xml utils', () => {
   describe('xmlToString', () => {
@@ -142,6 +143,23 @@ end.
     </mdb:identificationInfo>
 </mdb:MD_Metadata>
 `)
+    })
+  })
+
+  describe('readText', () => {
+    it('returns the text node in an element', () => {
+      const input = parseXmlString(`
+<root>hello
+world</root>
+`).root
+      expect(readText()(input)).toEqual('hello\nworld')
+    })
+    it('returns an empty string if no text node', () => {
+      const input = parseXmlString(`<root/>`).root
+      expect(readText()(input)).toEqual('')
+    })
+    it('returns null if applied to a falsy element', () => {
+      expect(readText()(null)).toEqual(null)
     })
   })
 })

@@ -1,18 +1,11 @@
-<div class="flex gap-2 mb-2">
-  <gn-ui-button
-    *ngFor="let addOption of addOptions"
-    (buttonClick)="add.emit(addOption.eventName)"
-  >
-    <span class="material-symbols-outlined gn-ui-icon-small"> add </span>
-    &nbsp;{{ addOption.buttonLabel }}</gn-ui-button
-  >
-</div>
 <div
   cdkDropList
   class="sortable-list flex flex-col gap-3 p-2"
   (cdkDropListDropped)="drop($event)"
 >
-  <ng-container *ngFor="let element of elements; index as index">
+  <ng-container
+    *ngFor="let element of elements; index as index; trackBy: trackByFn"
+  >
     <div class="sortable-box bg-white flex items-center" cdkDrag>
       <span
         cdkDragHandle

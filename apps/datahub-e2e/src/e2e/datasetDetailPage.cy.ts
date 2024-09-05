@@ -93,6 +93,13 @@ describe('dataset pages', () => {
   })
 
   describe('GENERAL : display & functions', () => {
+    describe('no-link-error block', () => {
+      it("shouldn't be there if there are links", () => {
+        cy.visit('/dataset/a3774ef6-809d-4dd1-984f-9254f49cbd0a')
+        cy.get('[data-test=dataset-has-no-link-block]').should('not.exist')
+      })
+    })
+
     describe('header', () => {
       it('should display the title, favorite star group and arrow back', () => {
         cy.get('datahub-header-record')
@@ -117,7 +124,7 @@ describe('dataset pages', () => {
           .find('.font-title')
           .next()
           .as('infoBar')
-        cy.get('@infoBar').children('div').should('have.length', 3)
+        cy.get('@infoBar').children().should('have.length', 3)
       })
       it('should return to the dataset list', () => {
         cy.get('datahub-header-record')
@@ -139,6 +146,16 @@ describe('dataset pages', () => {
             const text = $element.text().trim()
             expect(text).not.to.equal('')
           })
+      })
+      it('should display the read more button and expand description', () => {
+        cy.visit('/dataset/01491630-78ce-49f3-b479-4b30dabc4c69')
+        cy.get('datahub-record-metadata')
+          .find('[id="about"]')
+          .find('gn-ui-max-lines')
+          .as('maxLines')
+        cy.get('@maxLines').find('.ease-out').should('exist')
+        cy.get('[data-cy=readMoreButton]').click()
+        cy.get('@maxLines').find('.ease-in').should('exist')
       })
       it('should display the thumbnail image and magnify', () => {
         cy.get('datahub-record-metadata')
@@ -246,7 +263,7 @@ describe('dataset pages', () => {
       })
       it('should go to dataset search page when clicking on org name and filter by org', () => {
         cy.get('[data-cy="organization-name"]').eq(1).click()
-        cy.url().should('include', '/search?publisher=')
+        cy.url().should('include', '/search?organization=')
       })
       it('should go to dataset search page when clicking on keyword and filter by keyword', () => {
         cy.get('gn-ui-expandable-panel').eq(2).click()
@@ -354,6 +371,9 @@ describe('dataset pages', () => {
             .should('have.length.greaterThan', 0)
         })
         cy.screenshot({ capture: 'fullPage' })
+      })
+      it('should display the sharing options', () => {
+        cy.get('gn-ui-data-view-share').should('be.visible')
       })
     })
     describe('features', () => {
@@ -580,7 +600,12 @@ describe('dataset pages', () => {
         beforeEach(() => {
           cy.visit('/dataset/a3774ef6-809d-4dd1-984f-9254f49cbd0a')
         })
-        it('display the error datasetHasNoLink error block', () => {
+        it('do not display the no-link-error warning initially, only after loading', () => {
+          // wait for metadata info to show up
+          cy.get('gn-ui-metadata-info').should('exist')
+          // first, the block is not visible
+          cy.get('[data-test="dataset-has-no-link-block"]').should('not.exist')
+          // then the block shows up
           cy.get('[data-test="dataset-has-no-link-block"]').should('exist')
         })
       })
@@ -616,117 +641,125 @@ describe('record with file distributions', () => {
 
 describe('api cards', () => {
   beforeEach(() => {
-    cy.visit('/dataset/accroche_velos')
-    cy.get('gn-ui-api-card').first().as('firstCard')
+    cy.visit('/dataset/04bcec79-5b25-4b16-b635-73115f7456e4')
+    cy.get('gn-ui-api-card').eq(1).as('firstCard')
   })
 
   it('should display the open panel button', () => {
     cy.get('@firstCard')
       .find('button')
       .children('mat-icon')
+      .eq(1)
       .should('have.text', 'more_horiz')
   })
   it('should open and close the panel on click on open panel button', () => {
-    cy.get('@firstCard').click()
+    cy.get('@firstCard').find('button').eq(1).click()
     cy.get('gn-ui-record-api-form').should('be.visible')
     cy.screenshot({ capture: 'fullPage' })
-    cy.get('@firstCard').click()
+    cy.get('@firstCard').find('button').eq(1).click()
     cy.get('gn-ui-record-api-form').should('not.be.visible')
   })
 })
 
 describe('api form', () => {
-  beforeEach(() => {
-    cy.visit('/dataset/accroche_velos')
-    cy.get('gn-ui-api-card').first().find('button').click()
-    cy.get('gn-ui-record-api-form').children('div').as('apiForm')
-  })
-  it('should have request inputs', () => {
-    cy.get('@apiForm').find('gn-ui-text-input').should('have.length', 2)
-    cy.get('@apiForm').find('gn-ui-dropdown-selector').should('have.length', 1)
-    cy.get('@apiForm')
-      .children('div')
-      .first()
-      .children('div')
-      .first()
-      .find('button')
-      .should('have.length', 1)
-    cy.get('@apiForm').find('gn-ui-copy-text-button').should('have.length', 1)
-  })
-  it('should change url on input change', () => {
-    cy.get('@apiForm')
-      .find('gn-ui-copy-text-button')
-      .find('input')
-      .invoke('val')
-      .then((url) => {
-        cy.get('@apiForm').find('gn-ui-text-input').first().clear()
-        cy.get('@apiForm').find('gn-ui-text-input').first().type('54')
-        cy.get('@apiForm')
-          .find('gn-ui-copy-text-button')
-          .find('input')
-          .invoke('val')
-          .should('not.eq', url)
-          .and('include', '54')
-      })
-  })
-  it('should set limit to zero on click on "All" button', () => {
-    cy.get('@apiForm').find('gn-ui-text-input').first().clear()
-    cy.get('@apiForm').find('gn-ui-text-input').first().type('54')
-    cy.get('@apiForm').find('input[type="checkbox"]').check()
-    cy.get('@apiForm').find('gn-ui-text-input').first().should('have.value', '')
-  })
-  it('should reset all 3 inputs and link on click', () => {
-    cy.get('@apiForm').find('gn-ui-text-input').first().as('firstInput')
-    cy.get('@firstInput').clear()
-    cy.get('@firstInput').type('54')
+  describe('When the api link is ok', () => {
+    beforeEach(() => {
+      cy.visit('/dataset/accroche_velos')
+      cy.get('gn-ui-api-card').first().find('button').eq(1).click()
+      cy.get('gn-ui-record-api-form').children('div').as('apiForm')
+    })
+    it('should have request inputs', () => {
+      cy.get('@apiForm').find('gn-ui-text-input').should('have.length', 2)
+      cy.get('@apiForm')
+        .find('gn-ui-dropdown-selector')
+        .should('have.length', 1)
+      cy.get('@apiForm')
+        .children('div')
+        .first()
+        .children('div')
+        .first()
+        .find('button')
+        .should('have.length', 1)
+      cy.get('@apiForm').find('gn-ui-copy-text-button').should('have.length', 1)
+    })
+    it('should change url on input change', () => {
+      cy.get('@apiForm')
+        .find('gn-ui-copy-text-button')
+        .find('input')
+        .invoke('val')
+        .then((url) => {
+          cy.get('@apiForm').find('gn-ui-text-input').first().clear()
+          cy.get('@apiForm').find('gn-ui-text-input').first().type('54')
+          cy.get('@apiForm')
+            .find('gn-ui-copy-text-button')
+            .find('input')
+            .invoke('val')
+            .should('not.eq', url)
+            .and('include', '54')
+        })
+    })
+    it('should set limit to zero on click on "All" button', () => {
+      cy.get('@apiForm').find('gn-ui-text-input').first().clear()
+      cy.get('@apiForm').find('gn-ui-text-input').first().type('54')
+      cy.get('@apiForm').find('input[type="checkbox"]').check()
+      cy.get('@apiForm')
+        .find('gn-ui-text-input')
+        .first()
+        .should('have.value', '')
+    })
+    it('should reset all 3 inputs and link on click', () => {
+      cy.get('@apiForm').find('gn-ui-text-input').first().as('firstInput')
+      cy.get('@firstInput').clear()
+      cy.get('@firstInput').type('54')
 
-    cy.get('@apiForm').find('gn-ui-text-input').eq(1).as('secondInput')
-    cy.get('@secondInput').clear()
-    cy.get('@secondInput').type('87')
+      cy.get('@apiForm').find('gn-ui-text-input').eq(1).as('secondInput')
+      cy.get('@secondInput').clear()
+      cy.get('@secondInput').type('87')
 
-    cy.get('@apiForm').find('gn-ui-dropdown-selector').as('dropdown')
-    cy.get('@dropdown').eq(0).selectDropdownOption('geojson')
+      cy.get('@apiForm').find('gn-ui-dropdown-selector').as('dropdown')
+      cy.get('@dropdown').eq(0).selectDropdownOption('geojson')
 
-    cy.get('@apiForm')
-      .find('gn-ui-copy-text-button')
-      .find('input')
-      .invoke('val')
-      .should('include', 'f=geojson&limit=54&offset=87')
+      cy.get('@apiForm')
+        .find('gn-ui-copy-text-button')
+        .find('input')
+        .invoke('val')
+        .should('include', 'f=geojson&limit=54&offset=87')
 
-    cy.get('@apiForm').children('div').first().find('button').first().click()
+      cy.get('@apiForm').children('div').first().find('button').first().click()
 
-    cy.get('@firstInput').find('input').should('have.value', '')
-    cy.get('@secondInput').find('input').should('have.value', '')
-    cy.get('@apiForm')
-      .find('gn-ui-dropdown-selector')
-      .find('button')
-      .children('div')
-      .should('have.text', ' JSON ')
-    cy.get('@apiForm')
-      .find('gn-ui-copy-text-button')
-      .find('input')
-      .invoke('val')
-      .should('include', 'f=json&limit=-1')
-  })
-  it('should close the panel on click', () => {
-    cy.get('gn-ui-record-api-form').prev().find('button').click()
-    cy.get('gn-ui-record-api-form').should('not.be.visible')
-  })
-  it('should switch to other card url if card already open', () => {
-    cy.get('@apiForm')
-      .find('gn-ui-copy-text-button')
-      .find('input')
-      .invoke('val')
-      .then((url) => {
-        cy.get('@apiForm').find('gn-ui-text-input').first().clear()
-        cy.get('@apiForm').find('gn-ui-text-input').first().type('54')
-        cy.get('gn-ui-api-card').eq(1).find('button').click()
-        cy.get('@apiForm')
-          .find('gn-ui-copy-text-button')
-          .find('input')
-          .invoke('val')
-          .should('not.eq', url)
-      })
+      cy.get('@firstInput').find('input').should('have.value', '')
+      cy.get('@secondInput').find('input').should('have.value', '')
+      cy.get('@apiForm')
+        .find('gn-ui-dropdown-selector')
+        .find('button')
+        .children('div')
+        .should('have.text', ' JSON ')
+      cy.get('@apiForm')
+        .find('gn-ui-copy-text-button')
+        .find('input')
+        .invoke('val')
+        .should('include', 'f=json&limit=-1')
+    })
+    it('should close the panel on click', () => {
+      cy.get('gn-ui-record-api-form').prev().find('button').click()
+      cy.get('gn-ui-record-api-form').should('not.be.visible')
+    })
+    it('should switch to other card url if card already open', () => {
+      cy.get('@apiForm')
+        .find('gn-ui-copy-text-button')
+        .find('input')
+        .invoke('val')
+        .then((url) => {
+          cy.get('@apiForm').find('gn-ui-text-input').first().clear()
+          cy.get('@apiForm').find('gn-ui-text-input').first().type('54')
+          cy.get('gn-ui-api-card').eq(1).find('button').eq(1).click()
+          cy.get('@apiForm')
+            .find('gn-ui-copy-text-button')
+            .find('input')
+            .invoke('val')
+            .should('not.eq', url)
+        })
+    })
   })
 })
 

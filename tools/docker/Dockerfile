@@ -8,6 +8,7 @@ FROM ${registry}/library/php:8.1-apache
 COPY tools/docker/apache/apache-vhost.conf /etc/apache2/sites-available/000-default.conf
 COPY tools/docker/apache/apache-security.conf /etc/apache2/conf-enabled/security.conf
 COPY tools/docker/apache/apache-ports.conf /etc/apache2/ports.conf
+COPY tools/docker/docker-entrypoint-ign.sh /opt/docker-entrypoint-ign.sh
 
 RUN a2enmod rewrite remoteip alias headers
 
@@ -20,5 +21,13 @@ ENV ASSETS_DIRECTORY_OVERRIDE ""
 ENV CUSTOM_SCRIPTS_DIRECTORY ""
 
 COPY dist/apps/${APP_NAME} /opt/catalogue/
+RUN mv /opt/catalogue/assets/configuration/default.toml /opt/
+RUN chmod +x /opt/docker-entrypoint-ign.sh
+
+VOLUME /opt/catalogue/assets/configuration
+
+USER www-data
 
 EXPOSE 8080
+
+ENTRYPOINT ["sh", "/opt/docker-entrypoint-ign.sh"]

@@ -23,6 +23,7 @@ export class SearchPageComponent implements OnInit {
 
   ngOnInit() {
     this.searchFacade.setResultsLayout('ROW')
+    this.searchFacade.setSortBy(['desc', 'createDate'])
 
     const cfg: MetadataQualityConfig =
       getMetadataQualityConfig() || ({} as MetadataQualityConfig)

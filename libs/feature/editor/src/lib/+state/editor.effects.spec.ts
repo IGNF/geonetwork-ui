@@ -6,7 +6,7 @@ import { getTestScheduler, hot } from 'jasmine-marbles'
 import { firstValueFrom, Observable, of, throwError } from 'rxjs'
 import * as EditorActions from './editor.actions'
 import { EditorEffects } from './editor.effects'
-import { DATASET_RECORDS } from '@geonetwork-ui/common/fixtures'
+import { datasetRecordsFixture } from '@geonetwork-ui/common/fixtures'
 import { EditorService } from '../services/editor.service'
 import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
 import { EditorPartialState } from './editor.reducer'
@@ -20,13 +20,14 @@ class RecordsRepositoryMock {
 }
 
 const initialEditorState = {
-  record: DATASET_RECORDS[0],
+  record: datasetRecordsFixture()[0],
   recordSource: '<xml>blabla</xml>',
   saving: false,
   saveError: null,
   changedSinceSave: false,
   alreadySavedOnce: true,
-  fieldsConfig: [],
+  editorConfig: [],
+  currentPage: 0,
 }
 
 describe('EditorEffects', () => {
@@ -69,14 +70,14 @@ describe('EditorEffects', () => {
         const expected = hot('-(ab)|', {
           a: EditorActions.saveRecordSuccess(),
           b: EditorActions.openRecord({
-            record: DATASET_RECORDS[0],
+            record: datasetRecordsFixture()[0],
             alreadySavedOnce: true,
             recordSource: '<xml>blabla</xml>',
           }),
         })
         expect(effects.saveRecord$).toBeObservable(expected)
         expect(service.saveRecord).toHaveBeenCalledWith(
-          DATASET_RECORDS[0],
+          datasetRecordsFixture()[0],
           [],
           false
         )
@@ -92,7 +93,7 @@ describe('EditorEffects', () => {
         actions = of(EditorActions.saveRecord())
         await firstValueFrom(effects.saveRecord$)
         expect(service.saveRecord).toHaveBeenCalledWith(
-          DATASET_RECORDS[0],
+          datasetRecordsFixture()[0],
           [],
           true
         )
@@ -157,7 +158,7 @@ describe('EditorEffects', () => {
           })
         )
         expect(service.saveRecordAsDraft).toHaveBeenCalledWith(
-          DATASET_RECORDS[0]
+          datasetRecordsFixture()[0]
         )
       })
     })
@@ -168,7 +169,7 @@ describe('EditorEffects', () => {
       it('dispatch markRecordAsChanged', () => {
         actions = hot('-a-|', {
           a: EditorActions.openRecord({
-            record: DATASET_RECORDS[0],
+            record: datasetRecordsFixture()[0],
             alreadySavedOnce: true,
           }),
         })
@@ -187,7 +188,7 @@ describe('EditorEffects', () => {
       it('dispatches nothing', () => {
         actions = hot('-a-|', {
           a: EditorActions.openRecord({
-            record: DATASET_RECORDS[0],
+            record: datasetRecordsFixture()[0],
             alreadySavedOnce: true,
           }),
         })

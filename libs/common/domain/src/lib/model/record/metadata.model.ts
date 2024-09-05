@@ -67,6 +67,7 @@ export interface Keyword {
   description?: string
   type: KeywordType
   thesaurus?: ThesaurusModel
+  bbox?: [number, number, number, number]
 }
 // languages should be expressed using two-letters ISO 639-1 codes
 export type LanguageCode = string
@@ -160,7 +161,8 @@ export interface GraphicOverview {
 }
 
 export interface DatasetSpatialExtent {
-  geometry: Geometry
+  bbox?: [number, number, number, number]
+  geometry?: Geometry
   description?: string
 }
 

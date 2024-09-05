@@ -37,7 +37,7 @@
       <div class="flex flex-row items-center gap-2 max-w-full">
         <span class="overflow-hidden text-ellipsis">{{ item.title }}</span>
         <gn-ui-badge
-          *ngIf="recordHasDraft(item)"
+          *ngIf="hasDraft(item)"
           [style.--gn-ui-badge-padding]="'0.4em 0.6em'"
           [style.--gn-ui-badge-text-color]="'#3d2006'"
           [style.--gn-ui-badge-background-color]="'#ffbc7b'"
@@ -103,7 +103,12 @@
       <span translate>record.metadata.status</span>
     </ng-template>
     <ng-template #cell let-item>
-      {{ item.status }}
+      {{
+        (isUnsavedDraft(item)
+          ? 'record.metadata.status.notPublished'
+          : 'record.metadata.status.published'
+        ) | translate
+      }}
     </ng-template>
   </gn-ui-interactive-table-column>
 
@@ -117,7 +122,23 @@
       <span translate>record.metadata.updatedOn</span>
     </ng-template>
     <ng-template #cell let-item>
-      {{ dateToString(item.recordUpdated) }}
+      <div class="flex justify-center w-full">
+        {{ isUnsavedDraft(item) ? '-' : dateToString(item.recordUpdated) }}
+      </div>
+    </ng-template>
+  </gn-ui-interactive-table-column>
+
+  <!-- ACTION MENU COLUMN -->
+  <gn-ui-interactive-table-column>
+    <ng-template #header> </ng-template>
+    <ng-template #cell let-item>
+      <gn-ui-action-menu
+        [canDuplicate]="canDuplicate(item)"
+        [canDelete]="canDelete(item)"
+        (duplicate)="handleDuplicate(item)"
+        (delete)="handleDelete(item)"
+      >
+      </gn-ui-action-menu>
     </ng-template>
   </gn-ui-interactive-table-column>
 </gn-ui-interactive-table>
