@@ -22,12 +22,10 @@ ENV CUSTOM_SCRIPTS_DIRECTORY ""
 
 COPY dist/apps/${APP_NAME} /opt/catalogue/
 RUN chmod +x /opt/docker-entrypoint-ign.sh
-# RUN chown -R www-data:www-data /opt/catalogue/assets/configuration
+RUN chown -R www-data:www-data /opt/catalogue/assets/configuration
 
-# USER www-data
+USER www-data
 
 EXPOSE 8080
 
 ENTRYPOINT ["sh", "/opt/docker-entrypoint-ign.sh"]
-
-USER www-data
