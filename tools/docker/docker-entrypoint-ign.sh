@@ -20,8 +20,5 @@ fi
 
 echo "[INFO] docker-entrypoint-ign.sh ended successfully."
 
-# run as www-data
-su www-data
-
 # Start Apache in foreground
 /usr/sbin/apachectl -D FOREGROUND

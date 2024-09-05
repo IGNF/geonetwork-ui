@@ -29,3 +29,5 @@ RUN chmod +x /opt/docker-entrypoint-ign.sh
 EXPOSE 8080
 
 ENTRYPOINT ["sh", "/opt/docker-entrypoint-ign.sh"]
+
+USER www-data
