@@ -21,8 +21,10 @@ ENV ASSETS_DIRECTORY_OVERRIDE ""
 ENV CUSTOM_SCRIPTS_DIRECTORY ""
 
 COPY dist/apps/${APP_NAME} /opt/catalogue/
+RUN mv /opt/catalogue/assets/configuration/default.toml /opt/
 RUN chmod +x /opt/docker-entrypoint-ign.sh
-RUN chown -R www-data:www-data /opt/catalogue/assets/configuration
+
+VOLUME /opt/catalogue/assets/configuration
 
 USER www-data
 
