@@ -7,20 +7,42 @@ import {
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { DEFAULT_FIELDS } from '../fields.config'
 import { DATASET_RECORDS } from '@geonetwork-ui/common/fixtures'
+import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
+import { firstValueFrom, of } from 'rxjs'
 
 const SAMPLE_RECORD: CatalogRecord = DATASET_RECORDS[0]
+
+class RecordsRepositoryMock {
+  openRecordForEdition = jest.fn(() =>
+    of([
+      { ...SAMPLE_RECORD, recordUpdated: new Date() },
+      '<xml>blabla</xml>',
+      false,
+    ])
+  )
+  saveRecord = jest.fn(() => of('<xml>blabla</xml>'))
+  saveRecordAsDraft = jest.fn(() => of('<xml>blabla</xml>'))
+  clearRecordDraft = jest.fn()
+}
 
 describe('EditorService', () => {
   let service: EditorService
   let http: HttpTestingController
+  let repository: RecordsRepositoryInterface
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [],
+      providers: [
+        {
+          provide: RecordsRepositoryInterface,
+          useClass: RecordsRepositoryMock,
+        },
+      ],
     })
     service = TestBed.inject(EditorService)
     http = TestBed.inject(HttpTestingController)
+    repository = TestBed.inject(RecordsRepositoryInterface)
   })
 
   afterEach(() => {
@@ -31,49 +53,49 @@ describe('EditorService', () => {
     expect(service).toBeTruthy()
   })
 
-  describe('loadRecordByUuid', () => {
-    let record: CatalogRecord
-    beforeEach(() => {
-      service.loadRecordByUuid('1234-5678').subscribe((v) => (record = v))
-      http.expectOne(
-        (req) => req.url.indexOf('/records/1234-5678/formatters/xml') > -1
-      ).flush(`
-<gmd:MD_Metadata>
-    <gmd:fileIdentifier>
-        <gco:CharacterString>1234-5678</gco:CharacterString>
-    </gmd:fileIdentifier>
-</gmd:MD_Metadata>`)
+  describe('saveRecord', () => {
+    let savedRecord: [CatalogRecord, string]
+    beforeEach(async () => {
+      savedRecord = await firstValueFrom(
+        service.saveRecord(SAMPLE_RECORD, DEFAULT_FIELDS)
+      )
     })
-    it('parses the XML record into a native object', () => {
-      expect(record).toMatchObject({ uniqueIdentifier: '1234-5678' })
+    it('calls repository.saveRecord and repository.clearRecordDraft', () => {
+      const expected = {
+        ...SAMPLE_RECORD,
+        recordUpdated: expect.any(Date),
+      }
+      expect(repository.saveRecord).toHaveBeenCalledWith(expected)
+      expect(repository.clearRecordDraft).toHaveBeenCalledWith(
+        SAMPLE_RECORD.uniqueIdentifier
+      )
+      expect(savedRecord).toEqual([expected, '<xml>blabla</xml>'])
+    })
+    it('applies field processes (update date in record)', () => {
+      const arg = (repository.saveRecord as jest.Mock).mock.calls[0][0]
+      expect(arg.recordUpdated).not.toEqual(SAMPLE_RECORD.recordUpdated)
+    })
+    describe('if a new one has to be generated', () => {
+      beforeEach(() => {
+        service.saveRecord(SAMPLE_RECORD, DEFAULT_FIELDS, true).subscribe()
+      })
+      it('clears the unique identifier of the record', () => {
+        const expected = {
+          ...SAMPLE_RECORD,
+          recordUpdated: expect.any(Date),
+          uniqueIdentifier: null,
+        }
+        expect(repository.saveRecord).toHaveBeenCalledWith(expected)
+      })
     })
   })
 
-  describe('saveRecord', () => {
-    describe('after a record was set as current', () => {
-      let savedRecord: CatalogRecord
-      beforeEach(() => {
-        service
-          .saveRecord(SAMPLE_RECORD, DEFAULT_FIELDS)
-          .subscribe((v) => (savedRecord = v))
-      })
-      it('sends a record as XML to the API after applying field processes', () => {
-        const match = http.expectOne(
-          (req) => req.method === 'PUT' && req.url.indexOf('/records') > -1
-        )
-        match.flush('ok')
-        expect(match.request.body).toContain(`
-    <gmd:fileIdentifier>
-        <gco:CharacterString>${SAMPLE_RECORD.uniqueIdentifier}</gco:CharacterString>
-    </gmd:fileIdentifier>`)
-        expect(savedRecord).toEqual({
-          ...SAMPLE_RECORD,
-          recordUpdated: expect.any(Date),
-        })
-        expect(savedRecord.recordUpdated).not.toEqual(
-          SAMPLE_RECORD.recordUpdated
-        )
-      })
+  describe('saveRecordAsDraft', () => {
+    beforeEach(() => {
+      service.saveRecordAsDraft(SAMPLE_RECORD).subscribe()
+    })
+    it('calls saveRecordAsDraft', () => {
+      expect(repository.saveRecordAsDraft).toHaveBeenCalledWith(SAMPLE_RECORD)
     })
   })
 })

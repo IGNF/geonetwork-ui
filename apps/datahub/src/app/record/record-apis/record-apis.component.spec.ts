@@ -4,6 +4,7 @@ import { TranslateModule } from '@ngx-translate/core'
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
 import { MdViewFacade } from '@geonetwork-ui/feature/record'
 import { BehaviorSubject } from 'rxjs'
+import { NO_ERRORS_SCHEMA } from '@angular/core'
 
 class MdViewFacadeMock {
   selectedApiLink$ = new BehaviorSubject([])
@@ -23,6 +24,7 @@ describe('RecordApisComponent', () => {
     await TestBed.configureTestingModule({
       declarations: [RecordApisComponent],
       imports: [TranslateModule.forRoot()],
+      schemas: [NO_ERRORS_SCHEMA],
       providers: [
         {
           provide: MdViewFacade,
@@ -48,7 +50,7 @@ describe('RecordApisComponent', () => {
       expect(component.selectedApiLink).toEqual(serviceDistributionMock)
     })
     it('should update maxHeight for transition', () => {
-      expect(component.maxHeight).toEqual('500px')
+      expect(component.maxHeight).toEqual('700px')
     })
     it('should update opacity for transition', () => {
       expect(component.opacity).toEqual(1)
