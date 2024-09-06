@@ -365,6 +365,7 @@
   "record.metadata.api.form.openForm": "Open the form",
   "record.metadata.api.form.reset": "Reset",
   "record.metadata.api.form.title": "Generate a custom URL",
+  "record.metadata.api.form.title.gpf": "Download data",
   "record.metadata.api.form.type": "Output format",
   "record.metadata.author": "Edited by",
   "record.metadata.catalog": "Catalog",
