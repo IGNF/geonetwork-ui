@@ -116,7 +116,7 @@ export type ServiceProtocol =
   | 'GPFDL'
   | 'other'
 
-export type DatasetDistributionType = 'service' | 'download' | 'link'
+export type OnlineResourceType = 'service' | 'download' | 'link' | 'endpoint'
 
 export interface DatasetServiceDistribution {
   type: 'service'
@@ -147,12 +147,12 @@ export interface OnlineLinkResource {
   description?: string
 }
 
-export type DatasetDistribution = (
+export type DatasetOnlineResource = (
   | DatasetServiceDistribution
   | DatasetDownloadDistribution
   | OnlineLinkResource
 ) & {
-  type: DatasetDistributionType
+  type: OnlineResourceType
 }
 
 export interface GraphicOverview {
@@ -179,13 +179,11 @@ export interface DatasetRecord extends BaseRecord {
   kind: 'dataset'
   status: RecordStatus
   lineage: string // Explanation of the origin of this record (e.g: how, why)"
-  distributions: Array<DatasetDistribution>
+  onlineResources: Array<DatasetOnlineResource>
   spatialExtents: Array<DatasetSpatialExtent>
   temporalExtents: Array<DatasetTemporalExtent>
   spatialRepresentation?: SpatialRepresentationType
 }
-
-export type ServiceOnlineResourceType = 'endpoint' | 'link'
 
 export interface ServiceEndpoint {
   endpointUrl: URL
@@ -195,13 +193,15 @@ export interface ServiceEndpoint {
 }
 
 export type ServiceOnlineResource = (ServiceEndpoint | OnlineLinkResource) & {
-  type: ServiceOnlineResourceType
+  type: OnlineResourceType
 }
 
 export interface ServiceRecord extends BaseRecord {
   kind: 'service'
   onlineResources: Array<ServiceOnlineResource>
 }
+
+export type OnlineResource = DatasetOnlineResource | ServiceOnlineResource
 
 export type CatalogRecord = ServiceRecord | DatasetRecord
 
