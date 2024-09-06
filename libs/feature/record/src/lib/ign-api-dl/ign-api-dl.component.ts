@@ -5,22 +5,9 @@ import {
   OnInit,
 } from '@angular/core'
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
-import {
-  BehaviorSubject,
-  Observable,
-  combineLatest,
-  filter,
-  first,
-  iif,
-  map,
-  mergeMap,
-  startWith,
-  switchMap,
-  tap,
-} from 'rxjs'
-import { fromFetch } from 'rxjs/fetch'
+import { BehaviorSubject, Observable, combineLatest, map, mergeMap } from 'rxjs'
 import { HttpClient } from '@angular/common/http'
-import { Choice, DropdownChoice } from '@geonetwork-ui/ui/inputs'
+import { Choice } from '@geonetwork-ui/ui/inputs'
 import axios from 'axios'
 
 export interface Label {
@@ -68,15 +55,13 @@ export interface Field {
 export class IgnApiDlComponent implements OnInit {
   isOpen = false
   collapsed = false
-  initialPageSize = '200'
+  initialLimit = 50
   apiBaseUrl: string
   editionDate$ = new BehaviorSubject('')
   zone$ = new BehaviorSubject('')
   format$ = new BehaviorSubject('')
   crs$ = new BehaviorSubject('')
-  pageSize$ = new BehaviorSubject(this.initialPageSize)
-  page$ = new BehaviorSubject('0')
-  size$ = new BehaviorSubject(this.initialPageSize)
+  page$ = new BehaviorSubject(1)
   // a passer en config
   url =
     'https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
@@ -103,13 +88,10 @@ export class IgnApiDlComponent implements OnInit {
     this.format$,
     this.editionDate$,
     this.crs$,
-    this.pageSize$,
     this.page$,
   ]).pipe(
-    map(([zone, format, editionDate, crs, pageSize, page]) => {
+    map(([zone, format, editionDate, crs, page]) => {
       let outputUrl
-      console.log(zone, format, editionDate, crs, pageSize, page)
-
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
         const params = {
@@ -117,12 +99,11 @@ export class IgnApiDlComponent implements OnInit {
           format: format,
           editionDate: editionDate,
           crs: crs,
-          pageSize: pageSize,
           page: page,
         } // initialisation des paramètres de filtres
         for (const [key, value] of Object.entries(params)) {
           if (value && value !== 'null') {
-            url.searchParams.set(key, value)
+            url.searchParams.set(key, String(value))
           } else {
             url.searchParams.delete(key)
           }
@@ -146,11 +127,13 @@ export class IgnApiDlComponent implements OnInit {
       )
     })
   )
-  numberFilteredProduct$ = this.apiQueryUrl$.pipe(
+
+  pageMax$ = this.apiQueryUrl$.pipe(
     mergeMap((url) => {
       return this.getFilteredProduct$(url).pipe(
-        map((response) => response['totalentries'])
-        // startWith(0)
+        map((response) =>
+          Math.ceil(response['totalentries'] / Number(this.initialLimit))
+        )
       )
     })
   )
@@ -198,17 +181,18 @@ export class IgnApiDlComponent implements OnInit {
     this.zone$.next('null')
     this.format$.next('null')
     this.crs$.next('null')
-    this.page$.next('0')
-    this.size$.next(this.initialPageSize)
+    this.page$.next(1)
   }
   moreResult(): void {
-    const page = Number(this.page$.value) + 1
-    const size = (page + 1) * Number(this.initialPageSize)
-    this.size$.next(String(size))
-    this.page$.next(String(page))
+    this.page$.next(this.page$.value + 1)
   }
+
+  lessResult(): void {
+    this.page$.next(this.page$.value - 1)
+  }
+
   resetPage(): void {
-    this.page$.next('0')
+    this.page$.next(1)
   }
 
   async getCapabilities() {
@@ -218,7 +202,7 @@ export class IgnApiDlComponent implements OnInit {
 
     while (choicesTest === undefined && pageCount > page) {
       const response = await axios.get(
-        this.url.concat(`&pagesize=200&page=${page}`)
+        this.url.concat(`&limit=200&page=${page}`)
       )
 
       choicesTest = response.data.entry.filter(
