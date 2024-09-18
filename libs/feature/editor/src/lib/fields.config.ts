@@ -4,6 +4,7 @@ import {
   EditorField,
   EditorSection,
 } from './models/editor-config.model'
+import { Keyword } from '@geonetwork-ui/common/domain/model/record'
 
 /**
  * This file contains the configuration of the fields that will be displayed in the editor.
@@ -44,6 +45,7 @@ export const RECORD_RESOURCE_UPDATED_FIELD: EditorField = {
   formFieldConfig: {
     labelKey: marker('editor.record.form.field.resourceUpdated'),
   },
+  gridColumnSpan: 1,
 }
 
 export const RECORD_UPDATED_FIELD: EditorField = {
@@ -53,14 +55,15 @@ export const RECORD_UPDATED_FIELD: EditorField = {
     locked: true,
   },
   onSaveProcess: '${dateNow()}',
+  gridColumnSpan: 1,
 }
 
 export const RECORD_UPDATE_FREQUENCY_FIELD: EditorField = {
   model: 'updateFrequency',
-  formFieldConfig: {
-    labelKey: marker('editor.record.form.field.updateFrequency'),
-  },
+  formFieldConfig: {},
 }
+// keeping track of the label to not lose existing translation
+marker('editor.record.form.field.updateFrequency')
 
 export const RECORD_TEMPORAL_EXTENTS_FIELD: EditorField = {
   model: 'temporalExtents',
@@ -218,7 +221,7 @@ export const DEFAULT_CONFIGURATION: EditorConfig = {
 }
 
 /************************************************************
- ***************           LICENSES            *****************
+ ***************           LICENSES            **************
  ************************************************************
  */
 export const OPEN_DATA_LICENSES: string[] = [
@@ -230,3 +233,22 @@ export const OPEN_DATA_LICENSES: string[] = [
 ]
 
 export const MAX_UPLOAD_SIZE_MB = 10
+/************************************************************
+ ***************        SPATIAL SCOPE            ************
+ ************************************************************
+ */
+
+export const SPATIAL_SCOPES: Keyword[] = [
+  {
+    key: 'http://inspire.ec.europa.eu/metadata-codelist/SpatialScope/national',
+    label: 'National',
+    description: '',
+    type: 'theme',
+  },
+  {
+    key: 'http://inspire.ec.europa.eu/metadata-codelist/SpatialScope/regional',
+    label: 'Regional',
+    description: '',
+    type: 'theme',
+  },
+]

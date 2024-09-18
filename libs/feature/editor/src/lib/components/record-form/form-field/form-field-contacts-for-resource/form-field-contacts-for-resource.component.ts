@@ -34,6 +34,7 @@ import {
 } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ContactCardComponent } from '../../../contact-card/contact-card.component'
+import { MatIconModule } from '@angular/material/icon'
 
 @Component({
   selector: 'gn-ui-form-field-contacts-for-resource',
@@ -50,6 +51,7 @@ import { ContactCardComponent } from '../../../contact-card/contact-card.compone
     TranslateModule,
     ContactCardComponent,
     SortableListComponent,
+    MatIconModule,
   ],
 })
 export class FormFieldContactsForResourceComponent
@@ -145,9 +147,8 @@ export class FormFieldContactsForResourceComponent
     this.valueChange.emit(newContactsforRessource)
   }
 
-  handleContactsChanged(items: unknown[]) {
+  handleContactsChanged(items: unknown[], role: Role) {
     const contacts = items as Individual[]
-    const role = contacts[0].role
 
     this.contactsForRessourceByRole.set(role, contacts)
 
