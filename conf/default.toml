@@ -81,7 +81,7 @@ favicon = "/catalogue/assets/img/favicon.ico"
 # The advanced search filters available to the user can be customized with this setting.
 # The following fields can be used for filtering: 'organization', 'format', 'publicationYear', 'standard', 'inspireKeyword', 'keyword', 'topic', 'isSpatial', 'license', 'resourceType', 'representationType', 'producerOrg', 'publisherOrg'
 # any other field will be ignored
-advanced_filters = ['publisher', 'topic', 'resourceType', 'publicationYear', 'format', 'inspireKeyword', 'isSpatial', 'license']
+advanced_filters = ['topic', 'resourceType', 'publicationYear', 'format', 'inspireKeyword', 'isSpatial', 'license', 'organization']
 
 # One or several search presets can be defined here; every search preset is composed of:
 # - a name (which can be a translation key)
@@ -197,3 +197,5 @@ name = 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2'
 search.filters.title= "Affiner votre recherche"
 datahub.header.title.html="<div>Catalogue de données et de services</div>"
 datahub.header.datasets="Données et services"
+ogc.unreachable.unknown="Le flux n'est pas accessible ou est à accès restreint"
+wfs.unreachable.unknown="Le service n'est pas accessible ou est à accès restreint"

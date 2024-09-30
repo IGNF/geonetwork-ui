@@ -94,7 +94,6 @@ export class DropdownSelectorComponent implements OnInit {
     if (!this.choices || this.choices.length === 0) {
       this.choices = []
     }
-    console.log('un nv test', this.focusFirstItem())
   }
 
   isSelected(choice: DropdownChoice) {
