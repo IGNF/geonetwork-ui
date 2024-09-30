@@ -25,6 +25,7 @@
       <div class="flex flex-row flex-start items-center gap-3 mb-[12px]">
         <span
           #titleInput
+          data-test="recordTitleInput"
           class="grow font-title text-3xl font-normal"
           [gnUiEditableLabel]="valueAsString"
           (editableLabelChanged)="valueChange.emit($event)"
@@ -113,6 +114,20 @@
         [value]="valueAsIndividuals"
         (valueChange)="valueChange.emit($event)"
       ></gn-ui-form-field-contacts-for-resource>
+    </ng-container>
+    <ng-container *ngSwitchCase="'contacts'">
+      <gn-ui-form-field-contacts
+        [value]="valueAsIndividuals"
+        (valueChange)="valueChange.emit($event)"
+      ></gn-ui-form-field-contacts>
+    </ng-container>
+    <ng-container *ngSwitchCase="'onlineResources'">
+      <gn-ui-form-field-online-resources
+        *ngIf="modelSpecifier === 'onlineResourceType:!link'"
+        [metadataUuid]="uniqueIdentifier"
+        [value]="valueAsOnlineResources"
+        (valueChange)="valueChange.emit($event)"
+      ></gn-ui-form-field-online-resources>
     </ng-container>
     <ng-container *ngSwitchCase="'onlineResources'">
       <gn-ui-form-field-online-link-resources

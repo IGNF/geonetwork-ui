@@ -24,23 +24,25 @@ import { EditableLabelDirective } from '@geonetwork-ui/ui/inputs'
 import { FormFieldWrapperComponent } from '@geonetwork-ui/ui/layout'
 import { TranslateModule } from '@ngx-translate/core'
 import {
-  FormFieldLicenseComponent,
   FormFieldDateUpdatedComponent,
+  FormFieldLicenseComponent,
   FormFieldTemporalExtentsComponent,
 } from '.'
 import { FieldModelSpecifier, FormFieldConfig } from '../../../models'
 import { FormFieldArrayComponent } from './form-field-array/form-field-array.component'
 import { FormFieldContactsForResourceComponent } from './form-field-contacts-for-resource/form-field-contacts-for-resource.component'
+import { FormFieldContactsComponent } from './form-field-contacts/form-field-contacts.component'
 import { FormFieldFileComponent } from './form-field-file/form-field-file.component'
 import { FormFieldKeywordsComponent } from './form-field-keywords/form-field-keywords.component'
 import { FormFieldObjectComponent } from './form-field-object/form-field-object.component'
+import { FormFieldOnlineLinkResourcesComponent } from './form-field-online-link-resources/form-field-online-link-resources.component'
+import { FormFieldOnlineResourcesComponent } from './form-field-online-resources/form-field-online-resources.component'
+import { FormFieldOpenDataComponent } from './form-field-open-data/form-field-open-data.component'
 import { FormFieldOverviewsComponent } from './form-field-overviews/form-field-overviews.component'
 import { FormFieldRichComponent } from './form-field-rich/form-field-rich.component'
 import { FormFieldSimpleComponent } from './form-field-simple/form-field-simple.component'
 import { FormFieldSpatialExtentComponent } from './form-field-spatial-extent/form-field-spatial-extent.component'
 import { FormFieldUpdateFrequencyComponent } from './form-field-update-frequency/form-field-update-frequency.component'
-import { FormFieldOpenDataComponent } from './form-field-open-data/form-field-open-data.component'
-import { FormFieldOnlineLinkResourcesComponent } from './form-field-online-link-resources/form-field-online-link-resources.component'
 
 @Component({
   selector: 'gn-ui-form-field',
@@ -69,7 +71,9 @@ import { FormFieldOnlineLinkResourcesComponent } from './form-field-online-link-
     FormFieldOverviewsComponent,
     FormFieldContactsForResourceComponent,
     FormFieldOpenDataComponent,
+    FormFieldOnlineResourcesComponent,
     FormFieldOnlineLinkResourcesComponent,
+    FormFieldContactsComponent,
   ],
 })
 export class FormFieldComponent {

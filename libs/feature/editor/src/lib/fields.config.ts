@@ -93,6 +93,13 @@ export const CONTACTS_FOR_RESOURCE_FIELD: EditorField = {
   },
 }
 
+export const CONTACTS: EditorField = {
+  model: 'contacts',
+  formFieldConfig: {
+    labelKey: '',
+  },
+}
+
 export const RECORD_GRAPHICAL_OVERVIEW_FIELD: EditorField = {
   model: 'overviews',
   formFieldConfig: {
@@ -104,6 +111,14 @@ export const RECORD_SPATIAL_EXTENTS_FIELD: EditorField = {
   model: 'spatialExtents',
   formFieldConfig: {
     labelKey: marker('editor.record.form.field.spatialExtents'),
+  },
+}
+
+export const RECORD_ONLINE_RESOURCES: EditorField = {
+  model: 'onlineResources',
+  modelSpecifier: 'onlineResourceType:!link',
+  formFieldConfig: {
+    labelKey: marker('editor.record.form.field.onlineResources'),
   },
 }
 
@@ -154,11 +169,12 @@ export const ASSOCIATED_RESOURCES_SECTION: EditorSection = {
     'editor.record.form.section.associatedResources.description'
   ),
   hidden: false,
-  fields: [],
+  fields: [RECORD_ONLINE_RESOURCES],
 }
 
 export const ANNEXES_SECTION: EditorSection = {
   labelKey: marker('editor.record.form.section.annexes.label'),
+  descriptionKey: marker('editor.record.form.section.annexes.description'),
   hidden: false,
   fields: [RECORD_ONLINE_LINK_RESOURCES],
 }
@@ -191,7 +207,7 @@ export const DATA_POINT_OF_CONTACT_SECTION: EditorSection = {
     'editor.record.form.section.dataPointOfContact.description'
   ),
   hidden: false,
-  fields: [],
+  fields: [CONTACTS],
 }
 
 /************************************************************

@@ -8,12 +8,15 @@ const fakeUser = {
 
 const gnBaseUrl = 'http://localhost:8080/geonetwork/srv/eng/'
 
-describe('dashboard', () => {
+describe('dashboard (authenticated)', () => {
+  beforeEach(() => {
+    cy.login('admin', 'admin', false)
+  })
+
   let pageOne
   describe('avatar', () => {
     describe('display avatar for user without gravatar hash', () => {
       it('should display placeholder url', () => {
-        cy.login('admin', 'admin', false)
         cy.visit(`${gnBaseUrl}admin.console#/organization`)
         cy.get('#gn-btn-user-add').click()
         cy.get('#username').type(fakeUser.username)
@@ -35,7 +38,6 @@ describe('dashboard', () => {
           .should('eq', 'https://www.gravatar.com/avatar/?d=mp')
       })
       it('should display monsterid', () => {
-        cy.login('admin', 'admin', false)
         cy.visit(`${gnBaseUrl}admin.console#/settings`)
         cy.get('[id="system/users/identicon"]').type(
           '{selectAll}gravatar:monsterid'
@@ -160,7 +162,6 @@ describe('dashboard', () => {
   })
   describe('columns', () => {
     beforeEach(() => {
-      cy.login('admin', 'admin', false)
       cy.visit('/catalog/search')
     })
     it('should display the right info for unpublished records', () => {
@@ -187,7 +188,7 @@ describe('dashboard', () => {
       cy.get('@draft')
         .children('div')
         .eq(5)
-        .should('contain', ' Not published ')
+        .should('include.text', 'Not published')
       cy.get('@draft').children('div').eq(6).should('contain', ' - ')
       cy.clearRecordDrafts()
     })
@@ -204,23 +205,25 @@ describe('dashboard', () => {
         .find('span')
         .invoke('text')
         .should('eq', 'admin admin')
-      cy.get('@record').children('div').eq(5).should('contain', ' Published ')
+      cy.get('@record')
+        .children('div')
+        .eq(5)
+        .find('span')
+        .should('include.text', 'Published')
       cy.get('@record').children('div').eq(6).should('not.contain', ' - ')
       cy.clearRecordDrafts()
     })
   })
+
   describe('navigation', () => {
     beforeEach(() => {
-      cy.login('admin', 'admin', false)
       cy.visit('/catalog/search')
     })
-    describe('search input', () => {
-      it('should filter the dashboard based on the search input', () => {
-        cy.get('gn-ui-autocomplete').type('Mat')
-        cy.get('mat-option').first().click()
-        cy.get('gn-ui-interactive-table')
+    describe('all records', () => {
+      it('should display the correct amount of records', () => {
+        cy.get('gn-ui-results-table')
           .find('[data-cy="table-row"]')
-          .should('have.length', '1')
+          .should('have.length', '15')
       })
     })
     describe('my records', () => {
@@ -232,6 +235,91 @@ describe('dashboard', () => {
           .next()
           .should('contain', 'admin admin')
       })
+      it('should display the correct amount of records', () => {
+        cy.get('md-editor-dashboard-menu').find('a').eq(5).click()
+        cy.get('gn-ui-results-table')
+          .find('[data-cy="table-row"]')
+          .should('have.length', '10')
+      })
+      it('should sort the records by title', () => {
+        cy.get('md-editor-dashboard-menu').find('a').eq(5).click()
+        cy.get('gn-ui-results-table')
+          .find('[data-cy="table-row"]')
+          .first()
+          .invoke('text')
+          .then((firstRecord) => {
+            console.log(firstRecord)
+            cy.get('gn-ui-results-table')
+              .find('.table-header-cell')
+              .eq(1)
+              .click()
+            cy.get('gn-ui-results-table')
+              .find('[data-cy="table-row"]')
+              .first()
+              .invoke('text')
+              .should('not.eq', firstRecord)
+          })
+      })
     })
+  })
+
+  describe('search', () => {
+    function checkDashboardFiltered() {
+      cy.get('gn-ui-autocomplete').type('velo{enter}')
+      cy.get('gn-ui-interactive-table')
+        .find('[data-cy="table-row"]')
+        .should('have.length', '1')
+    }
+    function checkAutocompleteSelected() {
+      cy.get('gn-ui-autocomplete').type('velo')
+      cy.get('mat-option').first().click()
+      cy.url().should('include', '/edit/accroche_velos')
+    }
+    describe('allRecords search input', () => {
+      beforeEach(() => {
+        cy.visit('/catalog/search')
+      })
+      it('should filter the dashboard based on the search input', () => {
+        checkDashboardFiltered()
+      })
+      it('should navigate to the record selected in the autocomplete', () => {
+        checkAutocompleteSelected()
+      })
+      it('should clear the search input when navigating to my records', () => {
+        cy.get('gn-ui-autocomplete').type('velo')
+        cy.get('md-editor-dashboard-menu').find('a').eq(5).click()
+        cy.get('gn-ui-autocomplete').should('have.value', '')
+      })
+      it('should hide the search input when navigating to my drafts', () => {
+        cy.get('md-editor-dashboard-menu').find('a').eq(6).click()
+        cy.get('gn-ui-autocomplete').should('not.exist')
+      })
+    })
+    describe('myRecords search input', () => {
+      beforeEach(() => {
+        cy.login('admin', 'admin', false)
+        cy.visit('/my-space/my-records')
+      })
+      it('should filter the dashboard based on the search input', () => {
+        checkDashboardFiltered()
+      })
+      it('should navigate to the record selected in the autocomplete', () => {
+        checkAutocompleteSelected()
+      })
+      it('should clear the search input when navigating to all records', () => {
+        cy.get('gn-ui-autocomplete').type('velo')
+        cy.get('md-editor-dashboard-menu').find('a').first().click()
+        cy.get('gn-ui-autocomplete').should('have.value', '')
+      })
+    })
+  })
+})
+
+describe('when the user is not logged in', () => {
+  beforeEach(() => {
+    cy.visit('/catalog/search')
+  })
+  it('redirects to the login page', () => {
+    cy.url().should('include', '/catalog.signin?redirect=')
   })
 })

@@ -16,6 +16,7 @@ import {
   FileInputComponent,
   TextAreaComponent,
   TextInputComponent,
+  UrlInputComponent,
 } from '@geonetwork-ui/ui/inputs'
 import { CommonModule } from '@angular/common'
 import { OnlineResourceCardComponent } from '../../../online-resource-card/online-resource-card.component'
@@ -43,6 +44,7 @@ import { MAX_UPLOAD_SIZE_MB } from '../../../../fields.config'
     OnlineResourceCardComponent,
     TextInputComponent,
     TextAreaComponent,
+    UrlInputComponent,
     TranslateModule,
   ],
 })
@@ -154,6 +156,7 @@ export class FormFieldOnlineLinkResourcesComponent {
     }
     this.dialog
       .open(ModalDialogComponent, {
+        width: '800px',
         data: {
           title: this.translateService.instant(
             'editor.record.form.field.onlineResource.dialogTitle'
