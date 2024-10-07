@@ -28,13 +28,12 @@
   </gn-ui-api-card>
 </gn-ui-carousel>
 <div
-  class="content transition-all duration-300 w-screen mx-auto -ml-[calc(50vw-50%)] overflow-hidden"
+  *ngIf="displayApiIgnForm"
+  class="fixed inset-0 overflow-hidden justify-center items-center flex z-50"
   [ngClass]="selectedApiLink ? 'ease-in' : 'ease-out'"
-  [style.maxHeight]="maxHeight"
-  [style.opacity]="opacity"
 >
-  <div class="bg-primary-opacity-10 py-8">
-    <div class="flex flex-col px-4 gap-8 container-lg lg:mx-auto">
+  <div class="py-8 w-full h-full bg-slate-200 bg-opacity-50 w-full">
+    <div class="flex flex-col px-4 gap-8 container-lg lg:mx-auto bg-white">
       <div class="flex flex-wrap justify-between sm:mb-2 ng-star-inserted">
         <p
           class="text-[21px] text-title font-title"
