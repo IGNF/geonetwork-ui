@@ -21,6 +21,7 @@ export class RecordApisComponent implements OnInit {
   maxHeight = '700px'
   opacity = 1
   displayApiIgnForm: boolean
+  displayLayer: boolean
   selectedApiLink: DatasetServiceDistribution
 
   apiLinks$ = this.facade.apiLinks$
@@ -33,6 +34,7 @@ export class RecordApisComponent implements OnInit {
   ngOnInit(): void {
     this.selectedApiLink = undefined
     this.displayApiIgnForm = false
+    this.displayLayer = false
   }
 
   get hasPagination() {
@@ -57,9 +59,18 @@ export class RecordApisComponent implements OnInit {
     this.selectedApiLink = link
   }
 
+  openModalLayer(link: DatasetServiceDistribution) {
+    console.log('je suis laa haut')
+    this.displayLayer = link.accessServiceProtocol === 'GPFDL' ? true : false
+  }
+
   closeRecordApiForm() {
     this.selectedApiLink = undefined
     this.displayApiIgnForm = false
+  }
+
+  closeModalLayer() {
+    this.displayLayer = false
   }
 
   changeStepOrPage(direction: string) {

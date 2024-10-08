@@ -24,13 +24,37 @@
       'bg-neutral-100': link === selectedApiLink
     }"
     (openRecordApiForm)="openRecordApiForm($event)"
+    (openModalLayer)="openModalLayer($event)"
   >
   </gn-ui-api-card>
 </gn-ui-carousel>
 <div
+  *ngIf="displayLayer"
+  class="fixed inset-0 w-screen h-screen flex z-50 bg-white"
+>
+  <button
+    type="button"
+    class="flex items-center gap-0.5 text-primary group"
+    (click)="closeModalLayer()"
+  >
+    <div
+      class="text-sm font-medium opacity-50 group-hover:opacity-100 uppercase tracking-wide mt-0.5"
+      translate
+    >
+      record.metadata.api.form.closeButton
+    </div>
+    <mat-icon
+      class="!w-5 !h-5 text-xl font-bold material-symbols-outlined !flex items-center"
+      >close
+    </mat-icon>
+  </button>
+</div>
+
+<div
   *ngIf="displayApiIgnForm"
-  class="fixed inset-0 w-screen h-screen flex z-50"
+  class="content transition-all duration-300 w-screen mx-auto -ml-[calc(50vw-50%)] overflow-hidden"
   [ngClass]="selectedApiLink ? 'ease-in' : 'ease-out'"
+  [style.height]="maxHeight"
 >
   <div class="py-8 w-full h-full bg-slate-200 bg-opacity-50">
     <div
