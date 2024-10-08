@@ -29,12 +29,14 @@
 </gn-ui-carousel>
 <div
   *ngIf="displayApiIgnForm"
-  class="fixed inset-0 overflow-hidden justify-center items-center flex z-50"
+  class="fixed inset-0 w-screen h-screen flex z-50"
   [ngClass]="selectedApiLink ? 'ease-in' : 'ease-out'"
 >
-  <div class="py-8 w-full h-full bg-slate-200 bg-opacity-50 w-full">
-    <div class="flex flex-col px-4 gap-8 container-lg lg:mx-auto bg-white">
-      <div class="flex flex-wrap justify-between sm:mb-2 ng-star-inserted">
+  <div class="py-8 w-full h-full bg-slate-200 bg-opacity-50">
+    <div
+      class="flex flex-col justify-between container-lg lg:mx-auto bg-white h-full"
+    >
+      <div class="flex flex-wrap justify-between sm:mb-2 ng-star-inserted p-5">
         <p
           class="text-[21px] text-title font-title"
           *ngIf="selectedApiLink?.accessServiceProtocol !== 'GPFDL'"
@@ -66,11 +68,12 @@
           </mat-icon>
         </button>
       </div>
-
       <gn-ui-ign-api-dl
+        class="grow"
         *ngIf="displayApiIgnForm"
         [apiLink]="selectedApiLink"
       ></gn-ui-ign-api-dl>
+
       <gn-ui-record-api-form
         *ngIf="!displayApiIgnForm"
         [apiLink]="selectedApiLink"
