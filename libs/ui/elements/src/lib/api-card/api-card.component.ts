@@ -22,7 +22,6 @@ export class ApiCardComponent implements OnInit, OnChanges {
   displayApiFormButton: boolean
   displayModalLayer: boolean
   currentlyActive = false
-  currentlyAcitveModal = false
   @Output() openRecordApiForm: EventEmitter<DatasetServiceDistribution> =
     new EventEmitter<DatasetServiceDistribution>()
   @Output() openModalLayer: EventEmitter<DatasetServiceDistribution> =
@@ -50,10 +49,7 @@ export class ApiCardComponent implements OnInit, OnChanges {
 
   openModalLayerPanel() {
     if (this.displayModalLayer) {
-      this.currentlyAcitveModal = !this.currentlyAcitveModal
-      this.openModalLayer.emit(
-        this.currentlyAcitveModal ? this.link : undefined
-      )
+      this.openModalLayer.emit(this.link)
     }
   }
 }
