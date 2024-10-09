@@ -8,6 +8,10 @@ import {
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
 import { MdViewFacade } from '@geonetwork-ui/feature/record'
 import { CarouselComponent } from '@geonetwork-ui/ui/layout'
+import Map from 'ol/Map'
+import View from 'ol/View'
+import TileLayer from 'ol/layer/Tile'
+import OSM from 'ol/source/OSM'
 
 @Component({
   selector: 'datahub-record-apis',
@@ -26,10 +30,22 @@ export class RecordApisComponent implements OnInit {
 
   apiLinks$ = this.facade.apiLinks$
 
+  planIgn =
+    'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&TILEMATRIXSET=PM&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}&STYLE=normal&FORMAT=image/png'
+
   constructor(
     private facade: MdViewFacade,
     private changeDetector: ChangeDetectorRef
   ) {}
+
+  map = new Map({
+    layers: [new TileLayer({ source: new OSM() })],
+    view: new View({
+      center: [0, 0],
+      zoom: 2,
+    }),
+    target: 'maptest',
+  })
 
   ngOnInit(): void {
     this.selectedApiLink = undefined
@@ -60,7 +76,6 @@ export class RecordApisComponent implements OnInit {
   }
 
   openModalLayer(link: DatasetServiceDistribution) {
-    console.log('je suis laa haut')
     this.displayLayer = link.accessServiceProtocol === 'GPFDL' ? true : false
   }
 
