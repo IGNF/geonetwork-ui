@@ -97,4 +97,11 @@ export class MetadataInfoComponent {
   onKeywordClick(keyword: Keyword) {
     this.keyword.emit(keyword)
   }
+
+  get ignLandingPage() {
+    return new URL(
+      'https://data.geopf.fr/csw?REQUEST=GetRecordById&SERVICE=CSW&VERSION=2.0.2&OUTPUTSCHEMA=http://standards.iso.org/iso/19115/-3/mdb/2.0&elementSetName=full&ID=' +
+        this.metadata.uniqueIdentifier
+    )
+  }
 }
