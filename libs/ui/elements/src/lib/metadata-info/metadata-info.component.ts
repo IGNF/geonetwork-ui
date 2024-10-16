@@ -67,6 +67,7 @@ export class MetadataInfoComponent {
   }
 
   get updateFrequency(): string {
+    console.log(this.metadata)
     if (this.metadata.updateFrequency instanceof Object) {
       this.updatedTimes = this.metadata.updateFrequency.updatedTimes
       return `domain.record.updateFrequency.${this.metadata.updateFrequency.per}`
@@ -100,7 +101,8 @@ export class MetadataInfoComponent {
 
   get ignLandingPage() {
     return new URL(
-      'https://data.geopf.fr/csw?REQUEST=GetRecordById&SERVICE=CSW&VERSION=2.0.2&OUTPUTSCHEMA=http://standards.iso.org/iso/19115/-3/mdb/2.0&elementSetName=full&ID=' +
+      this.metadata.landingPage.origin +
+        '/csw?REQUEST=GetRecordById&SERVICE=CSW&VERSION=2.0.2&OUTPUTSCHEMA=http://standards.iso.org/iso/19115/-3/mdb/2.0&elementSetName=full&ID=' +
         this.metadata.uniqueIdentifier
     )
   }
