@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core'
-import { Observable, combineLatest, of, switchMap } from 'rxjs'
-import { catchError, map, shareReplay, tap } from 'rxjs/operators'
+import { combineLatest, Observable, of, switchMap } from 'rxjs'
+import { catchError, filter, map, shareReplay, tap } from 'rxjs/operators'
 import {
   MeApiService,
+  RecordsApiService,
   RegistriesApiService,
   SiteApiService,
-  ThesaurusInfoApiModel,
   ToolsApiService,
   UserfeedbackApiService,
   UsersApiService,
@@ -20,11 +20,12 @@ import {
 import { Gn4PlatformMapper } from './gn4-platform.mapper'
 import { ltr } from 'semver'
 import { LangService } from '@geonetwork-ui/util/i18n'
-import { HttpClient } from '@angular/common/http'
+import { HttpClient, HttpEventType } from '@angular/common/http'
 import {
   KeywordApiResponse,
   ThesaurusApiResponse,
 } from '@geonetwork-ui/api/metadata-converter'
+import { KeywordType } from '@geonetwork-ui/common/domain/model/thesaurus'
 
 const minApiVersion = '4.2.2'
 
@@ -77,7 +78,8 @@ export class Gn4PlatformService implements PlatformServiceInterface {
     private registriesApiService: RegistriesApiService,
     private langService: LangService,
     private userfeedbackApiService: UserfeedbackApiService,
-    private httpClient: HttpClient
+    private httpClient: HttpClient,
+    private recordsApiService: RecordsApiService
   ) {
     this.me$ = this.meApi.getMe().pipe(
       switchMap((apiUser) => this.mapper.userFromMeApi(apiUser)),
@@ -146,25 +148,36 @@ export class Gn4PlatformService implements PlatformServiceInterface {
     )
     .pipe(
       map((thesaurus) => {
-        // FIXME: find a better way to exclude place keywords
-        // thesaurus[0].filter((thes) => thes.dname !== 'place')
         return thesaurus[0] as ThesaurusApiResponse[]
       }),
       shareReplay(1)
     )
 
-  searchKeywords(query: string): Observable<Keyword[]> {
-    const keywords$: Observable<KeywordApiResponse[]> =
-      this.registriesApiService.searchKeywords(
-        query,
-        this.langService.iso3,
-        10,
-        0,
-        null,
-        null,
-        null,
-        `*${query}*`
-      ) as Observable<KeywordApiResponse[]>
+  searchKeywords(
+    query: string,
+    keywordTypes: KeywordType[]
+  ): Observable<Keyword[]> {
+    const keywords$: Observable<KeywordApiResponse[]> = this.allThesaurus$.pipe(
+      switchMap((thesaurus) => {
+        const selectedThesauri = []
+        keywordTypes.map((keywordType) => {
+          selectedThesauri.push(
+            ...thesaurus.filter((thes) => thes.dname === keywordType)
+          )
+        })
+
+        return this.registriesApiService.searchKeywords(
+          query,
+          this.langService.iso3,
+          10,
+          0,
+          null,
+          selectedThesauri.map((thes) => thes.key),
+          null,
+          `*${query}*`
+        ) as Observable<KeywordApiResponse[]>
+      })
+    )
 
     return combineLatest([keywords$, this.allThesaurus$]).pipe(
       map(([keywords, thesaurus]) => {
@@ -181,17 +194,16 @@ export class Gn4PlatformService implements PlatformServiceInterface {
     if (this.keywordsByThesauri[uri]) {
       return this.keywordsByThesauri[uri]
     }
-    const keywords$: Observable<KeywordApiResponse[]> =
-      this.registriesApiService.searchKeywords(
-        null,
-        this.langService.iso3,
-        1000,
-        0,
-        null,
-        null,
-        null,
-        `${uri}*`
-      ) as Observable<KeywordApiResponse[]>
+    const keywords$ = this.registriesApiService.searchKeywords(
+      null,
+      this.langService.iso3,
+      1000,
+      0,
+      null,
+      null,
+      null,
+      `${uri}*`
+    ) as Observable<KeywordApiResponse[]>
 
     this.keywordsByThesauri[uri] = combineLatest([
       keywords$,
@@ -208,6 +220,38 @@ export class Gn4PlatformService implements PlatformServiceInterface {
     )
 
     return this.keywordsByThesauri[uri]
+  }
+
+  searchKeywordsInThesaurus(query: string, thesaurusId: string) {
+    return this.allThesaurus$.pipe(
+      switchMap((thesauri) => {
+        const strippedThesaurusId = thesaurusId.replace(
+          'geonetwork.thesaurus.',
+          ''
+        )
+        if (!thesauri.find((thes) => thes.key === strippedThesaurusId))
+          return of([])
+        return this.registriesApiService
+          .searchKeywords(
+            query,
+            this.langService.iso3,
+            100,
+            0,
+            null,
+            [strippedThesaurusId],
+            null
+          )
+          .pipe(
+            map((keywords: KeywordApiResponse[]) =>
+              this.mapper.keywordsFromApi(
+                keywords,
+                thesauri,
+                this.langService.iso3
+              )
+            )
+          )
+      })
+    )
   }
 
   getUserFeedbacks(uuid: string): Observable<UserFeedback[]> {
@@ -231,5 +275,47 @@ export class Gn4PlatformService implements PlatformServiceInterface {
         return of(undefined)
       })
     )
+  }
+
+  getRecordAttachments(recordUuid: string) {
+    return this.recordsApiService.getAllResources(recordUuid).pipe(
+      map((resources) =>
+        resources.map((r) => ({
+          url: new URL(r.url),
+          fileName: r.filename,
+        }))
+      )
+    )
+  }
+
+  attachFileToRecord(recordUuid: string, file: File) {
+    let sizeBytes = -1
+    return this.recordsApiService
+      .putResource(recordUuid, file, 'public', undefined, 'events', true)
+      .pipe(
+        map((event) => {
+          if (event.type === HttpEventType.UploadProgress) {
+            sizeBytes = event.total
+            return {
+              type: 'progress',
+              progress: event.total
+                ? Math.round((100 * event.loaded) / event.total)
+                : 0,
+            } as const
+          }
+          if (event.type === HttpEventType.Response) {
+            return {
+              type: 'success',
+              attachment: {
+                url: new URL(event.body.url),
+                fileName: event.body.filename,
+              },
+              sizeBytes,
+            } as const
+          }
+          return undefined
+        }),
+        filter((event) => !!event)
+      )
   }
 }

@@ -1,5 +1,13 @@
 import { GENERIC_DATASET_RECORD } from '../fixtures/generic.records'
-import { writeContactsForResource, writeDistributions } from './write-parts'
+import {
+  writeContacts,
+  writeContactsForResource,
+  writeOnlineResources,
+  writeRecordCreated,
+  writeResourceCreated,
+  writeResourcePublished,
+  writeResourceUpdated,
+} from './write-parts'
 import {
   createElement,
   getRootElement,
@@ -22,9 +30,98 @@ describe('write parts', () => {
     datasetRecord = { ...GENERIC_DATASET_RECORD }
   })
 
-  describe('writeDistributions', () => {
-    const distributionShp = GENERIC_DATASET_RECORD.distributions[0]
-    const distributionLink = GENERIC_DATASET_RECORD.distributions[2]
+  describe('write dates', () => {
+    it('writes the record dates', () => {
+      const modified = {
+        ...datasetRecord,
+        resourcePublished: new Date('2024-01-01T00:00:00'),
+      }
+      writeRecordCreated(modified, rootEl)
+      writeResourceCreated(modified, rootEl)
+      writeResourceUpdated(modified, rootEl)
+      writeResourcePublished(modified, rootEl)
+      expect(rootAsString()).toEqual(`<root>
+    <mdb:dateInfo>
+        <cit:CI_Date>
+            <cit:date>
+                <gco:DateTime>2021-11-15T09:00:00</gco:DateTime>
+            </cit:date>
+            <cit:dateType>
+                <cit:CI_DateTypeCode codeList="https://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="creation">creation</cit:CI_DateTypeCode>
+            </cit:dateType>
+        </cit:CI_Date>
+    </mdb:dateInfo>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <mri:citation>
+                <cit:CI_Citation>
+                    <cit:date>
+                        <cit:CI_Date>
+                            <cit:date>
+                                <gco:DateTime>2022-09-01T14:18:19</gco:DateTime>
+                            </cit:date>
+                            <cit:dateType>
+                                <cit:CI_DateTypeCode codeList="https://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="creation">creation</cit:CI_DateTypeCode>
+                            </cit:dateType>
+                        </cit:CI_Date>
+                    </cit:date>
+                    <cit:date>
+                        <cit:CI_Date>
+                            <cit:date>
+                                <gco:DateTime>2022-12-04T15:12:00</gco:DateTime>
+                            </cit:date>
+                            <cit:dateType>
+                                <cit:CI_DateTypeCode codeList="https://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="revision">revision</cit:CI_DateTypeCode>
+                            </cit:dateType>
+                        </cit:CI_Date>
+                    </cit:date>
+                    <cit:date>
+                        <cit:CI_Date>
+                            <cit:date>
+                                <gco:DateTime>2024-01-01T00:00:00</gco:DateTime>
+                            </cit:date>
+                            <cit:dateType>
+                                <cit:CI_DateTypeCode codeList="https://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="publication">publication</cit:CI_DateTypeCode>
+                            </cit:dateType>
+                        </cit:CI_Date>
+                    </cit:date>
+                </cit:CI_Citation>
+            </mri:citation>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+    })
+    it('delete date if the date is not present in the record', () => {
+      // first write dates
+      writeRecordCreated(datasetRecord, rootEl)
+      writeResourceCreated(datasetRecord, rootEl)
+      writeResourceUpdated(datasetRecord, rootEl)
+      const modified = {
+        ...datasetRecord,
+        recordCreated: null,
+        resourceUpdated: null,
+        resourceCreated: null,
+        resourcePublished: null,
+      }
+      writeRecordCreated(modified, rootEl)
+      writeResourceCreated(modified, rootEl)
+      writeResourceUpdated(modified, rootEl)
+      writeResourcePublished(modified, rootEl)
+      expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <mri:citation>
+                <cit:CI_Citation/>
+            </mri:citation>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+    })
+  })
+
+  describe('writeOnlineResources', () => {
+    const distributionShp = GENERIC_DATASET_RECORD.onlineResources[0]
+    const distributionLink = GENERIC_DATASET_RECORD.onlineResources[2]
 
     it('writes one distributionInfo per link, format in iso19115-3, reuses a distribution info with distributor contact', () => {
       datasetRecord = {
@@ -39,10 +136,10 @@ describe('write parts', () => {
             },
           },
         ],
-        distributions: [distributionShp, distributionLink],
+        onlineResources: [distributionShp, distributionLink],
       }
       writeContactsForResource(datasetRecord, rootEl)
-      writeDistributions(datasetRecord, rootEl)
+      writeOnlineResources(datasetRecord, rootEl)
       expect(rootAsString()).toEqual(`<root>
     <gmd:identificationInfo>
         <gmd:MD_DataIdentification/>
@@ -152,7 +249,7 @@ describe('write parts', () => {
     })
 
     it('removes existing ones, keeping distributor info if not empty', () => {
-      // add some distributions first
+      // add some online resources first
       const sample = parseXmlString(`<root>
     <gmd:distributionInfo xmlns:comp="http://www.geocat.ch/2003/05/gateway/GM03Comprehensive" xmlns:xalan="http://xml.apache.org/xalan" xmlns:geonet="http://www.fao.org/geonetwork" xmlns:che="http://www.geocat.ch/2008/che" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:srv="http://www.isotc211.org/2005/srv" xmlns:gmx="http://www.isotc211.org/2005/gmx" xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:gsr="http://www.isotc211.org/2005/gsr" xmlns:gmi="http://www.isotc211.org/2005/gmi" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xlink="http://www.w3.org/1999/xlink">
         <gmd:MD_Distribution>
@@ -281,11 +378,11 @@ describe('write parts', () => {
     </gmd:distributionInfo>
 </root>`)
       rootEl = getRootElement(sample)
-      writeDistributions(
+      writeOnlineResources(
         {
           ...datasetRecord,
           contactsForResource: [],
-          distributions: [distributionLink],
+          onlineResources: [distributionLink],
         },
         rootEl
       )
@@ -353,6 +450,161 @@ describe('write parts', () => {
             </gmd:transferOptions>
         </gmd:MD_Distribution>
     </gmd:distributionInfo>
+</root>`)
+    })
+  })
+
+  describe('writeContacts', () => {
+    it('works with incomplete contacts', () => {
+      const contacts = [
+        {
+          firstName: 'John',
+          role: 'point_of_contact',
+          email: 'aaa@bbb.ccc',
+        },
+        {
+          lastName: 'Doe',
+          role: 'contributor',
+          email: 'abc@def.ghi',
+          organization: {
+            name: 'ACME',
+          },
+        },
+      ]
+      const modified: DatasetRecord = {
+        ...datasetRecord,
+        contacts,
+        contactsForResource: contacts,
+      }
+      writeContacts(modified, rootEl)
+      writeContactsForResource(modified, rootEl)
+      expect(rootAsString()).toEqual(`<root>
+    <gmd:contact>
+        <cit:CI_Responsibility>
+            <cit:role>
+                <cit:CI_RoleCode codeList="https://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</cit:CI_RoleCode>
+            </cit:role>
+            <cit:party>
+                <cit:CI_Organisation>
+                    <cit:contactInfo>
+                        <cit:CI_Contact>
+                            <cit:address>
+                                <cit:CI_Address>
+                                    <cit:electronicMailAddress>
+                                        <gco:CharacterString>aaa@bbb.ccc</gco:CharacterString>
+                                    </cit:electronicMailAddress>
+                                </cit:CI_Address>
+                            </cit:address>
+                        </cit:CI_Contact>
+                    </cit:contactInfo>
+                    <cit:individual>
+                        <cit:CI_Individual>
+                            <cit:name>
+                                <gco:CharacterString>John</gco:CharacterString>
+                            </cit:name>
+                        </cit:CI_Individual>
+                    </cit:individual>
+                </cit:CI_Organisation>
+            </cit:party>
+        </cit:CI_Responsibility>
+    </gmd:contact>
+    <gmd:contact>
+        <cit:CI_Responsibility>
+            <cit:role>
+                <cit:CI_RoleCode codeList="https://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_RoleCode" codeListValue="contributor">contributor</cit:CI_RoleCode>
+            </cit:role>
+            <cit:party>
+                <cit:CI_Organisation>
+                    <cit:name>
+                        <gco:CharacterString>ACME</gco:CharacterString>
+                    </cit:name>
+                    <cit:contactInfo>
+                        <cit:CI_Contact>
+                            <cit:address>
+                                <cit:CI_Address>
+                                    <cit:electronicMailAddress>
+                                        <gco:CharacterString>abc@def.ghi</gco:CharacterString>
+                                    </cit:electronicMailAddress>
+                                </cit:CI_Address>
+                            </cit:address>
+                        </cit:CI_Contact>
+                    </cit:contactInfo>
+                    <cit:individual>
+                        <cit:CI_Individual>
+                            <cit:name>
+                                <gco:CharacterString>Doe</gco:CharacterString>
+                            </cit:name>
+                        </cit:CI_Individual>
+                    </cit:individual>
+                </cit:CI_Organisation>
+            </cit:party>
+        </cit:CI_Responsibility>
+    </gmd:contact>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <mri:pointOfContact>
+                <cit:CI_Responsibility>
+                    <cit:role>
+                        <cit:CI_RoleCode codeList="https://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</cit:CI_RoleCode>
+                    </cit:role>
+                    <cit:party>
+                        <cit:CI_Organisation>
+                            <cit:contactInfo>
+                                <cit:CI_Contact>
+                                    <cit:address>
+                                        <cit:CI_Address>
+                                            <cit:electronicMailAddress>
+                                                <gco:CharacterString>aaa@bbb.ccc</gco:CharacterString>
+                                            </cit:electronicMailAddress>
+                                        </cit:CI_Address>
+                                    </cit:address>
+                                </cit:CI_Contact>
+                            </cit:contactInfo>
+                            <cit:individual>
+                                <cit:CI_Individual>
+                                    <cit:name>
+                                        <gco:CharacterString>John</gco:CharacterString>
+                                    </cit:name>
+                                </cit:CI_Individual>
+                            </cit:individual>
+                        </cit:CI_Organisation>
+                    </cit:party>
+                </cit:CI_Responsibility>
+            </mri:pointOfContact>
+            <mri:pointOfContact>
+                <cit:CI_Responsibility>
+                    <cit:role>
+                        <cit:CI_RoleCode codeList="https://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_RoleCode" codeListValue="contributor">contributor</cit:CI_RoleCode>
+                    </cit:role>
+                    <cit:party>
+                        <cit:CI_Organisation>
+                            <cit:name>
+                                <gco:CharacterString>ACME</gco:CharacterString>
+                            </cit:name>
+                            <cit:contactInfo>
+                                <cit:CI_Contact>
+                                    <cit:address>
+                                        <cit:CI_Address>
+                                            <cit:electronicMailAddress>
+                                                <gco:CharacterString>abc@def.ghi</gco:CharacterString>
+                                            </cit:electronicMailAddress>
+                                        </cit:CI_Address>
+                                    </cit:address>
+                                </cit:CI_Contact>
+                            </cit:contactInfo>
+                            <cit:individual>
+                                <cit:CI_Individual>
+                                    <cit:name>
+                                        <gco:CharacterString>Doe</gco:CharacterString>
+                                    </cit:name>
+                                </cit:CI_Individual>
+                            </cit:individual>
+                        </cit:CI_Organisation>
+                    </cit:party>
+                </cit:CI_Responsibility>
+            </mri:pointOfContact>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
 </root>`)
     })
   })

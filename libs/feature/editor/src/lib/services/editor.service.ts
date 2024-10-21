@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core'
 import { Observable, switchMap } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
-import { EditorFieldsConfig } from '../models/fields.model'
+import { EditorConfig } from '../models/'
 import { evaluate } from '../expressions'
 import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
 
@@ -15,17 +15,22 @@ export class EditorService {
   // returns the record as it was when saved, alongside its source
   saveRecord(
     record: CatalogRecord,
-    fieldsConfig: EditorFieldsConfig,
+    recordSource: string,
+    fieldsConfig: EditorConfig,
     generateNewUniqueIdentifier = false
   ): Observable<[CatalogRecord, string]> {
     const savedRecord = { ...record }
 
+    const fields = fieldsConfig.pages.flatMap((page) =>
+      page.sections.flatMap((section) => section.fields)
+    )
+
     // run onSave processes
-    for (const field of fieldsConfig) {
+    for (const field of fields) {
       if (field.onSaveProcess && field.model) {
         const evaluator = evaluate(field.onSaveProcess)
         savedRecord[field.model] = evaluator({
-          config: field,
+          model: field.model,
           value: record[field.model],
         })
       }
@@ -36,7 +41,7 @@ export class EditorService {
       savedRecord.uniqueIdentifier = null
     }
 
-    return this.recordsRepository.saveRecord(savedRecord).pipe(
+    return this.recordsRepository.saveRecord(savedRecord, recordSource).pipe(
       switchMap((uniqueIdentifier) =>
         this.recordsRepository.openRecordForEdition(uniqueIdentifier)
       ),
@@ -50,9 +55,19 @@ export class EditorService {
 
   // emits and completes once saving is done
   // note: onSave processes are not run for drafts
-  saveRecordAsDraft(record: CatalogRecord): Observable<void> {
+  saveRecordAsDraft(
+    record: CatalogRecord,
+    recordSource: string
+  ): Observable<void> {
     return this.recordsRepository
-      .saveRecordAsDraft(record)
+      .saveRecordAsDraft(record, recordSource)
       .pipe(map(() => undefined))
+  }
+
+  undoRecordDraft(
+    record: CatalogRecord
+  ): Observable<[CatalogRecord, string, boolean]> {
+    this.recordsRepository.clearRecordDraft(record.uniqueIdentifier)
+    return this.recordsRepository.openRecordForEdition(record.uniqueIdentifier)
   }
 }

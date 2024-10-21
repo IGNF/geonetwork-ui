@@ -1,11 +1,54 @@
-<div class="flex flex-col gap-6 p-6">
-  <ng-container *ngFor="let field of fields$ | async; trackBy: fieldTracker">
-    <gn-ui-form-field
-      *ngIf="field.config.formFieldConfig && !field.config.hidden"
-      [model]="field.config.model"
-      [config]="field.config.formFieldConfig"
-      [value]="field.value"
-      (valueChange)="handleFieldValueChange(field, $event)"
-    ></gn-ui-form-field>
+<div class="flex flex-col gap-6">
+  <ng-container
+    *ngFor="
+      let section of facade.currentSections$ | async;
+      trackBy: sectionTracker
+    "
+  >
+    <ng-container *ngIf="!section.hidden">
+      <div class="flex flex-col gap-8 border p-8 rounded-[8px] shadow">
+        <div
+          class="flex flex-col gap-2"
+          [ngClass]="section.labelKey ? 'mb-4' : 'hidden'"
+        >
+          <div
+            *ngIf="section.labelKey"
+            class="text-2xl font-title text-main"
+            translate
+          >
+            {{ section.labelKey }}
+          </div>
+          <div *ngIf="section.descriptionKey" class="text-gray-800" translate>
+            {{ section.descriptionKey }}
+          </div>
+        </div>
+        <div class="grid auto-rows-auto grid-cols-2 gap-[32px]">
+          <ng-container
+            *ngFor="
+              let field of section.fieldsWithValues;
+              trackBy: fieldTracker
+            "
+          >
+            <ng-container *ngIf="!field.config.hidden">
+              <gn-ui-form-field
+                [ngClass]="
+                  field.config.gridColumnSpan === 1
+                    ? 'col-span-1'
+                    : 'col-span-2'
+                "
+                [uniqueIdentifier]="recordUniqueIdentifier$ | async"
+                [model]="field.config.model!"
+                [modelSpecifier]="field.config.modelSpecifier!"
+                [config]="field.config.formFieldConfig"
+                [value]="field.value"
+                (valueChange)="
+                  handleFieldValueChange(field.config.model!, $event)
+                "
+              ></gn-ui-form-field>
+            </ng-container>
+          </ng-container>
+        </div>
+      </div>
+    </ng-container>
   </ng-container>
 </div>

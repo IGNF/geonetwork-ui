@@ -5,7 +5,7 @@ import {
 } from '@geonetwork-ui/data-access/gn4'
 import { firstValueFrom, lastValueFrom, of, throwError } from 'rxjs'
 import { ElasticsearchService } from './elasticsearch'
-import { TestBed } from '@angular/core/testing'
+import { fakeAsync, TestBed, tick } from '@angular/core/testing'
 import {
   EsSearchResponse,
   Gn4Converter,
@@ -15,13 +15,17 @@ import {
   SearchResults,
 } from '@geonetwork-ui/common/domain/model/search'
 import {
-  DATASET_RECORD_SIMPLE,
-  DATASET_RECORD_SIMPLE_AS_XML,
-  DATASET_RECORDS,
+  datasetRecordsFixture,
+  simpleDatasetRecordAsXmlFixture,
+  simpleDatasetRecordFixture,
 } from '@geonetwork-ui/common/fixtures'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { map } from 'rxjs/operators'
 import { HttpErrorResponse } from '@angular/common/http'
+import {
+  HttpClientTestingModule,
+  HttpTestingController,
+} from '@angular/common/http/testing'
 
 class Gn4MetadataMapperMock {
   readRecords = jest.fn((records) =>
@@ -50,7 +54,7 @@ class SearchApiServiceMock {
     const count = body.size || 1234
     const result: EsSearchResponse = {
       hits: {
-        hits: DATASET_RECORDS,
+        hits: datasetRecordsFixture(),
         total: { value: count },
       },
     }
@@ -84,6 +88,7 @@ class RecordsApiServiceMock {
       },
     })
   )
+  deleteRecord = jest.fn(() => of({}))
 }
 
 describe('Gn4Repository', () => {
@@ -91,9 +96,11 @@ describe('Gn4Repository', () => {
   let gn4Helper: ElasticsearchService
   let gn4SearchApi: SearchApiService
   let gn4RecordsApi: RecordsApiService
+  let httpTestingController: HttpTestingController
 
   beforeEach(() => {
     TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
       providers: [
         Gn4Repository,
         {
@@ -118,7 +125,14 @@ describe('Gn4Repository', () => {
     gn4Helper = TestBed.inject(ElasticsearchService)
     gn4SearchApi = TestBed.inject(SearchApiService)
     gn4RecordsApi = TestBed.inject(RecordsApiService)
+    httpTestingController = TestBed.inject(HttpTestingController)
   })
+
+  afterEach(() => {
+    // Verify that no other requests are outstanding
+    httpTestingController.verify()
+  })
+
   it('creates', () => {
     expect(repository).toBeTruthy()
   })
@@ -155,7 +169,7 @@ describe('Gn4Repository', () => {
     })
     it('returns the given results as records', () => {
       expect(results.count).toBe(12)
-      expect(results.records).toStrictEqual(DATASET_RECORDS)
+      expect(results.records).toStrictEqual(datasetRecordsFixture())
     })
   })
   describe('getMatchesCount', () => {
@@ -193,7 +207,7 @@ describe('Gn4Repository', () => {
       expect(gn4Helper.getMetadataByIdPayload).toHaveBeenCalledWith('1234-5678')
     })
     it('returns the given result as record', () => {
-      expect(record).toStrictEqual(DATASET_RECORDS[0])
+      expect(record).toStrictEqual(datasetRecordsFixture()[0])
     })
     describe('if record is not found', () => {
       beforeEach(async () => {
@@ -214,7 +228,9 @@ describe('Gn4Repository', () => {
     let results: CatalogRecord[]
     beforeEach(async () => {
       results = await lastValueFrom(
-        repository.getSimilarRecords(DATASET_RECORDS[0])
+        repository.getSimilarRecords(
+          datasetRecordsFixture()[0] as CatalogRecord
+        )
       )
     })
     it('uses a related record ES payload', () => {
@@ -225,7 +241,7 @@ describe('Gn4Repository', () => {
       )
     })
     it('returns the given results as records', () => {
-      expect(results).toStrictEqual(DATASET_RECORDS)
+      expect(results).toStrictEqual(datasetRecordsFixture())
     })
   })
   describe('aggregate', () => {
@@ -263,7 +279,7 @@ describe('Gn4Repository', () => {
     })
     it('returns the given results as records', () => {
       expect(results.count).toBe(1234)
-      expect(results.records).toStrictEqual(DATASET_RECORDS)
+      expect(results.records).toStrictEqual(datasetRecordsFixture())
     })
   })
   describe('openRecordForEdition', () => {
@@ -304,7 +320,7 @@ describe('Gn4Repository', () => {
       beforeEach(async () => {
         recordSource = await firstValueFrom(
           repository.saveRecordAsDraft({
-            ...DATASET_RECORD_SIMPLE,
+            ...simpleDatasetRecordFixture(),
             uniqueIdentifier: '1234-5678',
           })
         )
@@ -323,6 +339,56 @@ describe('Gn4Repository', () => {
       })
     })
   })
+  describe('openRecordForDuplication', () => {
+    let record: CatalogRecord
+    let recordSource: string
+    let savedOnce: boolean
+
+    const date = new Date('2024-07-11')
+    jest.useFakeTimers().setSystemTime(date)
+
+    beforeEach(async () => {
+      ;(gn4RecordsApi.getRecordAs as jest.Mock).mockReturnValueOnce(
+        of(simpleDatasetRecordAsXmlFixture()).pipe(
+          map((xml) => ({ body: xml }))
+        )
+      )
+      ;[record, recordSource, savedOnce] = await lastValueFrom(
+        repository.openRecordForDuplication('1234-5678')
+      )
+    })
+    it('calls the API to get the record as XML', () => {
+      expect(gn4RecordsApi.getRecordAs).toHaveBeenCalledWith(
+        '1234-5678',
+        undefined,
+        expect.anything(),
+        undefined,
+        undefined,
+        undefined,
+        expect.anything(),
+        expect.anything(),
+        undefined,
+        expect.anything()
+      )
+    })
+    it('parses the XML record into a native object, and updates the id and title', () => {
+      expect(record).toMatchObject({
+        uniqueIdentifier: `TEMP-ID-1720656000000`,
+        title:
+          'A very interesting dataset (un jeu de données très intéressant) (Copy)',
+      })
+    })
+    it('saves the duplicated record as draft', () => {
+      const hasDraft = repository.recordHasDraft(`TEMP-ID-1720656000000`)
+      expect(hasDraft).toBe(true)
+    })
+    it('tells the record it has not been saved yet', () => {
+      expect(savedOnce).toBe(false)
+    })
+    it('returns the record as serialized', () => {
+      expect(recordSource).toMatch(/<mdb:MD_Metadata/)
+    })
+  })
   // note: we're using a simple record here otherwise there might be loss of information when converting
   describe('saveRecord', () => {
     let recordSource: string
@@ -330,8 +396,8 @@ describe('Gn4Repository', () => {
       beforeEach(async () => {
         recordSource = await lastValueFrom(
           repository.saveRecord(
-            DATASET_RECORD_SIMPLE,
-            DATASET_RECORD_SIMPLE_AS_XML
+            simpleDatasetRecordFixture(),
+            simpleDatasetRecordAsXmlFixture()
           )
         )
       })
@@ -370,13 +436,17 @@ describe('Gn4Repository', () => {
     })
     describe('without reference', () => {
       beforeEach(async () => {
-        await lastValueFrom(repository.saveRecord(DATASET_RECORDS[0]))
+        await lastValueFrom(
+          repository.saveRecord(datasetRecordsFixture()[0] as CatalogRecord)
+        )
       })
       it('uses the ISO19139 converter by default', () => {
         const recordXml = (gn4RecordsApi.insert as jest.Mock).mock.calls[0][14]
         expect(recordXml).toMatch(`
     <gmd:fileIdentifier>
-        <gco:CharacterString>${DATASET_RECORD_SIMPLE.uniqueIdentifier}</gco:CharacterString>
+        <gco:CharacterString>${
+          simpleDatasetRecordFixture().uniqueIdentifier
+        }</gco:CharacterString>
     </gmd:fileIdentifier>`)
       })
     })
@@ -386,17 +456,17 @@ describe('Gn4Repository', () => {
       // save a record, then a draft, then open the record again
       await lastValueFrom(
         repository.saveRecord(
-          DATASET_RECORD_SIMPLE,
-          DATASET_RECORD_SIMPLE_AS_XML
+          simpleDatasetRecordFixture(),
+          simpleDatasetRecordAsXmlFixture()
         )
       )
       await lastValueFrom(
         repository.saveRecordAsDraft(
           {
-            ...DATASET_RECORD_SIMPLE,
+            ...simpleDatasetRecordFixture(),
             title: 'The title has been modified',
           },
-          DATASET_RECORD_SIMPLE_AS_XML
+          simpleDatasetRecordAsXmlFixture()
         )
       )
     })
@@ -404,28 +474,30 @@ describe('Gn4Repository', () => {
       it('loads the draft instead of the original one', async () => {
         const [record] = await lastValueFrom(
           repository.openRecordForEdition(
-            DATASET_RECORD_SIMPLE.uniqueIdentifier
+            simpleDatasetRecordFixture().uniqueIdentifier
           )
         )
         expect(record).toStrictEqual({
-          ...DATASET_RECORD_SIMPLE,
+          ...simpleDatasetRecordFixture(),
           title: 'The title has been modified',
         })
       })
     })
     describe('#clearRecordDraft', () => {
       beforeEach(() => {
-        repository.clearRecordDraft(DATASET_RECORD_SIMPLE.uniqueIdentifier)
+        repository.clearRecordDraft(
+          simpleDatasetRecordFixture().uniqueIdentifier
+        )
       })
       it('removes the record draft', async () => {
         const [record] = await lastValueFrom(
           repository.openRecordForEdition(
-            DATASET_RECORD_SIMPLE.uniqueIdentifier
+            simpleDatasetRecordFixture().uniqueIdentifier
           )
         )
         expect(record?.title).not.toBe('The title has been modified')
         const hasDraft = repository.recordHasDraft(
-          DATASET_RECORD_SIMPLE.uniqueIdentifier
+          simpleDatasetRecordFixture().uniqueIdentifier
         )
 
         expect(hasDraft).toBe(false)
@@ -434,7 +506,7 @@ describe('Gn4Repository', () => {
     describe('#recordHasDraft', () => {
       it('returns true when there is a draft', () => {
         const hasDraft = repository.recordHasDraft(
-          DATASET_RECORD_SIMPLE.uniqueIdentifier
+          simpleDatasetRecordFixture().uniqueIdentifier
         )
         expect(hasDraft).toBe(true)
       })
@@ -451,19 +523,19 @@ describe('Gn4Repository', () => {
       // save 3 drafts
       await firstValueFrom(
         repository.saveRecordAsDraft({
-          ...DATASET_RECORD_SIMPLE,
+          ...simpleDatasetRecordFixture(),
           uniqueIdentifier: 'DRAFT-1',
         })
       )
       await firstValueFrom(
         repository.saveRecordAsDraft({
-          ...DATASET_RECORD_SIMPLE,
+          ...simpleDatasetRecordFixture(),
           uniqueIdentifier: 'DRAFT-2',
         })
       )
       await firstValueFrom(
         repository.saveRecordAsDraft({
-          ...DATASET_RECORD_SIMPLE,
+          ...simpleDatasetRecordFixture(),
           uniqueIdentifier: 'DRAFT-3',
         })
       )
@@ -476,6 +548,151 @@ describe('Gn4Repository', () => {
         'DRAFT-2',
         'DRAFT-3',
       ])
+    })
+  })
+
+  describe('importRecordFromExternalFileUrlAsDraft', () => {
+    const recordDownloadUrl = 'https://example.com/record/xml'
+    const mockXml = simpleDatasetRecordAsXmlFixture()
+    let tempId: string
+
+    it('should fetch the external record and save it as a draft', fakeAsync(() => {
+      repository.duplicateExternalRecord(recordDownloadUrl).subscribe((id) => {
+        tempId = id
+
+        expect(tempId).toMatch(/^TEMP-ID-\d+$/)
+      })
+
+      const req = httpTestingController.expectOne(recordDownloadUrl)
+
+      expect(req.request.headers.get('Accept')).toEqual(
+        'text/xml,application/xml'
+      )
+      expect(req.request.method).toEqual('GET')
+
+      req.flush(mockXml)
+
+      tick()
+    }))
+
+    it('should handle an error response when fetching the external record', fakeAsync(() => {
+      let errorResponse: any
+
+      repository.duplicateExternalRecord(recordDownloadUrl).subscribe({
+        error: (error) => {
+          errorResponse = error
+        },
+      })
+
+      const req = httpTestingController.expectOne(recordDownloadUrl)
+
+      req.flush('Error fetching record', {
+        status: 404,
+        statusText: 'Not Found',
+      })
+
+      tick()
+
+      expect(errorResponse).toBeDefined()
+      expect(errorResponse.status).toBe(404)
+      expect(errorResponse.statusText).toBe('Not Found')
+    }))
+  })
+
+  describe('deleteRecord', () => {
+    it('calls the API to delete the record by unique identifier', fakeAsync(() => {
+      repository.deleteRecord('1234-5678').subscribe()
+
+      // Simulate async passage of time
+      tick()
+
+      // Ensure the API method was called correctly
+      expect(gn4RecordsApi.deleteRecord).toHaveBeenCalledWith('1234-5678')
+    }))
+  })
+
+  describe('saveRecordAsDraft', () => {
+    beforeEach(async () => {
+      await lastValueFrom(
+        repository.saveRecordAsDraft({
+          ...simpleDatasetRecordFixture(),
+          uniqueIdentifier: 'DRAFT-123',
+        })
+      )
+    })
+
+    it('saves the record to localStorage with the correct key', () => {
+      const hasDraft = repository.recordHasDraft('DRAFT-123')
+      expect(hasDraft).toBe(true)
+    })
+
+    it('emits a draft changed notification', async () => {
+      const draftsChangedSpy = jest.spyOn(repository._draftsChanged, 'next')
+
+      await lastValueFrom(
+        repository.saveRecordAsDraft({
+          ...simpleDatasetRecordFixture(),
+          uniqueIdentifier: 'DRAFT-456',
+        })
+      )
+
+      expect(draftsChangedSpy).toHaveBeenCalled()
+    })
+  })
+
+  describe('generateTemporaryId', () => {
+    it('generates a temporary ID with the correct prefix', () => {
+      const tempId = repository.generateTemporaryId()
+      expect(tempId).toMatch(/^TEMP-ID-\d+$/)
+    })
+  })
+
+  describe('clearRecordDraft', () => {
+    beforeEach(async () => {
+      await lastValueFrom(
+        repository.saveRecordAsDraft({
+          ...simpleDatasetRecordFixture(),
+          uniqueIdentifier: 'DRAFT-123',
+        })
+      )
+      repository.clearRecordDraft('DRAFT-123')
+    })
+
+    it('removes the draft from localStorage', () => {
+      const hasDraft = repository.recordHasDraft('DRAFT-123')
+      expect(hasDraft).toBe(false)
+    })
+
+    it('emits a draft changed notification after clearing', () => {
+      const draftsChangedSpy = jest.spyOn(repository._draftsChanged, 'next')
+      repository.clearRecordDraft('DRAFT-123')
+      expect(draftsChangedSpy).toHaveBeenCalled()
+    })
+  })
+
+  describe('recordHasDraft', () => {
+    it('returns true if the draft exists', async () => {
+      await lastValueFrom(
+        repository.saveRecordAsDraft({
+          ...simpleDatasetRecordFixture(),
+          uniqueIdentifier: 'DRAFT-123',
+        })
+      )
+      expect(repository.recordHasDraft('DRAFT-123')).toBe(true)
+    })
+
+    it('returns false if the draft does not exist', () => {
+      expect(repository.recordHasDraft('NON_EXISTENT_DRAFT')).toBe(false)
+    })
+  })
+
+  describe('isRecordNotYetSaved', () => {
+    it('returns true if the record has a temporary ID', () => {
+      expect(repository.isRecordNotYetSaved('TEMP-ID-12345')).toBe(true)
+    })
+
+    it('returns false if the record does not have a temporary ID', () => {
+      expect(repository.isRecordNotYetSaved('1234-5678')).toBe(false)
     })
   })
 })

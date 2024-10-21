@@ -6,7 +6,7 @@
           <div id="organization-details-left" class="w-2/3 mt-14">
             <div class="flex flex-col gap-11">
               <gn-ui-max-lines [maxLines]="2" *ngIf="organization.description">
-                <div>
+                <div class="mb-6">
                   <gn-ui-markdown-parser
                     data-test="organizationDescription"
                     [textContent]="organization.description"
@@ -33,7 +33,7 @@
             <a
               data-test="organizationDatasetCount"
               [routerLink]="['/', ROUTER_ROUTE_SEARCH]"
-              [queryParams]="{ publisher: organization.name }"
+              [queryParams]="{ organization: organization.name }"
             >
               <gn-ui-figure
                 class="py-[37px] pl-[47px] rounded-lg border bg-white mb-5 card-shadow cursor-pointer"
@@ -65,7 +65,7 @@
                 class="font-title text-[28px] font-medium text-title text-center sm:text-left"
                 translate
               >
-                organization.lastPublishedDatasets
+                organization.details.lastPublishedDatasets
               </p>
               <ng-container
                 *ngIf="
@@ -82,12 +82,12 @@
                 <div class="ml-auto">
                   <a
                     [routerLink]="['/', ROUTER_ROUTE_SEARCH]"
-                    [queryParams]="{ publisher: organization.name }"
+                    [queryParams]="{ organization: organization.name }"
                     class="gn-ui-btn-primary h-[34px] rounded-lg"
                     data-test="orgDetailsSearchAllBtn"
                     translate
                   >
-                    organization.lastPublishedDatasets.searchAllButton
+                    organization.details.lastPublishedDatasets.searchAllButton
                   </a>
                 </div>
               </ng-container>

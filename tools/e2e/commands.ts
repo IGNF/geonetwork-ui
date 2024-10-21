@@ -15,6 +15,10 @@ declare namespace Cypress {
     login(username?: string, password?: string, redirect?: boolean): void
     signOut(): void
     clearFavorites(): void
+    clearRecordDrafts(): void
+    editor_readFormUniqueIdentifier(): Chainable<string | number | string[]>
+    editor_wrapPreviousDraft(): void
+    editor_publishAndReload(): void
 
     // interaction with gn-ui-dropdown-selector
     openDropdown(): Chainable<JQuery<HTMLElement>>
@@ -138,6 +142,72 @@ Cypress.Commands.add(
     return cy.wrap(dropdownElement).openDropdown().find(`[data-cy-active]`)
   }
 )
+
+Cypress.Commands.add('clearRecordDrafts', () => {
+  cy.window().then((window) => {
+    const items = { ...window.localStorage }
+    const draftKeys = Object.keys(items).filter((key) =>
+      key.startsWith('geonetwork-ui-draft-')
+    )
+    draftKeys.forEach((key) => window.localStorage.removeItem(key))
+    cy.log(`Cleared ${draftKeys.length} draft(s).`)
+  })
+  cy.reload()
+})
+
+Cypress.Commands.add('editor_readFormUniqueIdentifier', () => {
+  return cy
+    .get('gn-ui-form-field[ng-reflect-model=uniqueIdentifier] input')
+    .invoke('val')
+})
+
+// this needs a recordUuid to have been wrapped
+Cypress.Commands.add('editor_wrapPreviousDraft', () => {
+  cy.get('@recordUuid').then((recordUuid) => {
+    cy.window()
+      .its('localStorage')
+      .invoke('getItem', `geonetwork-ui-draft-${recordUuid}`)
+      .then((previousDraft) => {
+        cy.wrap(previousDraft).as('previousDraft')
+      })
+  })
+})
+
+// this needs a recordUuid and a previousDraft to have been wrapped
+Cypress.Commands.add('editor_publishAndReload', () => {
+  // wait for the draft to be saved
+  cy.get('@recordUuid').then((recordUuid) => {
+    // nesting thens as Cypress doesn't seem to support the "all" operator
+    //https://github.com/cypress-io/cypress/issues/915
+    cy.get('@previousDraft').then((previousDraft) => {
+      cy.window()
+        .its('localStorage')
+        .invoke('getItem', `geonetwork-ui-draft-${recordUuid}`)
+        .should('not.eq', previousDraft)
+    })
+  })
+
+  // publish the record
+  cy.intercept({
+    method: 'PUT',
+    pathname: '**/records',
+  }).as('insertRecord')
+  cy.get('md-editor-publish-button').click()
+  cy.wait('@insertRecord')
+
+  // wait for the draft to be deleted on publication
+  cy.get('@recordUuid').then((recordUuid) => {
+    cy.window()
+      .its('localStorage')
+      .invoke('getItem', `geonetwork-ui-draft-${recordUuid}`)
+      .should('be.null')
+  })
+
+  // reload the page
+  cy.get('@recordUuid').then((recordUuid) => {
+    cy.visit(`/edit/${recordUuid}`)
+  })
+})
 
 // -- This is a parent command --
 // Cypress.Commands.add('login', (email, password) => { ... })

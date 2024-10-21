@@ -9,8 +9,8 @@ import { ContentGhostComponent } from './content-ghost/content-ghost.component'
 import { DownloadItemComponent } from './download-item/download-item.component'
 import { DownloadsListComponent } from './downloads-list/downloads-list.component'
 import { ApiCardComponent } from './api-card/api-card.component'
-import { UiWidgetsModule } from '@geonetwork-ui/ui/widgets'
-import { UiLayoutModule } from '@geonetwork-ui/ui/layout'
+import { PopoverComponent, UiWidgetsModule } from '@geonetwork-ui/ui/widgets'
+import { MaxLinesComponent, UiLayoutModule } from '@geonetwork-ui/ui/layout'
 import { TranslateModule } from '@ngx-translate/core'
 import { RelatedRecordCardComponent } from './related-record-card/related-record-card.component'
 import { MetadataContactComponent } from './metadata-contact/metadata-contact.component'
@@ -20,7 +20,11 @@ import { MetadataQualityItemComponent } from './metadata-quality-item/metadata-q
 import { ErrorComponent } from './error/error.component'
 import { PaginationComponent } from './pagination/pagination.component'
 import { ThumbnailComponent } from './thumbnail/thumbnail.component'
-import { BadgeComponent, UiInputsModule } from '@geonetwork-ui/ui/inputs'
+import {
+  BadgeComponent,
+  TextInputComponent,
+  UiInputsModule,
+} from '@geonetwork-ui/ui/inputs'
 import { FormsModule } from '@angular/forms'
 import { AvatarComponent } from './avatar/avatar.component'
 import { UserPreviewComponent } from './user-preview/user-preview.component'
@@ -45,10 +49,13 @@ import { TimeSincePipe } from './user-feedback-item/time-since.pipe'
     UiInputsModule,
     FormsModule,
     NgOptimizedImage,
+    PopoverComponent,
     MarkdownParserComponent,
     ThumbnailComponent,
     TimeSincePipe,
     BadgeComponent,
+    MaxLinesComponent,
+    TextInputComponent,
   ],
   declarations: [
     MetadataInfoComponent,

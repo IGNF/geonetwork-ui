@@ -10,7 +10,6 @@ import { ChipsInputComponent } from './chips-input/chips-input.component'
 import { DragAndDropFileInputComponent } from './drag-and-drop-file-input/drag-and-drop-file-input.component'
 import { DropdownSelectorComponent } from './dropdown-selector/dropdown-selector.component'
 import { TextAreaComponent } from './text-area/text-area.component'
-import { TextInputComponent } from './text-input/text-input.component'
 import { MatAutocompleteModule } from '@angular/material/autocomplete'
 import { MatIconModule } from '@angular/material/icon'
 import { NavigationButtonComponent } from './navigation-button/navigation-button.component'
@@ -25,7 +24,6 @@ import { CopyTextButtonComponent } from './copy-text-button/copy-text-button.com
 import { MatTooltipModule } from '@angular/material/tooltip'
 import { CommonModule } from '@angular/common'
 import { CheckboxComponent } from './checkbox/checkbox.component'
-import { SearchInputComponent } from './search-input/search-input.component'
 import { DateRangePickerComponent } from './date-range-picker/date-range-picker.component'
 import { MatFormFieldModule } from '@angular/material/form-field'
 import { MatInputModule } from '@angular/material/input'
@@ -36,7 +34,6 @@ import { ImageInputComponent } from './image-input/image-input.component'
 
 @NgModule({
   declarations: [
-    TextInputComponent,
     DragAndDropFileInputComponent,
     ChipsInputComponent,
     NavigationButtonComponent,
@@ -45,7 +42,6 @@ import { ImageInputComponent } from './image-input/image-input.component'
     ViewportIntersectorComponent,
     CopyTextButtonComponent,
     CheckboxComponent,
-    SearchInputComponent,
   ],
   imports: [
     CommonModule,
@@ -77,7 +73,6 @@ import { ImageInputComponent } from './image-input/image-input.component'
   exports: [
     DropdownSelectorComponent,
     ButtonComponent,
-    TextInputComponent,
     DragAndDropFileInputComponent,
     TextAreaComponent,
     ChipsInputComponent,
@@ -88,7 +83,6 @@ import { ImageInputComponent } from './image-input/image-input.component'
     CheckToggleComponent,
     CopyTextButtonComponent,
     CheckboxComponent,
-    SearchInputComponent,
     DateRangePickerComponent,
     EditableLabelDirective,
     ImageInputComponent,

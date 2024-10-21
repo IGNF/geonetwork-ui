@@ -98,7 +98,7 @@ Malgré l'attention portée à la création de ces données, il est rappelé que
   ],
   topics: ['planningCadastre'],
   spatialRepresentation: 'vector',
-  distributions: [
+  onlineResources: [
     {
       type: 'download',
       url: new URL(
@@ -122,7 +122,11 @@ Ce lot de données produit en 2019, a été numérisé à partir du PCI Vecteur 
   securityConstraints: [],
   otherConstraints: [],
   // data quality?
-  spatialExtents: [],
+  spatialExtents: [
+    {
+      bbox: [2.5587, 49.3677, 2.5934, 49.4051],
+    },
+  ],
   temporalExtents: [],
   status: 'completed',
   updateFrequency: 'unknown',

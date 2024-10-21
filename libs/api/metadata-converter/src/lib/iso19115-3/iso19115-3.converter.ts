@@ -4,10 +4,10 @@ import { Iso19139Converter } from '../iso19139'
 import { renameElements } from '../xml-utils'
 import {
   readContacts,
-  readDistributions,
   readKind,
   readLandingPage,
   readLineage,
+  readOnlineResources,
   readOwnerOrganization,
   readRecordCreated,
   readRecordPublished,
@@ -18,11 +18,10 @@ import {
 import {
   writeContacts,
   writeContactsForResource,
-  writeDistributions,
   writeKind,
   writeLandingPage,
   writeLineage,
-  writeOwnerOrganization,
+  writeOnlineResources,
   writeRecordCreated,
   writeRecordPublished,
   writeRecordUpdated,
@@ -48,7 +47,7 @@ export class Iso191153Converter extends Iso19139Converter {
     this.readers['ownerOrganization'] = readOwnerOrganization
     this.readers['landingPage'] = readLandingPage
     this.readers['lineage'] = readLineage
-    this.readers['distributions'] = readDistributions
+    this.readers['onlineResources'] = readOnlineResources
 
     this.writers['uniqueIdentifier'] = writeUniqueIdentifier
     this.writers['kind'] = writeKind
@@ -60,10 +59,10 @@ export class Iso191153Converter extends Iso19139Converter {
     this.writers['resourcePublished'] = writeResourcePublished
     this.writers['contacts'] = writeContacts
     this.writers['contactsForResource'] = writeContactsForResource
-    this.writers['ownerOrganization'] = writeOwnerOrganization
+    this.writers['ownerOrganization'] = () => undefined // fixme: find a way to store this value properly
     this.writers['landingPage'] = writeLandingPage
     this.writers['lineage'] = writeLineage
-    this.writers['distributions'] = writeDistributions
+    this.writers['onlineResources'] = writeOnlineResources
     this.writers['status'] = writeStatus
     this.writers['spatialRepresentation'] = writeSpatialRepresentation
   }

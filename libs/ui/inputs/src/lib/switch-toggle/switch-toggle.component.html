@@ -1,0 +1,14 @@
+<mat-button-toggle-group
+  #group="matButtonToggleGroup"
+  multiple="false"
+  class="flex w-full"
+>
+  <mat-button-toggle
+    *ngFor="let option of options"
+    [aria-label]="option.label"
+    [checked]="option.checked"
+    (change)="onChange(option)"
+    [class]="extraClasses"
+    >{{ option.label | translate }}</mat-button-toggle
+  >
+</mat-button-toggle-group>

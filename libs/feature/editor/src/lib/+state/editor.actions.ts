@@ -28,3 +28,10 @@ export const saveRecordFailure = createAction(
 )
 
 export const draftSaveSuccess = createAction('[Editor] Draft save success')
+
+export const undoRecordDraft = createAction('[Editor] Undo record draft')
+
+export const setCurrentPage = createAction(
+  '[Editor] Set current page',
+  props<{ page: number }>()
+)

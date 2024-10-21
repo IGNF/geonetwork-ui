@@ -25,8 +25,12 @@ export class EditorFacade {
   changedSinceSave$ = this.store.pipe(
     select(EditorSelectors.selectRecordChangedSinceSave)
   )
-  recordFields$ = this.store.pipe(select(EditorSelectors.selectRecordFields))
+  currentSections$ = this.store.pipe(
+    select(EditorSelectors.selectRecordSections)
+  )
   draftSaveSuccess$ = this.actions$.pipe(ofType(EditorActions.draftSaveSuccess))
+  currentPage$ = this.store.pipe(select(EditorSelectors.selectCurrentPage))
+  editorConfig$ = this.store.pipe(select(EditorSelectors.selectEditorConfig))
 
   openRecord(
     record: CatalogRecord,
@@ -42,7 +46,15 @@ export class EditorFacade {
     this.store.dispatch(EditorActions.saveRecord())
   }
 
+  undoRecordDraft() {
+    this.store.dispatch(EditorActions.undoRecordDraft())
+  }
+
   updateRecordField(field: string, value: unknown) {
     this.store.dispatch(EditorActions.updateRecordField({ field, value }))
+  }
+
+  setCurrentPage(page: number) {
+    this.store.dispatch(EditorActions.setCurrentPage({ page }))
   }
 }

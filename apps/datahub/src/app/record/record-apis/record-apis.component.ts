@@ -18,9 +18,10 @@ import { CarouselComponent } from '@geonetwork-ui/ui/layout'
 export class RecordApisComponent implements OnInit {
   @ViewChild(CarouselComponent) carousel: CarouselComponent
 
-  maxHeight = '0px'
-  opacity = 0
+  maxHeight = '700px'
+  opacity = 1
   displayApiIgnForm: boolean
+  displayLayer: boolean
   selectedApiLink: DatasetServiceDistribution
 
   apiLinks$ = this.facade.apiLinks$
@@ -31,8 +32,9 @@ export class RecordApisComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.setStyle(undefined)
     this.selectedApiLink = undefined
+    this.displayApiIgnForm = false
+    this.displayLayer = false
   }
 
   get hasPagination() {
@@ -55,17 +57,20 @@ export class RecordApisComponent implements OnInit {
     this.displayApiIgnForm =
       link.accessServiceProtocol === 'GPFDL' ? true : false
     this.selectedApiLink = link
-    this.setStyle(link)
+  }
+
+  openModalLayer(link: DatasetServiceDistribution) {
+    console.log('je suis laa haut')
+    this.displayLayer = link.accessServiceProtocol === 'GPFDL' ? true : false
   }
 
   closeRecordApiForm() {
     this.selectedApiLink = undefined
-    this.setStyle(undefined)
+    this.displayApiIgnForm = false
   }
 
-  setStyle(link: DatasetServiceDistribution) {
-    this.maxHeight = link === undefined ? '0px' : '700px'
-    this.opacity = link === undefined ? 0 : 1
+  closeModalLayer() {
+    this.displayLayer = false
   }
 
   changeStepOrPage(direction: string) {

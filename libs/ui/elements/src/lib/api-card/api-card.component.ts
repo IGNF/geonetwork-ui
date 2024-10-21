@@ -20,15 +20,19 @@ export class ApiCardComponent implements OnInit, OnChanges {
   @Input() link: DatasetServiceDistribution
   @Input() currentLink: DatasetServiceDistribution
   displayApiFormButton: boolean
+  displayModalLayer: boolean
   currentlyActive = false
-    @Output() openRecordApiForm: EventEmitter<DatasetServiceDistribution> =
+  @Output() openRecordApiForm: EventEmitter<DatasetServiceDistribution> =
+    new EventEmitter<DatasetServiceDistribution>()
+  @Output() openModalLayer: EventEmitter<DatasetServiceDistribution> =
     new EventEmitter<DatasetServiceDistribution>()
 
   ngOnInit() {
     this.displayApiFormButton =
       this.link.accessServiceProtocol === 'ogcFeatures' ||
       this.link.accessServiceProtocol === 'wfs' ||
-    this.link.accessServiceProtocol === 'GPFDL'
+      this.link.accessServiceProtocol === 'GPFDL'
+    this.displayModalLayer = this.link.accessServiceProtocol === 'GPFDL'
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -40,6 +44,12 @@ export class ApiCardComponent implements OnInit, OnChanges {
     if (this.displayApiFormButton) {
       this.currentlyActive = !this.currentlyActive
       this.openRecordApiForm.emit(this.currentlyActive ? this.link : undefined)
+    }
+  }
+
+  openModalLayerPanel() {
+    if (this.displayModalLayer) {
+      this.openModalLayer.emit(this.link)
     }
   }
 }
