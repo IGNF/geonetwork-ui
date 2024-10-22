@@ -24,8 +24,6 @@ export class ApiCardComponent implements OnInit, OnChanges {
   currentlyActive = false
   @Output() openRecordApiForm: EventEmitter<DatasetServiceDistribution> =
     new EventEmitter<DatasetServiceDistribution>()
-  @Output() openModalLayer: EventEmitter<DatasetServiceDistribution> =
-    new EventEmitter<DatasetServiceDistribution>()
 
   ngOnInit() {
     this.displayApiFormButton =
@@ -44,12 +42,6 @@ export class ApiCardComponent implements OnInit, OnChanges {
     if (this.displayApiFormButton) {
       this.currentlyActive = !this.currentlyActive
       this.openRecordApiForm.emit(this.currentlyActive ? this.link : undefined)
-    }
-  }
-
-  openModalLayerPanel() {
-    if (this.displayModalLayer) {
-      this.openModalLayer.emit(this.link)
     }
   }
 }
