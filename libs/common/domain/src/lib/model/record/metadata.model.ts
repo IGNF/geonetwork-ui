@@ -3,6 +3,14 @@ import type { Individual } from './contact.model'
 import type { Organization } from './organization.model'
 import type { Geometry } from 'geojson'
 import { KeywordType, ThesaurusModel } from '../thesaurus'
+import {
+  ConstraintTranslations,
+  KeywordTranslations,
+  LanguageCode,
+  OnlineResourceTranslations,
+  RecordTranslations,
+  SpatialExtentTranslations,
+} from './translation.model'
 
 type Uuid = string
 
@@ -52,6 +60,8 @@ export type RecordStatus = typeof RecordStatusValues[number]
 export type Constraint = {
   text: string
   url?: URL
+
+  translations?: ConstraintTranslations
 }
 
 export type SpatialRepresentationType =
@@ -68,9 +78,9 @@ export interface Keyword {
   type: KeywordType
   thesaurus?: ThesaurusModel
   bbox?: [number, number, number, number]
+
+  translations?: KeywordTranslations
 }
-// languages should be expressed using two-letters ISO 639-1 codes
-export type LanguageCode = string
 
 export interface BaseRecord {
   uniqueIdentifier: Uuid
@@ -81,7 +91,6 @@ export interface BaseRecord {
   recordCreated?: Date
   recordPublished?: Date
   recordUpdated: Date
-  languages: Array<LanguageCode>
   kind: RecordKind
   topics: Array<string> // TODO: handle codelists
   keywords: Array<Keyword>
@@ -99,6 +108,12 @@ export interface BaseRecord {
   resourceCreated?: Date
   resourcePublished?: Date
   resourceUpdated?: Date
+
+  // multilingual support
+  defaultLanguage: LanguageCode
+  otherLanguages: Array<LanguageCode> // this should include all non-default languages present in the metadata, even if incompletely translated
+
+  translations?: RecordTranslations
 
   // to add: canonical url
   // to add: source catalog (??)
@@ -125,6 +140,7 @@ export interface DatasetServiceDistribution {
   identifierInService?: string
   name?: string
   description?: string
+  translations?: OnlineResourceTranslations
 }
 
 export interface DatasetDownloadDistribution {
@@ -138,6 +154,7 @@ export interface DatasetDownloadDistribution {
   name?: string
   description?: string
   accessServiceProtocol?: ServiceProtocol
+  translations?: OnlineResourceTranslations
 }
 
 export interface OnlineLinkResource {
@@ -145,6 +162,7 @@ export interface OnlineLinkResource {
   url: URL
   name?: string
   description?: string
+  translations?: OnlineResourceTranslations
 }
 
 export type DatasetOnlineResource = (
@@ -164,6 +182,7 @@ export interface DatasetSpatialExtent {
   bbox?: [number, number, number, number]
   geometry?: Geometry
   description?: string
+  translations?: SpatialExtentTranslations
 }
 
 /**
@@ -190,6 +209,7 @@ export interface ServiceEndpoint {
   protocol: string
   type: 'endpoint'
   description?: string
+  translations?: OnlineResourceTranslations
 }
 
 export type ServiceOnlineResource = (ServiceEndpoint | OnlineLinkResource) & {

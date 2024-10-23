@@ -15,14 +15,13 @@ import { AvatarServiceInterface } from '../auth/avatar.service.interface'
 import { Gn4PlatformMapper } from './gn4-platform.mapper'
 import { LangService } from '@geonetwork-ui/util/i18n'
 import {
+  datasetRecordsFixture,
   someUserFeedbacksFixture,
   userFeedbackFixture,
 } from '@geonetwork-ui/common/fixtures'
-import {
-  HttpClientTestingModule,
-  HttpTestingController,
-} from '@angular/common/http/testing'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { HttpClient, HttpEventType } from '@angular/common/http'
+import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 
 let geonetworkVersion: string
 
@@ -174,6 +173,11 @@ class LangServiceMock {
   iso3 = 'fre'
 }
 
+const associatedResources = {
+  onlines: [],
+  thumbnails: [],
+}
+
 class RecordsApiServiceMock {
   getAllResources = jest.fn(() =>
     of([
@@ -187,7 +191,13 @@ class RecordsApiServiceMock {
       },
     ])
   )
-  putResource = jest.fn(() => of(undefined))
+  getAssociatedResources = jest.fn(() => of(associatedResources))
+  delResource = jest.fn(() => of(undefined))
+  putResource = jest.fn(() =>
+    of({
+      type: HttpEventType.UploadProgress,
+    })
+  )
 }
 
 class UserfeedbackApiServiceMock {
@@ -257,7 +267,6 @@ describe('Gn4PlatformService', () => {
     registriesApiService = TestBed.inject(RegistriesApiService)
     userFeedbackApiService = TestBed.inject(UserfeedbackApiService as any)
     recordsApiService = TestBed.inject(RecordsApiService)
-    TestBed.inject(HttpTestingController)
   })
 
   it('creates', () => {
@@ -769,13 +778,29 @@ describe('Gn4PlatformService', () => {
     })
   })
 
+  describe('cleanRecordAttachments', () => {
+    it('calls api service', async () => {
+      const record = datasetRecordsFixture() as unknown as CatalogRecord
+
+      service.cleanRecordAttachments(record)
+
+      expect(recordsApiService.getAssociatedResources).toHaveBeenCalledWith(
+        record.uniqueIdentifier
+      )
+      expect(recordsApiService.getAllResources).toHaveBeenCalledWith(
+        record.uniqueIdentifier
+      )
+    })
+  })
+
   describe('attachFileToRecord', () => {
     let file: File
     beforeEach(() => {
       file = new File([''], 'filename')
     })
     it('calls api service', async () => {
-      service.attachFileToRecord('12345', file)
+      await firstValueFrom(service.attachFileToRecord('12345', file))
+      expect(recordsApiService.getAllResources).toHaveBeenCalledWith('12345')
       expect(recordsApiService.putResource).toHaveBeenCalledWith(
         '12345',
         file,
@@ -784,6 +809,13 @@ describe('Gn4PlatformService', () => {
         'events',
         true
       )
+    })
+    it('disambiguates file name if an identical file already exists', async () => {
+      file = new File([''], 'doge.jpg')
+      await firstValueFrom(service.attachFileToRecord('12345', file))
+      const fileSent = (recordsApiService.putResource as jest.Mock).mock
+        .calls[0][1]
+      expect(fileSent.name).not.toEqual('doge.jpg')
     })
     it('handles progress event', () => {
       ;(recordsApiService.putResource as jest.Mock).mockReturnValue(

@@ -17,6 +17,7 @@ import {
   writeResourcePublished,
   writeResourceUpdated,
   writeSpatialExtents,
+  writeSpatialRepresentation,
   writeTemporalExtents,
 } from './write-parts'
 
@@ -286,7 +287,17 @@ describe('write parts', () => {
       writeOnlineResources(
         {
           ...datasetRecord,
-          onlineResources: [distributionLink],
+          onlineResources: [
+            {
+              ...distributionLink,
+              translations: {
+                description: {
+                  fr: "Un lien vers la documentation en ligne en PDF ; veuillez pardonner les fautes d'orthographes.",
+                  de: 'Ein Link zur Online-Dokumentation im PDF-Format; Bitte verzeihen Sie die Tippfehler.',
+                },
+              },
+            },
+          ],
         },
         rootEl
       )
@@ -302,6 +313,17 @@ describe('write parts', () => {
                             </gmd:linkage>
                             <gmd:description>
                                 <gco:CharacterString>A link to the online documentation in PDF; please forgive the typos.</gco:CharacterString>
+                                <gmd:PT_FreeText>
+                                    <gmd:textGroup>
+                                        <gmd:LocalisedCharacterString locale="#EN">A link to the online documentation in PDF; please forgive the typos.</gmd:LocalisedCharacterString>
+                                    </gmd:textGroup>
+                                    <gmd:textGroup>
+                                        <gmd:LocalisedCharacterString locale="#FR">Un lien vers la documentation en ligne en PDF ; veuillez pardonner les fautes d'orthographes.</gmd:LocalisedCharacterString>
+                                    </gmd:textGroup>
+                                    <gmd:textGroup>
+                                        <gmd:LocalisedCharacterString locale="#DE">Ein Link zur Online-Dokumentation im PDF-Format; Bitte verzeihen Sie die Tippfehler.</gmd:LocalisedCharacterString>
+                                    </gmd:textGroup>
+                                </gmd:PT_FreeText>
                             </gmd:description>
                             <gmd:name>
                                 <gco:CharacterString>Documentation</gco:CharacterString>
@@ -924,6 +946,34 @@ describe('write parts', () => {
           per: 'week',
         })
       ).toEqual('P0Y0M3D')
+    })
+  })
+
+  describe('writeSpatialRepresentation', () => {
+    it('writes the corresponding element', () => {
+      writeSpatialRepresentation(datasetRecord, rootEl)
+      expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <gmd:spatialRepresentationType>
+                <gmd:MD_SpatialRepresentationTypeCode codeList="http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#MD_SpatialRepresentationTypeCode" codeListValue="grid"/>
+            </gmd:spatialRepresentationType>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+    })
+    it('clears the corresponding element if the record has no spatial representation', () => {
+      writeSpatialRepresentation(datasetRecord, rootEl)
+      const modified: DatasetRecord = {
+        ...datasetRecord,
+        spatialRepresentation: null,
+      }
+      writeSpatialRepresentation(modified, rootEl)
+      expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification/>
+    </gmd:identificationInfo>
+</root>`)
     })
   })
 })
