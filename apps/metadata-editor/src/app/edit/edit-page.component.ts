@@ -13,8 +13,15 @@ import {
   NotificationsContainerComponent,
   NotificationsService,
 } from '@geonetwork-ui/feature/notifications'
-import { TranslateService } from '@ngx-translate/core'
-import { filter, Subscription, take } from 'rxjs'
+import { TranslateModule, TranslateService } from '@ngx-translate/core'
+import { filter, firstValueFrom, Subscription, take } from 'rxjs'
+import { PageSelectorComponent } from './components/page-selector/page-selector.component'
+import { marker } from '@biesbjerg/ngx-translate-extract-marker'
+import { map } from 'rxjs/operators'
+
+marker('editor.record.form.bottomButtons.comeBackLater')
+marker('editor.record.form.bottomButtons.previous')
+marker('editor.record.form.bottomButtons.next')
 
 @Component({
   selector: 'md-editor-edit',
@@ -29,10 +36,17 @@ import { filter, Subscription, take } from 'rxjs'
     PublishButtonComponent,
     TopToolbarComponent,
     NotificationsContainerComponent,
+    PageSelectorComponent,
+    TranslateModule,
   ],
 })
 export class EditPageComponent implements OnInit, OnDestroy {
   subscription = new Subscription()
+
+  currentPage$ = this.facade.currentPage$
+  pagesLength$ = this.facade.editorConfig$.pipe(
+    map((config) => config.pages.length)
+  )
 
   constructor(
     private route: ActivatedRoute,
@@ -45,6 +59,7 @@ export class EditPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const [currentRecord, currentRecordSource, currentRecordAlreadySaved] =
       this.route.snapshot.data['record']
+
     this.facade.openRecord(
       currentRecord,
       currentRecordSource,
@@ -88,7 +103,9 @@ export class EditPageComponent implements OnInit, OnDestroy {
     // if we're on the /create route, go to /edit/{uuid} on first change
     if (this.route.snapshot.routeConfig?.path.includes('create')) {
       this.facade.draftSaveSuccess$.pipe(take(1)).subscribe(() => {
-        this.router.navigate(['edit', currentRecord.uniqueIdentifier])
+        this.router.navigate(['edit', currentRecord.uniqueIdentifier], {
+          replaceUrl: true,
+        })
       })
     }
 
@@ -108,5 +125,22 @@ export class EditPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.subscription.unsubscribe()
+  }
+
+  async previousPageButtonHandler() {
+    const currentPage = await firstValueFrom(this.currentPage$)
+    if (currentPage === 0) {
+      this.router.navigate(['catalog', 'search'])
+    } else {
+      this.facade.setCurrentPage(currentPage - 1)
+    }
+  }
+
+  async nextPageButtonHandler() {
+    const currentPage = await firstValueFrom(this.currentPage$)
+    const pagesCount = await firstValueFrom(this.pagesLength$)
+    if (currentPage < pagesCount - 1) {
+      this.facade.setCurrentPage(currentPage + 1)
+    }
   }
 }

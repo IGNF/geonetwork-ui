@@ -15,7 +15,7 @@ import { CommonModule } from '@angular/common'
 import { MatIconModule } from '@angular/material/icon'
 import { UiInputsModule } from '@geonetwork-ui/ui/inputs'
 import { By } from '@angular/platform-browser'
-import { DATASET_RECORDS } from '@geonetwork-ui/common/fixtures'
+import { datasetRecordsFixture } from '@geonetwork-ui/common/fixtures'
 import { Router } from '@angular/router'
 
 const results = [{ md: true }]
@@ -30,6 +30,7 @@ const totalPages = 25
 })
 export class ResultsTableContainerComponent {
   @Output() recordClick = new EventEmitter<CatalogRecord>()
+  @Output() duplicateRecord = new EventEmitter<CatalogRecord>()
 }
 
 @Component({
@@ -63,6 +64,7 @@ class SearchFacadeMock {
   setConfigRequestFields = jest.fn(() => this)
   setPageSize = jest.fn(() => this)
   setSortBy = jest.fn(() => this)
+  resetSearch = jest.fn()
 }
 
 class SearchServiceMock {
@@ -142,7 +144,7 @@ describe('SearchRecordsComponent', () => {
     describe('when click on a record', () => {
       const uniqueIdentifier = 123
       const singleRecord = {
-        ...DATASET_RECORDS[0],
+        ...datasetRecordsFixture()[0],
         uniqueIdentifier,
       }
       beforeEach(() => {
@@ -150,6 +152,19 @@ describe('SearchRecordsComponent', () => {
       })
       it('routes to record edition', () => {
         expect(router.navigate).toHaveBeenCalledWith(['/edit', 123])
+      })
+    })
+    describe('when asking for record duplication', () => {
+      const uniqueIdentifier = 123
+      const singleRecord = {
+        ...datasetRecordsFixture()[0],
+        uniqueIdentifier,
+      }
+      beforeEach(() => {
+        table.duplicateRecord.emit(singleRecord)
+      })
+      it('routes to record duplication', () => {
+        expect(router.navigate).toHaveBeenCalledWith(['/duplicate', 123])
       })
     })
     describe('when click on pagination', () => {

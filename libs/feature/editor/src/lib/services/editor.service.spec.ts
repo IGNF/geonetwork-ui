@@ -5,12 +5,12 @@ import {
   HttpTestingController,
 } from '@angular/common/http/testing'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
-import { DEFAULT_FIELDS } from '../fields.config'
-import { DATASET_RECORDS } from '@geonetwork-ui/common/fixtures'
+import { DEFAULT_CONFIGURATION } from '../fields.config'
+import { datasetRecordsFixture } from '@geonetwork-ui/common/fixtures'
 import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
 import { firstValueFrom, of } from 'rxjs'
 
-const SAMPLE_RECORD: CatalogRecord = DATASET_RECORDS[0]
+const SAMPLE_RECORD: CatalogRecord = datasetRecordsFixture()[0]
 
 class RecordsRepositoryMock {
   openRecordForEdition = jest.fn(() =>
@@ -57,7 +57,7 @@ describe('EditorService', () => {
     let savedRecord: [CatalogRecord, string]
     beforeEach(async () => {
       savedRecord = await firstValueFrom(
-        service.saveRecord(SAMPLE_RECORD, DEFAULT_FIELDS)
+        service.saveRecord(SAMPLE_RECORD, DEFAULT_CONFIGURATION)
       )
     })
     it('calls repository.saveRecord and repository.clearRecordDraft', () => {
@@ -77,7 +77,9 @@ describe('EditorService', () => {
     })
     describe('if a new one has to be generated', () => {
       beforeEach(() => {
-        service.saveRecord(SAMPLE_RECORD, DEFAULT_FIELDS, true).subscribe()
+        service
+          .saveRecord(SAMPLE_RECORD, DEFAULT_CONFIGURATION, true)
+          .subscribe()
       })
       it('clears the unique identifier of the record', () => {
         const expected = {

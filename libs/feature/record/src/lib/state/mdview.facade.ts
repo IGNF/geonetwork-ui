@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core'
 import { select, Store } from '@ngrx/store'
 import {
+  catchError,
   defaultIfEmpty,
   filter,
   map,
   mergeMap,
-  scan,
   switchMap,
   toArray,
 } from 'rxjs/operators'
@@ -64,7 +64,11 @@ export class MdViewFacade {
   chartConfig$ = this.store.pipe(select(MdViewSelectors.getChartConfig))
 
   allLinks$ = this.metadata$.pipe(
-    map((record) => ('distributions' in record ? record.distributions : []))
+    map((record) =>
+      record.kind === 'dataset' && 'onlineResources' in record
+        ? record.onlineResources
+        : []
+    )
   )
 
   apiLinks$ = this.allLinks$.pipe(
@@ -127,7 +131,11 @@ export class MdViewFacade {
                     ? link
                     : null
                 }),
-                defaultIfEmpty(null)
+                defaultIfEmpty(null),
+                catchError((e) => {
+                  console.error(e)
+                  return of(null)
+                })
               )
             } else {
               return of(link)

@@ -7,7 +7,6 @@ import {
   OnInit,
   Output,
 } from '@angular/core'
-import { DatasetDistribution } from '@geonetwork-ui/common/domain/model/record'
 import { Observable, catchError, map, mergeMap, tap, throwError } from 'rxjs'
 
 @Component({

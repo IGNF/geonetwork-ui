@@ -1,7 +1,13 @@
-import { EditorPartialState, initialEditorState } from './editor.reducer'
+import {
+  EDITOR_FEATURE_KEY,
+  EditorPartialState,
+  initialEditorState,
+} from './editor.reducer'
 import * as EditorSelectors from './editor.selectors'
-import { DATASET_RECORDS } from '@geonetwork-ui/common/fixtures'
-import { DEFAULT_FIELDS } from '../fields.config'
+import { datasetRecordsFixture } from '@geonetwork-ui/common/fixtures'
+import { DEFAULT_CONFIGURATION } from '../fields.config'
+import { EditorSectionWithValues } from './editor.models'
+import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 
 describe('Editor Selectors', () => {
   let state: EditorPartialState
@@ -10,7 +16,7 @@ describe('Editor Selectors', () => {
     state = {
       editor: {
         ...initialEditorState,
-        record: DATASET_RECORDS[0],
+        record: datasetRecordsFixture()[0] as CatalogRecord,
         recordSource: '<xml>blabla</xml>',
         saveError: 'something went wrong',
         saving: false,
@@ -22,7 +28,7 @@ describe('Editor Selectors', () => {
   describe('Editor Selectors', () => {
     it('selectRecord() should return the current loaded record', () => {
       const result = EditorSelectors.selectRecord(state)
-      expect(result).toBe(DATASET_RECORDS[0])
+      expect(result).toEqual(datasetRecordsFixture()[0])
     })
 
     it('selectRecordSource() should return the source of the current record', () => {
@@ -51,72 +57,65 @@ describe('Editor Selectors', () => {
     })
 
     it('selectRecordFieldsConfig() should return the current "fieldsConfig" state', () => {
-      const result = EditorSelectors.selectRecordFieldsConfig(state)
-      expect(result).toEqual(DEFAULT_FIELDS)
+      const result = EditorSelectors.selectEditorConfig(state)
+      expect(result).toEqual(DEFAULT_CONFIGURATION)
     })
 
     describe('selectRecordFields', () => {
-      it('should return the config and value for each field', () => {
-        const result = EditorSelectors.selectRecordFields(state)
-        expect(result).toEqual([
-          {
-            config: DEFAULT_FIELDS[0],
-            value: DATASET_RECORDS[0].title,
-          },
-          {
-            config: DEFAULT_FIELDS[1],
-            value: DATASET_RECORDS[0].abstract,
-          },
-          {
-            config: DEFAULT_FIELDS[2],
-            value: DATASET_RECORDS[0].uniqueIdentifier,
-          },
-          {
-            config: DEFAULT_FIELDS[3],
-            value: DATASET_RECORDS[0].recordUpdated,
-          },
-          {
-            config: DEFAULT_FIELDS[4],
-            value: DATASET_RECORDS[0].licenses,
-          },
-          {
-            config: DEFAULT_FIELDS[5],
-            value: DATASET_RECORDS[0].resourceUpdated,
-          },
-          {
-            config: DEFAULT_FIELDS[6],
-            value: DATASET_RECORDS[0].updateFrequency,
-          },
-          {
-            config: DEFAULT_FIELDS[7],
-            value: DATASET_RECORDS[0].temporalExtents,
-          },
-          {
-            config: DEFAULT_FIELDS[8],
-            value: DATASET_RECORDS[0].keywords,
-          },
-        ])
+      it('should return the config and value for specified page', () => {
+        const recordSections = EditorSelectors.selectRecordSections(state)
+
+        const expectedResult = DEFAULT_CONFIGURATION.pages[0].sections.map(
+          (section) => ({
+            ...section,
+            fieldsWithValues: section.fields.map((fieldConfig) => ({
+              config: fieldConfig,
+              value:
+                state[EDITOR_FEATURE_KEY].record?.[fieldConfig.model] ?? null,
+            })),
+          })
+        ) as EditorSectionWithValues[]
+
+        expect(recordSections).toEqual(expectedResult)
+
+        const actualFields = recordSections
+          .map((section) => section.fields)
+          .flat()
+
+        const expectedFields = expectedResult
+          .map((section) => section.fields)
+          .flat()
+
+        expect(actualFields).toEqual(expectedFields)
       })
+
       it('should not coerce falsy values to null', () => {
-        const result = EditorSelectors.selectRecordFields({
+        const result = EditorSelectors.selectRecordSections({
           ...state,
           editor: {
             ...state.editor,
             record: {
-              ...DATASET_RECORDS[0],
+              ...datasetRecordsFixture()[0],
               abstract: '',
               title: '',
             },
           },
         })
-        expect(result).toContainEqual({
-          config: DEFAULT_FIELDS[0],
-          value: '',
-        })
-        expect(result).toContainEqual({
-          config: DEFAULT_FIELDS[1],
-          value: '',
-        })
+
+        const resultFields = result.flatMap(
+          (section) => section.fieldsWithValues
+        )
+
+        const abstractField = resultFields.find(
+          (field) => field.config.model === 'abstract'
+        )
+
+        const titleField = resultFields.find(
+          (field) => field.config.model === 'title'
+        )
+
+        expect(abstractField.value).toEqual('')
+        expect(titleField.value).toEqual('')
       })
     })
   })

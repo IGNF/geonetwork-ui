@@ -15,7 +15,7 @@ import { TranslateModule } from '@ngx-translate/core'
 import { BehaviorSubject, of } from 'rxjs'
 import { RecordMetadataComponent } from './record-metadata.component'
 import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
-import { DATASET_RECORDS } from '@geonetwork-ui/common/fixtures'
+import { datasetRecordsFixture } from '@geonetwork-ui/common/fixtures'
 import { MdViewFacade } from '@geonetwork-ui/feature/record'
 import {
   CatalogRecord,
@@ -27,7 +27,7 @@ import {
 } from '@geonetwork-ui/common/domain/model/record'
 
 const SAMPLE_RECORD = {
-  ...DATASET_RECORDS[0],
+  ...datasetRecordsFixture()[0],
   extras: {
     catalogUuid: 'catalog-0001',
   },
@@ -45,6 +45,7 @@ class MdViewFacadeMock {
   otherLinks$ = new BehaviorSubject([])
   related$ = new BehaviorSubject(null)
   error$ = new BehaviorSubject(null)
+  isMetadataLoading$ = new BehaviorSubject(false)
 }
 
 class SearchServiceMock {
@@ -421,10 +422,10 @@ describe('RecordMetadataComponent', () => {
           fixture.debugElement.query(By.directive(MockDataViewComponent))
         ).toBeFalsy()
       })
-      it('does not render the permalink component', () => {
+      it('does render the permalink component', () => {
         expect(
           fixture.debugElement.query(By.directive(MockDataViewShareComponent))
-        ).toBeFalsy()
+        ).toBeTruthy()
       })
     })
     describe('when a DATA link present', () => {
@@ -446,14 +447,14 @@ describe('RecordMetadataComponent', () => {
             .length
         ).toEqual(2)
       })
-      it('does not render the permalink component', () => {
+      it('does render the permalink component', () => {
         expect(
           fixture.debugElement.query(By.directive(MockDataViewShareComponent))
-        ).toBeFalsy()
+        ).toBeTruthy()
       })
-      describe('when selectedTabIndex$ is 2 (chart tab)', () => {
+      describe('when selectedView$ is chart', () => {
         beforeEach(() => {
-          component.selectedTabIndex$.next(2)
+          component.selectedView$.next('chart')
           fixture.detectChanges()
         })
         it('renders the permalink component', () => {
@@ -659,20 +660,39 @@ describe('RecordMetadataComponent', () => {
     })
 
     describe('When there are no link (download, api or other links)', () => {
-      beforeEach(() => {
-        facade.apiLinks$.next([])
-        facade.downloadLinks$.next([])
-        facade.otherLinks$.next([])
-        fixture.detectChanges()
+      describe('When the metadata is not fully loaded', () => {
+        beforeEach(() => {
+          facade.isMetadataLoading$.next(true)
+          facade.apiLinks$.next([])
+          facade.downloadLinks$.next([])
+          facade.otherLinks$.next([])
+          fixture.detectChanges()
+        })
+        it("doesn' show the no link error block", () => {
+          const result = fixture.debugElement.query(
+            By.css('[data-test="dataset-has-no-link-block"]')
+          )
+          expect(result).toBeFalsy()
+        })
       })
-      it('shows the no link error block', () => {
-        const result = fixture.debugElement.query(
-          By.css('[data-test="dataset-has-no-link-block"]')
-        )
-        expect(result).toBeTruthy()
-        expect(result.componentInstance.type).toBe(
-          ErrorType.DATASET_HAS_NO_LINK
-        )
+
+      describe('When the metadata is not fully loaded', () => {
+        beforeEach(() => {
+          facade.isMetadataLoading$.next(false)
+          facade.apiLinks$.next([])
+          facade.downloadLinks$.next([])
+          facade.otherLinks$.next([])
+          fixture.detectChanges()
+        })
+        it('shows the no link error block', () => {
+          const result = fixture.debugElement.query(
+            By.css('[data-test="dataset-has-no-link-block"]')
+          )
+          expect(result).toBeTruthy()
+          expect(result.componentInstance.type).toBe(
+            ErrorType.DATASET_HAS_NO_LINK
+          )
+        })
       })
     })
   })

@@ -31,6 +31,18 @@ export abstract class RecordsRepositoryInterface {
   ): Observable<[CatalogRecord, string, boolean] | null>
 
   /**
+   * This emits once:
+   * - record object with a new unique identifier and suffixed title
+   * - serialized representation of the record as text
+   * - false, as the duplicated record is always a draft
+   * @param uniqueIdentifier
+   * @returns Observable<[CatalogRecord, string, false] | null>
+   */
+  abstract openRecordForDuplication(
+    uniqueIdentifier: string
+  ): Observable<[CatalogRecord, string, false] | null>
+
+  /**
    * @param record
    * @param referenceRecordSource
    * @returns Observable<string> Returns the unique identifier of the record as it was when saved
@@ -39,6 +51,14 @@ export abstract class RecordsRepositoryInterface {
     record: CatalogRecord,
     referenceRecordSource?: string
   ): Observable<string>
+
+  /**
+   * @param uniqueIdentifier
+   * @returns Observable<void> Returns when record is deleted
+   */
+  abstract deleteRecord(uniqueIdentifier: string): Observable<void>
+
+  abstract generateTemporaryId(): string
 
   /**
    * @param record
@@ -52,7 +72,9 @@ export abstract class RecordsRepositoryInterface {
 
   abstract clearRecordDraft(uniqueIdentifier: string): void
   abstract recordHasDraft(uniqueIdentifier: string): boolean
+  abstract isRecordNotYetSaved(uniqueIdentifier: string): boolean
 
   /** will return all pending drafts, both published and not published */
   abstract getAllDrafts(): Observable<CatalogRecord[]>
+  abstract draftsChanged$: Observable<void>
 }

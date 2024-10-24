@@ -1,5 +1,6 @@
 import {
   MeApiService,
+  RecordsApiService,
   RegistriesApiService,
   SiteApiService,
   ToolsApiService,
@@ -14,14 +15,14 @@ import { AvatarServiceInterface } from '../auth/avatar.service.interface'
 import { Gn4PlatformMapper } from './gn4-platform.mapper'
 import { LangService } from '@geonetwork-ui/util/i18n'
 import {
-  A_USER_FEEDBACK,
-  SOME_USER_FEEDBACKS,
+  someUserFeedbacksFixture,
+  userFeedbackFixture,
 } from '@geonetwork-ui/common/fixtures'
 import {
   HttpClientTestingModule,
   HttpTestingController,
 } from '@angular/common/http/testing'
-import { HttpClient } from '@angular/common/http'
+import { HttpClient, HttpEventType } from '@angular/common/http'
 
 let geonetworkVersion: string
 
@@ -173,9 +174,24 @@ class LangServiceMock {
   iso3 = 'fre'
 }
 
-class UserfeedbackApiServiceMock {
-  getUserComments = jest.fn(() => of(SOME_USER_FEEDBACKS))
+class RecordsApiServiceMock {
+  getAllResources = jest.fn(() =>
+    of([
+      {
+        filename: 'doge.jpg',
+        url: 'http://localhost:8080/geonetwork/srv/api/records/8505d991-e38f-4704-a47a-e7d335dfbef5/attachments/doge.jpg',
+      },
+      {
+        filename: 'flower.jpg',
+        url: 'http://localhost:8080/geonetwork/srv/api/records/8505d991-e38f-4704-a47a-e7d335dfbef5/attachments/flower.jpg',
+      },
+    ])
+  )
+  putResource = jest.fn(() => of(undefined))
+}
 
+class UserfeedbackApiServiceMock {
+  getUserComments = jest.fn(() => of(someUserFeedbacksFixture()))
   newUserFeedback = jest.fn(() => of(undefined))
 }
 
@@ -185,6 +201,7 @@ describe('Gn4PlatformService', () => {
   let toolsApiService: ToolsApiService
   let registriesApiService: RegistriesApiService
   let userFeedbackApiService: UserfeedbackApiServiceMock
+  let recordsApiService: RecordsApiService
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -227,6 +244,10 @@ describe('Gn4PlatformService', () => {
           provide: HttpClient,
           useClass: HttpClientMock,
         },
+        {
+          provide: RecordsApiService,
+          useClass: RecordsApiServiceMock,
+        },
       ],
       imports: [HttpClientTestingModule],
     })
@@ -235,6 +256,7 @@ describe('Gn4PlatformService', () => {
     toolsApiService = TestBed.inject(ToolsApiService)
     registriesApiService = TestBed.inject(RegistriesApiService)
     userFeedbackApiService = TestBed.inject(UserfeedbackApiService as any)
+    recordsApiService = TestBed.inject(RecordsApiService)
     TestBed.inject(HttpTestingController)
   })
 
@@ -370,6 +392,151 @@ describe('Gn4PlatformService', () => {
       })
     })
   })
+  describe('#searchKeywords', () => {
+    beforeEach(() => {
+      jest.spyOn(service, 'searchKeywords')
+    })
+    it('calls api service with qeury', () => {
+      service.searchKeywords('road', ['theme']).subscribe()
+      expect(registriesApiService.searchKeywords).toHaveBeenCalledWith(
+        'road',
+        'fre',
+        10,
+        0,
+        null,
+        ['external.theme.httpinspireeceuropaeutheme-theme'],
+        null,
+        '*road*'
+      )
+    })
+    it('returns mapped thesaurus with translated values', async () => {
+      const keywords = await lastValueFrom(
+        service.searchKeywords('road', ['theme'])
+      )
+      expect(keywords).toEqual([
+        {
+          description:
+            'Localisation des propriétés fondée sur les identifiants des adresses, habituellement le nom de la rue, le numéro de la maison et le code postal.',
+          key: 'http://inspire.ec.europa.eu/theme/ad',
+          label: 'Adresses',
+          thesaurus: {
+            id: 'external.theme.httpinspireeceuropaeutheme-theme',
+            name: 'GEMET - INSPIRE themes, version 1.0',
+            type: 'theme',
+            url: new URL(
+              'http://localhost:8080/geonetwork/srv/api/registries/vocabularies/external.theme.httpinspireeceuropaeutheme-theme'
+            ),
+          },
+          type: 'theme',
+        },
+        {
+          description:
+            "Modèles numériques pour l'altitude des surfaces terrestres, glaciaires et océaniques. Comprend l'altitude terrestre, la bathymétrie et la ligne de rivage.",
+          key: 'http://inspire.ec.europa.eu/theme/el',
+          label: 'Altitude',
+          thesaurus: {
+            id: 'external.theme.httpinspireeceuropaeutheme-theme',
+            name: 'GEMET - INSPIRE themes, version 1.0',
+            type: 'theme',
+            url: new URL(
+              'http://localhost:8080/geonetwork/srv/api/registries/vocabularies/external.theme.httpinspireeceuropaeutheme-theme'
+            ),
+          },
+          type: 'theme',
+        },
+      ])
+    })
+    describe('if translations are unavailable', () => {
+      it('uses default values', async () => {
+        service['langService']['iso3'] = 'ger'
+        const keywords = await lastValueFrom(
+          service.searchKeywords('road', ['theme'])
+        )
+        expect(keywords).toEqual([
+          {
+            description: 'localization of properties',
+            key: 'http://inspire.ec.europa.eu/theme/ad',
+            label: 'addresses',
+            thesaurus: {
+              id: 'external.theme.httpinspireeceuropaeutheme-theme',
+              name: 'GEMET - INSPIRE themes, version 1.0',
+              type: 'theme',
+              url: new URL(
+                'http://localhost:8080/geonetwork/srv/api/registries/vocabularies/external.theme.httpinspireeceuropaeutheme-theme'
+              ),
+            },
+            type: 'theme',
+          },
+          {
+            description: 'digital terrain models',
+            key: 'http://inspire.ec.europa.eu/theme/el',
+            label: 'altitude',
+            thesaurus: {
+              id: 'external.theme.httpinspireeceuropaeutheme-theme',
+              name: 'GEMET - INSPIRE themes, version 1.0',
+              type: 'theme',
+              url: new URL(
+                'http://localhost:8080/geonetwork/srv/api/registries/vocabularies/external.theme.httpinspireeceuropaeutheme-theme'
+              ),
+            },
+            type: 'theme',
+          },
+        ])
+      })
+    })
+    describe('if keywordType is empty Array', () => {
+      it('calls api service with empty array and returns keywords from all thesauri', async () => {
+        service.searchKeywords('road', ['theme']).subscribe()
+        const keywords = await lastValueFrom(
+          service.searchKeywords('road', ['theme'])
+        )
+
+        expect(registriesApiService.searchKeywords).toHaveBeenCalledWith(
+          'road',
+          'fre',
+          10,
+          0,
+          null,
+          ['external.theme.httpinspireeceuropaeutheme-theme'],
+          null,
+          '*road*'
+        )
+
+        expect(keywords).toEqual([
+          {
+            description:
+              'Localisation des propriétés fondée sur les identifiants des adresses, habituellement le nom de la rue, le numéro de la maison et le code postal.',
+            key: 'http://inspire.ec.europa.eu/theme/ad',
+            label: 'Adresses',
+            thesaurus: {
+              id: 'external.theme.httpinspireeceuropaeutheme-theme',
+              name: 'GEMET - INSPIRE themes, version 1.0',
+              type: 'theme',
+              url: new URL(
+                'http://localhost:8080/geonetwork/srv/api/registries/vocabularies/external.theme.httpinspireeceuropaeutheme-theme'
+              ),
+            },
+            type: 'theme',
+          },
+          {
+            description:
+              "Modèles numériques pour l'altitude des surfaces terrestres, glaciaires et océaniques. Comprend l'altitude terrestre, la bathymétrie et la ligne de rivage.",
+            key: 'http://inspire.ec.europa.eu/theme/el',
+            label: 'Altitude',
+            thesaurus: {
+              id: 'external.theme.httpinspireeceuropaeutheme-theme',
+              name: 'GEMET - INSPIRE themes, version 1.0',
+              type: 'theme',
+              url: new URL(
+                'http://localhost:8080/geonetwork/srv/api/registries/vocabularies/external.theme.httpinspireeceuropaeutheme-theme'
+              ),
+            },
+            type: 'theme',
+          },
+        ])
+      })
+    })
+  })
   describe('#getKeywordsByUri', () => {
     it('calls api service ', async () => {
       service.getKeywordsByUri('http://inspire.ec.europa.eu/theme/')
@@ -462,7 +629,7 @@ describe('Gn4PlatformService', () => {
     describe('getUserFeedbacks', () => {
       it('should call getUserComments with correct UUID and map results', (done) => {
         const mockUuid = '1234'
-        const mockFeedbacks = SOME_USER_FEEDBACKS
+        const mockFeedbacks = someUserFeedbacksFixture()
 
         service.getUserFeedbacks(mockUuid).subscribe({
           next: (results) => {
@@ -498,12 +665,12 @@ describe('Gn4PlatformService', () => {
     describe('postUserFeedbacks', () => {
       it('should process and post user feedbacks correctly', (done) => {
         const expected: UserFeedbackDTOApiModel = {
-          ...A_USER_FEEDBACK,
+          ...userFeedbackFixture(),
           authorUserId: expect.any(Number),
           date: expect.any(String),
         }
 
-        service.postUserFeedbacks(A_USER_FEEDBACK).subscribe({
+        service.postUserFeedbacks(userFeedbackFixture()).subscribe({
           next: () => {
             expect(userFeedbackApiService.newUserFeedback).toHaveBeenCalledWith(
               expected
@@ -512,6 +679,155 @@ describe('Gn4PlatformService', () => {
           },
           error: done,
         })
+      })
+    })
+  })
+  describe('#searchKeywordsInThesaurus', () => {
+    it('calls api service and strips thesaurus id of the geonetwork prefix', async () => {
+      await firstValueFrom(
+        service.searchKeywordsInThesaurus(
+          'Bla',
+          'geonetwork.thesaurus.external.place.regions'
+        )
+      )
+      expect(registriesApiService.searchKeywords).toHaveBeenCalledWith(
+        'Bla',
+        'fre',
+        100,
+        0,
+        null,
+        ['external.place.regions'],
+        null
+      )
+    })
+    it('returns mapped thesaurus with translated values', async () => {
+      const keywords = await lastValueFrom(
+        service.searchKeywordsInThesaurus(
+          'Bla',
+          'geonetwork.thesaurus.external.place.regions'
+        )
+      )
+      expect(keywords).toEqual([
+        {
+          description:
+            'Localisation des propriétés fondée sur les identifiants des adresses, habituellement le nom de la rue, le numéro de la maison et le code postal.',
+          key: 'http://inspire.ec.europa.eu/theme/ad',
+          label: 'Adresses',
+          thesaurus: {
+            id: 'external.theme.httpinspireeceuropaeutheme-theme',
+            name: 'GEMET - INSPIRE themes, version 1.0',
+            type: 'theme',
+            url: new URL(
+              'http://localhost:8080/geonetwork/srv/api/registries/vocabularies/external.theme.httpinspireeceuropaeutheme-theme'
+            ),
+          },
+          type: 'theme',
+        },
+        {
+          description:
+            "Modèles numériques pour l'altitude des surfaces terrestres, glaciaires et océaniques. Comprend l'altitude terrestre, la bathymétrie et la ligne de rivage.",
+          key: 'http://inspire.ec.europa.eu/theme/el',
+          label: 'Altitude',
+          thesaurus: {
+            id: 'external.theme.httpinspireeceuropaeutheme-theme',
+            name: 'GEMET - INSPIRE themes, version 1.0',
+            type: 'theme',
+            url: new URL(
+              'http://localhost:8080/geonetwork/srv/api/registries/vocabularies/external.theme.httpinspireeceuropaeutheme-theme'
+            ),
+          },
+          type: 'theme',
+        },
+      ])
+    })
+    it('returns an empty array if the thesaurus is unknown', async () => {
+      const keywords = await firstValueFrom(
+        service.searchKeywordsInThesaurus('Bla', 'abcd')
+      )
+      expect(keywords).toEqual([])
+    })
+  })
+
+  describe('getRecordAttachments', () => {
+    it('calls api service', async () => {
+      const result = await firstValueFrom(service.getRecordAttachments('12345'))
+      expect(recordsApiService.getAllResources).toHaveBeenCalledWith('12345')
+      expect(result).toEqual([
+        {
+          fileName: 'doge.jpg',
+          url: new URL(
+            'http://localhost:8080/geonetwork/srv/api/records/8505d991-e38f-4704-a47a-e7d335dfbef5/attachments/doge.jpg'
+          ),
+        },
+        {
+          fileName: 'flower.jpg',
+          url: new URL(
+            'http://localhost:8080/geonetwork/srv/api/records/8505d991-e38f-4704-a47a-e7d335dfbef5/attachments/flower.jpg'
+          ),
+        },
+      ])
+    })
+  })
+
+  describe('attachFileToRecord', () => {
+    let file: File
+    beforeEach(() => {
+      file = new File([''], 'filename')
+    })
+    it('calls api service', async () => {
+      service.attachFileToRecord('12345', file)
+      expect(recordsApiService.putResource).toHaveBeenCalledWith(
+        '12345',
+        file,
+        'public',
+        undefined,
+        'events',
+        true
+      )
+    })
+    it('handles progress event', () => {
+      ;(recordsApiService.putResource as jest.Mock).mockReturnValue(
+        of({
+          type: HttpEventType.UploadProgress,
+          loaded: 2,
+          total: 10,
+        })
+      )
+      let result
+      service.attachFileToRecord('12345', file).subscribe((e) => (result = e))
+      expect(result).toEqual({
+        type: 'progress',
+        progress: 20,
+      })
+    })
+    it('handles success event', () => {
+      ;(recordsApiService.putResource as jest.Mock).mockReturnValue(
+        of(
+          {
+            type: HttpEventType.UploadProgress,
+            loaded: 2,
+            total: 10,
+          },
+          {
+            type: HttpEventType.Response,
+            body: {
+              filename: 'filename',
+              url: 'http://localhost:8080/geonetwork/srv/api/records/12345/attachments/filename',
+            },
+          }
+        )
+      )
+      let result
+      service.attachFileToRecord('12345', file).subscribe((e) => (result = e))
+      expect(result).toEqual({
+        type: 'success',
+        attachment: {
+          fileName: 'filename',
+          url: new URL(
+            'http://localhost:8080/geonetwork/srv/api/records/12345/attachments/filename'
+          ),
+        },
+        sizeBytes: 10,
       })
     })
   })

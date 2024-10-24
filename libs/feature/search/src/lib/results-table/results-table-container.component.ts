@@ -1,4 +1,10 @@
-import { Component, EventEmitter, Output } from '@angular/core'
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnDestroy,
+  Output,
+} from '@angular/core'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { SearchFacade } from '../state/search.facade'
 import { SelectionService } from '@geonetwork-ui/api/repository'
@@ -6,6 +12,9 @@ import { SearchService } from '../utils/service/search.service'
 import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
 import { ResultsTableComponent } from '@geonetwork-ui/ui/search'
 import { CommonModule } from '@angular/common'
+import { Subscription } from 'rxjs'
+import { NotificationsService } from '@geonetwork-ui/feature/notifications'
+import { TranslateService } from '@ngx-translate/core'
 
 @Component({
   selector: 'gn-ui-results-table-container',
@@ -14,8 +23,11 @@ import { CommonModule } from '@angular/common'
   standalone: true,
   imports: [CommonModule, ResultsTableComponent],
 })
-export class ResultsTableContainerComponent {
+export class ResultsTableContainerComponent implements OnDestroy {
   @Output() recordClick = new EventEmitter<CatalogRecord>()
+  @Output() duplicateRecord = new EventEmitter<CatalogRecord>()
+
+  subscription = new Subscription()
 
   records$ = this.searchFacade.results$
   selectedRecords$ = this.selectionService.selectedRecordsIdentifiers$
@@ -24,15 +36,62 @@ export class ResultsTableContainerComponent {
   hasDraft = (record: CatalogRecord): boolean =>
     this.recordsRepository.recordHasDraft(record.uniqueIdentifier)
 
+  isUnsavedDraft = (record: CatalogRecord): boolean =>
+    this.recordsRepository.isRecordNotYetSaved(record.uniqueIdentifier)
+
   constructor(
     private searchFacade: SearchFacade,
     private searchService: SearchService,
     private selectionService: SelectionService,
-    private recordsRepository: RecordsRepositoryInterface
+    private recordsRepository: RecordsRepositoryInterface,
+    private notificationsService: NotificationsService,
+    private translateService: TranslateService
   ) {}
 
   handleRecordClick(item: unknown) {
     this.recordClick.emit(item as CatalogRecord)
+  }
+
+  handleDuplicateRecord(item: unknown) {
+    this.duplicateRecord.emit(item as CatalogRecord)
+  }
+
+  async handleDeleteRecord(item: unknown) {
+    const uniqueIdentifier = (item as CatalogRecord).uniqueIdentifier
+    this.subscription.add(
+      this.recordsRepository.deleteRecord(uniqueIdentifier).subscribe({
+        next: () => {
+          this.recordsRepository.clearRecordDraft(uniqueIdentifier)
+          this.searchFacade.requestNewResults()
+          this.notificationsService.showNotification(
+            {
+              type: 'success',
+              title: this.translateService.instant(
+                'editor.record.deleteSuccess.title'
+              ),
+              text: `${this.translateService.instant(
+                'editor.record.deleteSuccess.body'
+              )}`,
+            },
+            2500
+          )
+        },
+        error: (error) => {
+          this.notificationsService.showNotification({
+            type: 'error',
+            title: this.translateService.instant(
+              'editor.record.deleteError.title'
+            ),
+            text: `${this.translateService.instant(
+              'editor.record.deleteError.body'
+            )} ${error}`,
+            closeMessage: this.translateService.instant(
+              'editor.record.deleteError.closeMessage'
+            ),
+          })
+        },
+      })
+    )
   }
 
   handleSortByChange(col: string, order: 'asc' | 'desc') {
@@ -45,5 +104,9 @@ export class ResultsTableContainerComponent {
     } else {
       this.selectionService.selectRecords(records)
     }
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe()
   }
 }

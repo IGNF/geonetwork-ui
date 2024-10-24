@@ -1,4 +1,4 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing'
+import { fakeAsync, TestBed, tick } from '@angular/core/testing'
 import { MockStore, provideMockStore } from '@ngrx/store/testing'
 import {
   initialMetadataViewState,
@@ -8,8 +8,8 @@ import { MdViewFacade } from './mdview.facade'
 import * as MdViewActions from './mdview.actions'
 import { hot } from 'jasmine-marbles'
 import {
-  A_USER_FEEDBACK,
-  DATASET_RECORDS,
+  datasetRecordsFixture,
+  userFeedbackFixture,
 } from '@geonetwork-ui/common/fixtures'
 import { DatavizConfigurationModel } from '@geonetwork-ui/common/domain/model/dataviz/dataviz-configuration.model'
 import { AvatarServiceInterface } from '@geonetwork-ui/api/repository'
@@ -72,7 +72,7 @@ describe('MdViewFacade', () => {
       store.setState({
         [METADATA_VIEW_FEATURE_STATE_KEY]: {
           ...initialMetadataViewState,
-          metadata: DATASET_RECORDS[0],
+          metadata: datasetRecordsFixture()[0],
         },
       })
       const expected = hot('a', { a: true })
@@ -90,10 +90,10 @@ describe('MdViewFacade', () => {
       store.setState({
         [METADATA_VIEW_FEATURE_STATE_KEY]: {
           ...initialMetadataViewState,
-          metadata: DATASET_RECORDS[0],
+          metadata: datasetRecordsFixture()[0],
         },
       })
-      const expected = hot('a', { a: DATASET_RECORDS[0] })
+      const expected = hot('a', { a: datasetRecordsFixture()[0] })
       expect(facade.metadata$).toBeObservable(expected)
     })
   })
@@ -108,10 +108,12 @@ describe('MdViewFacade', () => {
       store.setState({
         [METADATA_VIEW_FEATURE_STATE_KEY]: {
           ...initialMetadataViewState,
-          metadata: DATASET_RECORDS[0],
+          metadata: datasetRecordsFixture()[0],
         },
       })
-      const expected = hot('a', { a: DATASET_RECORDS[0].distributions })
+      const expected = hot('a', {
+        a: datasetRecordsFixture()[0].onlineResources,
+      })
       expect(facade.allLinks$).toBeObservable(expected)
     })
   })
@@ -121,7 +123,7 @@ describe('MdViewFacade', () => {
       store.setState({
         [METADATA_VIEW_FEATURE_STATE_KEY]: {
           ...initialMetadataViewState,
-          metadata: DATASET_RECORDS[0],
+          metadata: datasetRecordsFixture()[0],
           loadingFull: true,
         },
       })
@@ -133,7 +135,7 @@ describe('MdViewFacade', () => {
       store.setState({
         [METADATA_VIEW_FEATURE_STATE_KEY]: {
           ...initialMetadataViewState,
-          metadata: DATASET_RECORDS[0],
+          metadata: datasetRecordsFixture()[0],
           loadingFull: false,
         },
       })
@@ -188,10 +190,10 @@ describe('MdViewFacade', () => {
 
   describe('setIncompleteMetadata', () => {
     it('dispatches a setIncompleteMetadata action', () => {
-      facade.setIncompleteMetadata(DATASET_RECORDS[0])
+      facade.setIncompleteMetadata(datasetRecordsFixture()[0])
       const expected = hot('a', {
         a: MdViewActions.setIncompleteMetadata({
-          incomplete: DATASET_RECORDS[0],
+          incomplete: datasetRecordsFixture()[0],
         }),
       })
       expect(store.scannedActions$).toBeObservable(expected)
@@ -220,9 +222,11 @@ describe('MdViewFacade', () => {
 
   describe('addUserFeedback', () => {
     it('dispatches a addUserFeedback action', () => {
-      facade.addUserFeedback(A_USER_FEEDBACK)
+      facade.addUserFeedback(userFeedbackFixture())
       const expected = hot('a', {
-        a: MdViewActions.addUserFeedback({ userFeedback: A_USER_FEEDBACK }),
+        a: MdViewActions.addUserFeedback({
+          userFeedback: userFeedbackFixture(),
+        }),
       })
       expect(store.scannedActions$).toBeObservable(expected)
     })
@@ -239,6 +243,30 @@ describe('MdViewFacade', () => {
   })
 
   describe('geoDataLinksWithGeometry$', () => {
+    const links = [
+      {
+        type: 'download',
+        url: new URL('http://my-org.net/download/2.geojson'),
+        mimeType: 'application/geo+json',
+        name: 'Direct download',
+      },
+      {
+        type: 'service',
+        url: new URL('https://my-org.net/wfs'),
+        accessServiceProtocol: 'wfs',
+        name: 'my:featuretype', // FIXME: same as identifier otherwise it will be lost in iso...
+        description: 'This WFS service offers direct download capability',
+        identifierInService: 'my:featuretype',
+      },
+      {
+        type: 'service',
+        url: new URL('https://my-org.net/ogc'),
+        accessServiceProtocol: 'ogcFeatures',
+        name: 'my:featuretype',
+        description: 'This OGC service offers direct download capability',
+        identifierInService: 'my:featuretype',
+      },
+    ]
     beforeEach(() => {
       testScheduler = new TestScheduler((actual, expected) => {
         expect(actual).toEqual(expected)
@@ -246,37 +274,11 @@ describe('MdViewFacade', () => {
       store.setState({
         [METADATA_VIEW_FEATURE_STATE_KEY]: {
           ...initialMetadataViewState,
-          metadata: DATASET_RECORDS[0],
+          metadata: datasetRecordsFixture()[0],
         },
       })
     })
     it('should return OGC links that have geometry', fakeAsync(() => {
-      const values = {
-        a: [
-          {
-            type: 'download',
-            url: new URL('http://my-org.net/download/2.geojson'),
-            mimeType: 'application/geo+json',
-            name: 'Direct download',
-          },
-          {
-            type: 'service',
-            url: new URL('https://my-org.net/wfs'),
-            accessServiceProtocol: 'wfs',
-            name: 'my:featuretype', // FIXME: same as identifier otherwise it will be lost in iso...
-            description: 'This WFS service offers direct download capability',
-            identifierInService: 'my:featuretype',
-          },
-          {
-            type: 'service',
-            url: new URL('https://my-org.net/ogc'),
-            accessServiceProtocol: 'ogcFeatures',
-            name: 'my:featuretype',
-            description: 'This OGC service offers direct download capability',
-            identifierInService: 'my:featuretype',
-          },
-        ],
-      }
       jest.spyOn(facade.dataService, 'getItemsFromOgcApi').mockResolvedValue({
         id: '123',
         type: 'Feature',
@@ -291,7 +293,17 @@ describe('MdViewFacade', () => {
       let result
       facade.geoDataLinksWithGeometry$.subscribe((v) => (result = v))
       tick()
-      expect(result).toEqual(values.a)
+      expect(result).toEqual(links)
+    }))
+    it('should return links that have geometry if OGC API does not respond', fakeAsync(() => {
+      jest
+        .spyOn(facade.dataService, 'getItemsFromOgcApi')
+        .mockRejectedValue(new Error('An error occurred'))
+      let result
+      facade.geoDataLinksWithGeometry$.subscribe((v) => (result = v))
+      tick()
+      const linksWithoutOgcApi = links.slice(0, -1)
+      expect(result).toEqual(linksWithoutOgcApi)
     }))
     it('should not return OGC links that do not have geometry', fakeAsync(() => {
       const values = {
@@ -333,7 +345,7 @@ describe('MdViewFacade', () => {
         store.setState({
           [METADATA_VIEW_FEATURE_STATE_KEY]: {
             ...initialMetadataViewState,
-            metadata: DATASET_RECORDS[1],
+            metadata: datasetRecordsFixture()[1],
           },
         })
       })

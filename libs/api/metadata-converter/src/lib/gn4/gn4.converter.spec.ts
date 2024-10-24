@@ -1,7 +1,7 @@
 import 'jest-preset-angular/setup-jest'
 import {
-  ES_FIXTURE_FULL_RESPONSE,
-  hitsOnly,
+  elasticFullResponseFixture,
+  elasticHitsOnlyFixture,
 } from '@geonetwork-ui/common/fixtures'
 import { Gn4Converter } from './gn4.converter'
 import { of } from 'rxjs'
@@ -71,7 +71,9 @@ describe('Gn4Converter', () => {
     })
     describe('#readRecords', () => {
       it('outputs records', async () => {
-        const records = await service.readRecords(hitsOnly.hits.hits)
+        const records = await service.readRecords(
+          elasticHitsOnlyFixture().hits.hits
+        )
         expect(records).toEqual([
           {
             kind: 'dataset',
@@ -100,7 +102,7 @@ describe('Gn4Converter', () => {
             lineage: null,
             recordPublished: null,
             recordUpdated: null,
-            distributions: [],
+            onlineResources: [],
             licenses: [],
             legalConstraints: [],
             securityConstraints: [],
@@ -147,7 +149,7 @@ describe('Gn4Converter', () => {
             lineage: null,
             recordPublished: null,
             recordUpdated: null,
-            distributions: [],
+            onlineResources: [],
             contacts: [],
             contactsForResource: [],
             keywords: [],
@@ -176,7 +178,7 @@ describe('Gn4Converter', () => {
     describe('#readRecord', () => {
       let hit
       beforeEach(() => {
-        hit = hitsOnly.hits.hits[0]
+        hit = elasticHitsOnlyFixture().hits.hits[0]
       })
 
       describe('overview', () => {
@@ -233,7 +235,7 @@ describe('Gn4Converter', () => {
           })
           it('parses as a valid link, uses name as label', async () => {
             const record = (await service.readRecord(hit)) as DatasetRecord
-            expect(record.distributions).toEqual([
+            expect(record.onlineResources).toEqual([
               {
                 name: 'my data layer',
                 type: 'link',
@@ -259,7 +261,7 @@ describe('Gn4Converter', () => {
           })
           it('parses as a valid link, uses description as label', async () => {
             const record = (await service.readRecord(hit)) as DatasetRecord
-            expect(record.distributions).toEqual([
+            expect(record.onlineResources).toEqual([
               {
                 description: 'Download this file!',
                 type: 'link',
@@ -286,7 +288,7 @@ describe('Gn4Converter', () => {
           })
           it('parses as a valid link, uses description as label', async () => {
             const record = (await service.readRecord(hit)) as DatasetRecord
-            expect(record.distributions).toEqual([
+            expect(record.onlineResources).toEqual([
               {
                 description: 'Download this file!',
                 mimeType: 'application/csv',
@@ -313,7 +315,7 @@ describe('Gn4Converter', () => {
           })
           it('does not parse the link', async () => {
             const record = (await service.readRecord(hit)) as DatasetRecord
-            expect(record.distributions).toEqual([])
+            expect(record.onlineResources).toEqual([])
             expect(window.console.warn).toHaveBeenCalledWith(
               expect.stringContaining('URL'),
               expect.any(Object)
@@ -348,7 +350,7 @@ describe('Gn4Converter', () => {
           })
           it('parse the link correctly', async () => {
             const summary = (await service.readRecord(hit)) as DatasetRecord
-            expect(summary.distributions).toEqual([
+            expect(summary.onlineResources).toEqual([
               {
                 name: 'My file',
                 description: 'Download this file!',
@@ -378,7 +380,7 @@ describe('Gn4Converter', () => {
           })
           it('parse the link correctly', async () => {
             const summary = (await service.readRecord(hit)) as DatasetRecord
-            expect(summary.distributions).toEqual([
+            expect(summary.onlineResources).toEqual([
               {
                 url: new URL('https://my.website/services/static/data.csv'),
                 type: 'link',
@@ -954,6 +956,7 @@ describe('Gn4Converter', () => {
                 name: 'GEMET themes',
               },
               type: 'theme',
+              key: 'http://www.eionet.europa.eu/gemet/theme/1',
             },
             {
               label: 'Unterschlupf',
@@ -988,7 +991,7 @@ describe('Gn4Converter', () => {
       describe('full record', () => {
         it('builds a complete record object', async () => {
           const record = await service.readRecord(
-            ES_FIXTURE_FULL_RESPONSE.hits.hits[0] as Gn4Record
+            elasticFullResponseFixture().hits.hits[0] as Gn4Record
           )
           expect(record).toEqual({
             kind: 'dataset',
@@ -1057,7 +1060,7 @@ describe('Gn4Converter', () => {
                 role: 'publisher',
               },
             ],
-            distributions: [
+            onlineResources: [
               {
                 url: new URL(
                   'https://wwz.ifremer.fr/envlit/Quadrige-la-base-de-donnees'

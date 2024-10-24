@@ -9,8 +9,9 @@ import {
 } from '../xml-utils'
 import {
   getISODuration,
-  writeDistributions,
   writeKeywords,
+  writeOnlineResources,
+  writeSpatialExtents,
   writeTemporalExtents,
 } from './write-parts'
 
@@ -27,15 +28,15 @@ describe('write parts', () => {
     datasetRecord = { ...GENERIC_DATASET_RECORD }
   })
 
-  describe('writeDistributions', () => {
-    const distributionShp = GENERIC_DATASET_RECORD.distributions[0]
-    const distributionLink = GENERIC_DATASET_RECORD.distributions[2]
+  describe('writeOnlineResources', () => {
+    const distributionShp = GENERIC_DATASET_RECORD.onlineResources[0]
+    const distributionLink = GENERIC_DATASET_RECORD.onlineResources[2]
 
-    it('writes several distributions', () => {
-      writeDistributions(
+    it('writes several online resources', () => {
+      writeOnlineResources(
         {
           ...datasetRecord,
-          distributions: [distributionShp, distributionLink],
+          onlineResources: [distributionShp, distributionLink],
         },
         rootEl
       )
@@ -108,7 +109,7 @@ describe('write parts', () => {
     })
 
     it('removes existing ones', () => {
-      // add some distributions first
+      // add some online resources first
       const sample = parseXmlString(`
 <root>
     <gmd:distributionInfo xmlns:comp="http://www.geocat.ch/2003/05/gateway/GM03Comprehensive" xmlns:xalan="http://xml.apache.org/xalan" xmlns:geonet="http://www.fao.org/geonetwork" xmlns:che="http://www.geocat.ch/2008/che" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:srv="http://www.isotc211.org/2005/srv" xmlns:gmx="http://www.isotc211.org/2005/gmx" xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:gsr="http://www.isotc211.org/2005/gsr" xmlns:gmi="http://www.isotc211.org/2005/gmi" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -202,10 +203,10 @@ describe('write parts', () => {
     </gmd:distributionInfo>
 </root>`)
       rootEl = getRootElement(sample)
-      writeDistributions(
+      writeOnlineResources(
         {
           ...datasetRecord,
-          distributions: [distributionLink],
+          onlineResources: [distributionLink],
         },
         rootEl
       )
@@ -305,6 +306,122 @@ describe('write parts', () => {
                             </gmd:extent>
                         </gmd:EX_TemporalExtent>
                     </gmd:temporalElement>
+                </gmd:EX_Extent>
+            </gmd:extent>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+    })
+  })
+
+  describe('writeSpatialExtents', () => {
+    it('removes and writes several spatial extents', () => {
+      // add some spatial extents first
+      const sample = parseXmlString(`
+<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <gmd:extent>
+                <gmd:EX_Extent>
+                    <gmd:geographicElement>
+                        <gmd:EX_GeographicDescription>
+                            <gmd:geographicIdentifier>
+                                <gmd:MD_Identifier>
+                                    <gmd:code>
+                                        <gco:CharacterString>Some previous description</gco:CharacterString>
+                                    </gmd:code>
+                                </gmd:MD_Identifier>
+                            </gmd:geographicIdentifier>
+                        </gmd:EX_GeographicDescription>
+                    </gmd:geographicElement>
+                </gmd:EX_Extent>
+            </gmd:extent>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+      rootEl = getRootElement(sample)
+      writeSpatialExtents(
+        {
+          ...datasetRecord,
+          spatialExtents: [
+            {
+              description: 'AK',
+            },
+            {
+              bbox: [
+                6.75599105586694, 45.7887442565203, 10.5418236945627,
+                47.5175655551557,
+              ],
+            },
+            {
+              geometry: {
+                type: 'MultiPolygon',
+                coordinates: [
+                  [
+                    [
+                      [6.777075, 45.827119, 0],
+                      [6.755991, 47.517566, 0],
+                      [10.541824, 47.477984, 0],
+                      [10.446252, 45.788744, 0],
+                      [6.777075, 45.827119, 0],
+                    ],
+                  ],
+                ],
+              },
+            },
+          ],
+        },
+        rootEl
+      )
+      expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <gmd:extent>
+                <gmd:EX_Extent>
+                    <gmd:geographicElement>
+                        <gmd:EX_GeographicDescription>
+                            <gmd:geographicIdentifier>
+                                <gmd:MD_Identifier>
+                                    <gmd:code>
+                                        <gco:CharacterString>AK</gco:CharacterString>
+                                    </gmd:code>
+                                </gmd:MD_Identifier>
+                            </gmd:geographicIdentifier>
+                        </gmd:EX_GeographicDescription>
+                    </gmd:geographicElement>
+                    <gmd:geographicElement>
+                        <gmd:EX_GeographicBoundingBox>
+                            <gmd:westBoundLongitude>
+                                <gco:Decimal>6.75599105586694</gco:Decimal>
+                            </gmd:westBoundLongitude>
+                            <gmd:eastBoundLongitude>
+                                <gco:Decimal>10.5418236945627</gco:Decimal>
+                            </gmd:eastBoundLongitude>
+                            <gmd:southBoundLatitude>
+                                <gco:Decimal>45.7887442565203</gco:Decimal>
+                            </gmd:southBoundLatitude>
+                            <gmd:northBoundLatitude>
+                                <gco:Decimal>47.5175655551557</gco:Decimal>
+                            </gmd:northBoundLatitude>
+                        </gmd:EX_GeographicBoundingBox>
+                    </gmd:geographicElement>
+                    <gmd:geographicElement>
+                        <gmd:EX_BoundingPolygon>
+                            <gmd:polygon>
+                                <MultiSurface xmlns="http://www.opengis.net/gml/3.2">
+                                    <surfaceMember>
+                                        <Polygon>
+                                            <exterior>
+                                                <LinearRing>
+                                                    <posList srsDimension="2">6.777075 45.827119 6.755991 47.517566 10.541824 47.477984 10.446252 45.788744 6.777075 45.827119</posList>
+                                                </LinearRing>
+                                            </exterior>
+                                        </Polygon>
+                                    </surfaceMember>
+                                </MultiSurface>
+                            </gmd:polygon>
+                        </gmd:EX_BoundingPolygon>
+                    </gmd:geographicElement>
                 </gmd:EX_Extent>
             </gmd:extent>
         </gmd:MD_DataIdentification>
@@ -426,7 +543,7 @@ describe('write parts', () => {
     })
 
     it('removes existing ones', () => {
-      // add some distributions first
+      // add some keywords first
       const sample = parseXmlString(`
 <root>
     <gmd:identificationInfo >
@@ -503,7 +620,7 @@ describe('write parts', () => {
     })
 
     it('correctly adds a thesaurus to an existing keyword', () => {
-      // add some distributions first
+      // add some keywords first
       const sample = parseXmlString(`
 <root>
     <gmd:identificationInfo >

@@ -42,10 +42,15 @@ export class SearchRecordsComponent {
     public searchService: SearchService
   ) {
     this.searchFacade.setPageSize(15)
+    this.searchFacade.resetSearch()
   }
 
   editRecord(record: CatalogRecord) {
     this.router.navigate(['/edit', record.uniqueIdentifier])
+  }
+
+  duplicateRecord(record: CatalogRecord) {
+    this.router.navigate(['/duplicate', record.uniqueIdentifier])
   }
 
   createRecord() {

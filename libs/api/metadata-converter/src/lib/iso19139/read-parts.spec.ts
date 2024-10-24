@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-ignore
-// @ts-ignore
 import GEOCAT_CH_DATASET from '../fixtures/geocat-ch.iso19139.dataset.xml'
 // @ts-ignore
 import { XmlElement } from '@rgrove/parse-xml'
+// @ts-ignore
 import GEOCAT_CH_SERVICE from '../fixtures/geocat-ch.iso19139.service.xml'
 import { pipe } from '../function-utils'
 import {
@@ -17,9 +17,9 @@ import {
   findIdentification,
   getUpdateFrequencyFromCustomPeriod,
   readContacts,
-  readDistributions,
   readOnlineResources,
   readOwnerOrganization,
+  readSpatialExtents,
   readTemporalExtents,
 } from './read-parts'
 
@@ -111,9 +111,9 @@ describe('read parts', () => {
     beforeEach(() => {
       recordRootEl = getRootElement(parseXmlString(GEOCAT_CH_DATASET))
     })
-    describe('readDistributions', () => {
-      it('returns an array of distributions', () => {
-        expect(readDistributions(recordRootEl)).toEqual([
+    describe('readOnlineResources', () => {
+      it('returns an array of online resources', () => {
+        expect(readOnlineResources(recordRootEl)).toEqual([
           {
             description: 'Vorschau map.geo.admin.ch',
             url: new URL(
@@ -223,8 +223,8 @@ describe('read parts', () => {
             appendChildren(() => linkWithoutUrl)
           )(recordRootEl)
         })
-        it('returns an array of distributions with empty url', () => {
-          expect(readDistributions(recordRootEl)).toEqual([
+        it('returns an array of online resources with empty url', () => {
+          expect(readOnlineResources(recordRootEl)).toEqual([
             {
               url: new URL('http://missing'),
               mimeType: 'x-gis/x-shapefile',
@@ -379,6 +379,129 @@ describe('read parts', () => {
         })
       })
     })
+    describe('readSpatialExtents', () => {
+      describe('no spatial extent', () => {
+        beforeEach(() => {
+          pipe(
+            findIdentification(),
+            findNestedElement('gmd:extent', 'gmd:EX_Extent'),
+            removeChildrenByName('gmd:geographicElement')
+          )(recordRootEl)
+        })
+        it('returns an empty array', () => {
+          expect(readSpatialExtents(recordRootEl)).toEqual([])
+        })
+      })
+      describe('one spatial extent with one geometry, one bbox and one description', () => {
+        beforeEach(() => {
+          const spatialExtent = getRootElement(
+            parseXmlString(`
+<gmd:geographicElement>
+    <gmd:EX_GeographicDescription>
+        <gmd:geographicIdentifier>
+            <gmd:MD_Identifier>
+                <gmd:code>
+                    <gco:CharacterString>AK</gco:CharacterString>
+                </gmd:code>
+            </gmd:MD_Identifier>
+        </gmd:geographicIdentifier>
+    </gmd:EX_GeographicDescription>
+    <gmd:EX_GeographicBoundingBox>
+        <gmd:westBoundLongitude>
+            <gco:Decimal>6.75599105586694</gco:Decimal>
+        </gmd:westBoundLongitude>
+        <gmd:eastBoundLongitude>
+            <gco:Decimal>10.5418236945627</gco:Decimal>
+        </gmd:eastBoundLongitude>
+        <gmd:southBoundLatitude>
+            <gco:Decimal>45.7887442565203</gco:Decimal>
+        </gmd:southBoundLatitude>
+        <gmd:northBoundLatitude>
+            <gco:Decimal>47.5175655551557</gco:Decimal>
+        </gmd:northBoundLatitude>
+    </gmd:EX_GeographicBoundingBox>
+    <gmd:EX_BoundingPolygon>
+        <gmd:polygon>
+            <gml:MultiSurface>
+                <gml:surfaceMember>
+                    <gml:Polygon>
+                        <gml:exterior>
+                            <gml:LinearRing>
+                                <gml:posList srsDimension="2">6.777075 45.827119 6.755991 47.517566 10.541824 47.477984 10.446252 45.788744 6.777075 45.827119</gml:posList>
+                            </gml:LinearRing>
+                        </gml:exterior>
+                    </gml:Polygon>
+                </gml:surfaceMember>
+            </gml:MultiSurface>
+        </gmd:polygon>
+    </gmd:EX_BoundingPolygon>
+</gmd:geographicElement>`)
+          )
+          pipe(
+            findIdentification(),
+            findNestedElement('gmd:extent', 'gmd:EX_Extent'),
+            removeChildrenByName('gmd:geographicElement'),
+            appendChildren(() => spatialExtent)
+          )(recordRootEl)
+        })
+        it('returns an array of spatial extents with geometries, bbox and description', () => {
+          expect(readSpatialExtents(recordRootEl)).toEqual([
+            {
+              geometry: {
+                type: 'MultiPolygon',
+                coordinates: [
+                  [
+                    [
+                      [6.777075, 45.827119, 0],
+                      [6.755991, 47.517566, 0],
+                      [10.541824, 47.477984, 0],
+                      [10.446252, 45.788744, 0],
+                      [6.777075, 45.827119, 0],
+                    ],
+                  ],
+                ],
+              },
+              bbox: [
+                6.75599105586694, 45.7887442565203, 10.5418236945627,
+                47.5175655551557,
+              ],
+              description: 'AK',
+            },
+          ])
+        })
+      })
+      describe('three spatial extents, first with description, second with bbox, third with geometry', () => {
+        it('returns an array of partial spatial extents with geometries, bbox and description', () => {
+          expect(readSpatialExtents(recordRootEl)).toEqual([
+            {
+              description: 'AK',
+            },
+            {
+              bbox: [
+                6.75599105586694, 45.7887442565203, 10.5418236945627,
+                47.5175655551557,
+              ],
+            },
+            {
+              geometry: {
+                type: 'MultiPolygon',
+                coordinates: [
+                  [
+                    [
+                      [6.777075, 45.827119, 0],
+                      [6.755991, 47.517566, 0],
+                      [10.541824, 47.477984, 0],
+                      [10.446252, 45.788744, 0],
+                      [6.777075, 45.827119, 0],
+                    ],
+                  ],
+                ],
+              },
+            },
+          ])
+        })
+      })
+    })
   })
 
   describe('service record', () => {
@@ -438,7 +561,7 @@ describe('read parts', () => {
             appendChildren(() => resourceWithoutUrl)
           )(recordRootEl)
         })
-        it('returns an array of distributions with empty url', () => {
+        it('returns an array of online resources with empty url', () => {
           expect(readOnlineResources(recordRootEl)).toEqual([
             {
               url: new URL('http://missing'),

@@ -34,6 +34,9 @@ import { FeatureDatavizModule } from '@geonetwork-ui/feature/dataviz'
 import { FeatureAuthModule } from '@geonetwork-ui/feature/auth'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { provideGn4 } from '@geonetwork-ui/api/repository'
+import { GnFigureDatasetsComponent } from './components/gn-figure-datasets/gn-figure-datasets.component'
+import { UiDatavizModule } from '@geonetwork-ui/ui/dataviz'
+import { GnDatasetViewMapComponent } from './components/gn-dataset-view-map/gn-dataset-view-map.component'
 
 const CUSTOM_ELEMENTS: [new (...args) => BaseComponent, string][] = [
   [GnFacetsComponent, 'gn-facets'],
@@ -43,6 +46,8 @@ const CUSTOM_ELEMENTS: [new (...args) => BaseComponent, string][] = [
   [GnDatasetViewTableComponent, 'gn-dataset-view-table'],
   [GnDatasetViewChartComponent, 'gn-dataset-view-chart'],
   [GnMapViewerComponent, 'gn-map-viewer'],
+  [GnFigureDatasetsComponent, 'gn-figure-datasets'],
+  [GnDatasetViewMapComponent, 'gn-dataset-view-map'],
 ]
 
 @NgModule({
@@ -57,6 +62,8 @@ const CUSTOM_ELEMENTS: [new (...args) => BaseComponent, string][] = [
     GnDatasetViewTableComponent,
     GnDatasetViewChartComponent,
     GnMapViewerComponent,
+    GnFigureDatasetsComponent,
+    GnDatasetViewMapComponent,
   ],
   imports: [
     CommonModule,
@@ -64,6 +71,7 @@ const CUSTOM_ELEMENTS: [new (...args) => BaseComponent, string][] = [
     UiInputsModule,
     UiSearchModule,
     UiElementsModule,
+    UiDatavizModule,
     FeatureSearchModule,
     FeatureRecordModule,
     FeatureMapModule,
