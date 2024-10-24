@@ -62,7 +62,11 @@
         </button>
       </div>
       <div class="grow">
-        <div id="maptest" class="h-full w-full"></div>
+        <gn-ui-map-container
+          #mapContainer
+          [context]="mapContext$ | async"
+          (featuresClick)="onMapFeatureSelect($event)"
+        ></gn-ui-map-container>
       </div>
     </div>
   </div>
