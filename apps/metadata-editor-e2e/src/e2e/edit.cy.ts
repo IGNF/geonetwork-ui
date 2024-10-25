@@ -83,6 +83,14 @@ describe('editor form', () => {
   })
 
   describe('form display', () => {
+    it('opens the first page by default', () => {
+      cy.get('@accessContactPageBtn').click()
+      cy.visit('/catalog/search')
+      cy.get('@recordUuid').then((recordUuid) => {
+        cy.visit(`/edit/${recordUuid}`)
+      })
+      cy.get('@abstractField').should('be.visible')
+    })
     it('form shows correctly', () => {
       cy.get('gn-ui-record-form').should('be.visible')
       cy.get('gn-ui-record-form gn-ui-form-field').should('have.length.gt', 0)
@@ -186,6 +194,13 @@ describe('editor form', () => {
             'src/fixtures/sample.png'
           )
           cy.editor_publishAndReload()
+          cy.intercept({
+            method: 'GET',
+            url: '**/attachments/sample.png',
+          }).as('importUrlRequest')
+          cy.get('@importUrlRequest')
+            .its('response.statusCode')
+            .should('eq', 200)
           cy.get('@saveStatus').should('eq', 'record_up_to_date')
           cy.get('gn-ui-image-input').find('img').should('have.length', 1)
         })
