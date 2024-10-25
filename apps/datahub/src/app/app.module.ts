@@ -120,6 +120,7 @@ import {
 } from '@ng-icons/material-icons/outline'
 import { NgIconsModule, provideNgIconsConfig } from '@ng-icons/core'
 import { MatButtonToggleModule } from '@angular/material/button-toggle'
+import { MatIconModule } from '@angular/material/icon'
 import { DsfrHeaderModule } from '@edugouvfr/ngx-dsfr'
 import { DsfrFooterModule } from '@edugouvfr/ngx-dsfr'
 
@@ -209,6 +210,7 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
       matSendOutline,
     }),
     MatButtonToggleModule,
+    MatIconModule,
     DsfrHeaderModule,
     DsfrFooterModule,
   ],
