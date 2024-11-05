@@ -15,7 +15,8 @@ import { TRANSLATE_DEFAULT_CONFIG } from '@geonetwork-ui/util/i18n'
 import { UiDatavizModule } from '@geonetwork-ui/ui/dataviz'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { MatIconModule } from '@angular/material/icon'
-import { DATASET_RECORDS } from '@geonetwork-ui/common/fixtures'
+import { datasetRecordsFixture } from '@geonetwork-ui/common/fixtures'
+import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 
 export default {
   title: 'Search/RecordPreviewFeedComponent',
@@ -44,7 +45,7 @@ type RecordPreviewFeedTemplate = RecordPreviewFeedComponent & {
 
 export const Primary: StoryObj<RecordPreviewFeedTemplate> = {
   args: {
-    record: DATASET_RECORDS[0],
+    record: datasetRecordsFixture()[0] as CatalogRecord,
     linkTarget: '_blank',
     favoriteTemplateString: `<a href title="Mark '{{record.title}}' as favorite">
     1234 <mat-icon class="material-symbols-outlined align-middle">star</mat-icon>

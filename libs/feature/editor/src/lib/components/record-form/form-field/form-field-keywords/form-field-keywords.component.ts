@@ -1,17 +1,25 @@
 import { CommonModule } from '@angular/common'
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core'
-import { FormControl } from '@angular/forms'
-import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+} from '@angular/core'
 import {
   AutocompleteComponent,
   DropdownSelectorComponent,
   UiInputsModule,
 } from '@geonetwork-ui/ui/inputs'
 import { UiWidgetsModule } from '@geonetwork-ui/ui/widgets'
-import { map } from 'rxjs'
 import { Keyword } from '@geonetwork-ui/common/domain/model/record'
-
-type AutocompleteItem = { title: string; value: Keyword }
+import { GenericKeywordsComponent } from '../../../generic-keywords/generic-keywords.component'
+import { TranslateModule } from '@ngx-translate/core'
+import { KeywordType } from '@geonetwork-ui/common/domain/model/thesaurus'
+import { EditorFacade } from '../../../../+state/editor.facade'
+import { firstValueFrom, map } from 'rxjs'
+import { SPATIAL_SCOPES } from '../../../../fields.config'
+import { all } from 'ol/loadingstrategy'
 
 @Component({
   selector: 'gn-ui-form-field-keywords',
@@ -25,53 +33,46 @@ type AutocompleteItem = { title: string; value: Keyword }
     CommonModule,
     UiWidgetsModule,
     AutocompleteComponent,
+    GenericKeywordsComponent,
+    TranslateModule,
   ],
 })
 export class FormFieldKeywordsComponent {
-  @Input() control: FormControl<Keyword[]>
+  @Input() value: Keyword[]
+  @Output() valueChange: EventEmitter<Keyword[]> = new EventEmitter()
 
-  displayWithFn = (item: AutocompleteItem) => {
-    return `${item.title} (${item.value.thesaurus?.name})`
-  }
+  keywordTypes = ['temporal', 'theme', 'other'] as KeywordType[]
 
-  autoCompleteAction = (query: string) => {
-    return this.platformService.searchKeywords(query).pipe(
-      map((keywords) =>
-        keywords.map((keyword) => {
-          return { title: keyword.label, value: keyword }
-        })
-      )
+  get filteredKeywords(): Keyword[] {
+    return (
+      this.value?.filter(
+        (keyword) =>
+          keyword.type !== 'place' && // filter out place keywords
+          !SPATIAL_SCOPES.some(
+            (spatialScope) => spatialScope.label === keyword.label
+          ) // filter out keywords matching spatialScope keys
+      ) || []
     )
   }
 
-  constructor(private platformService: PlatformServiceInterface) {}
+  constructor(private editorFacade: EditorFacade) {}
 
-  handleItemSelection(item: AutocompleteItem) {
-    this.addKeyword(item.value)
-  }
-
-  addKeyword(keyword: Keyword) {
-    const addedKeywords = [...this.control.value, keyword]
-
-    // remove duplicates from keyword
-    const filteredKeywords = addedKeywords.filter((value, index, self) => {
-      return (
-        index ===
-        self.findIndex(
-          (t) =>
-            t?.label === value?.label &&
-            t?.thesaurus?.id === value?.thesaurus?.id &&
-            t?.type === value?.type
+  async handleKeywordsChange(keywords: Keyword[]) {
+    const filteredKeywords = await firstValueFrom(
+      this.editorFacade.record$.pipe(
+        map((record) =>
+          record.keywords.filter(
+            (k) =>
+              k.type === 'place' || // get back place keyword
+              SPATIAL_SCOPES.some(
+                (spatialScope) => spatialScope.label === k.label // get back spatialScope keywords
+              )
+          )
         )
       )
-    })
+    )
 
-    this.control.setValue(filteredKeywords)
-  }
-
-  removeKeyword(index: number) {
-    const removeKeywords = this.control.value.filter((_, i) => i !== index)
-
-    this.control.setValue(removeKeywords)
+    const allKeywords = [...filteredKeywords, ...keywords]
+    this.valueChange.emit(allKeywords)
   }
 }

@@ -1,17 +1,19 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core'
 import { WfsEndpoint, WfsFeatureTypeBrief } from '@camptocamp/ogc-client'
-import { Subject } from 'rxjs'
-import {
-  MapContextLayerModel,
-  MapContextLayerTypeEnum,
-} from '../map-context/map-context.model'
+import { firstValueFrom, Subject } from 'rxjs'
 import { MapFacade } from '../+state/map.facade'
 import { debounceTime } from 'rxjs/operators'
+import { MapContextLayer } from '@geospatial-sdk/core'
+import { ButtonComponent, TextInputComponent } from '@geonetwork-ui/ui/inputs'
+import { TranslateModule } from '@ngx-translate/core'
+import { CommonModule } from '@angular/common'
 
 @Component({
   selector: 'gn-ui-add-layer-from-wfs',
   templateUrl: './add-layer-from-wfs.component.html',
   styleUrls: ['./add-layer-from-wfs.component.css'],
+  standalone: true,
+  imports: [TextInputComponent, ButtonComponent, TranslateModule, CommonModule],
 })
 export class AddLayerFromWfsComponent implements OnInit {
   wfsUrl = ''
@@ -53,12 +55,17 @@ export class AddLayerFromWfsComponent implements OnInit {
     }
   }
 
-  addLayer(layer: WfsFeatureTypeBrief) {
-    const layerToAdd: MapContextLayerModel = {
-      name: layer.name,
+  async addLayer(layer: WfsFeatureTypeBrief) {
+    const context = await firstValueFrom(this.mapFacade.context$)
+    const layerToAdd: MapContextLayer = {
+      featureType: layer.name,
       url: this.wfsUrl.toString(),
-      type: MapContextLayerTypeEnum.WFS,
+      type: 'wfs',
+      label: layer.title,
     }
-    this.mapFacade.addLayer({ ...layerToAdd, title: layer.title })
+    this.mapFacade.applyContext({
+      ...context,
+      layers: [...context.layers, layerToAdd],
+    })
   }
 }

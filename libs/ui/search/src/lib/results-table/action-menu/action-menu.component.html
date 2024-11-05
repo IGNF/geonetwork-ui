@@ -1,0 +1,26 @@
+<gn-ui-button
+  type="light"
+  [matMenuTriggerFor]="menu"
+  (buttonClick)="openMenu()"
+  data-test="record-menu-button"
+>
+  <mat-icon class="material-symbols-outlined">more_vert</mat-icon>
+</gn-ui-button>
+<mat-menu #menu="matMenu">
+  <button
+    mat-menu-item
+    [disabled]="!canDuplicate"
+    (click)="duplicate.emit()"
+    data-test="record-menu-duplicate-button"
+  >
+    <span translate>record.action.duplicate</span>
+  </button>
+  <button
+    mat-menu-item
+    [disabled]="!canDelete"
+    (click)="openDeleteConfirmationDialog()"
+    data-test="record-menu-delete-button"
+  >
+    <span translate>record.action.delete</span>
+  </button>
+</mat-menu>

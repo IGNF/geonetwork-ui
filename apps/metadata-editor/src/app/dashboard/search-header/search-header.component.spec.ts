@@ -1,29 +1,16 @@
-import {
-  ChangeDetectionStrategy,
-  CUSTOM_ELEMENTS_SCHEMA,
-  NO_ERRORS_SCHEMA,
-} from '@angular/core'
+import { ChangeDetectionStrategy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core'
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { SearchHeaderComponent } from './search-header.component'
-import { BehaviorSubject, of } from 'rxjs'
-import { USER_FIXTURE } from '@geonetwork-ui/common/fixtures'
+import { of } from 'rxjs'
 import { StoreModule } from '@ngrx/store'
 import { EffectsModule } from '@ngrx/effects'
 import { TranslateModule } from '@ngx-translate/core'
-import { TRANSLATE_DEFAULT_CONFIG } from '@geonetwork-ui/util/i18n'
 import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
 import { AvatarServiceInterface } from '@geonetwork-ui/api/repository'
-
-class AvatarServiceInterfaceMock {
-  getPlaceholder = () => of('http://placeholder.com')
-  getProfileIcon = (hash: string) => of(`${hash}`)
-}
-
-const me$ = new BehaviorSubject(USER_FIXTURE())
-class PlatformServiceMock {
-  getMe = jest.fn(() => me$)
-}
+import { SearchService } from '@geonetwork-ui/feature/search'
+import { MockProvider, MockProviders } from 'ng-mocks'
+import { RouterFacade } from '@geonetwork-ui/feature/router'
 
 describe('SearchHeaderComponent', () => {
   let component: SearchHeaderComponent
@@ -35,24 +22,23 @@ describe('SearchHeaderComponent', () => {
         SearchHeaderComponent,
         EffectsModule.forRoot(),
         StoreModule.forRoot({}),
-        TranslateModule.forRoot(TRANSLATE_DEFAULT_CONFIG),
+        TranslateModule.forRoot(),
       ],
-      schemas: [NO_ERRORS_SCHEMA],
       providers: [
-        {
-          provide: AvatarServiceInterface,
-          useClass: AvatarServiceInterfaceMock,
-        },
-        {
-          provide: PlatformServiceInterface,
-          useClass: PlatformServiceMock,
-        },
+        MockProviders(
+          AvatarServiceInterface,
+          PlatformServiceInterface,
+          SearchService
+        ),
+        MockProvider(RouterFacade, {
+          currentRoute$: of(null),
+        }),
       ],
     })
       .overrideComponent(SearchHeaderComponent, {
         set: {
           changeDetection: ChangeDetectionStrategy.Default,
-          imports: [],
+          imports: [TranslateModule],
           schemas: [CUSTOM_ELEMENTS_SCHEMA],
         },
       })
@@ -60,6 +46,7 @@ describe('SearchHeaderComponent', () => {
 
     fixture = TestBed.createComponent(SearchHeaderComponent)
     component = fixture.componentInstance
+    component.activeBtn = true
     fixture.detectChanges()
   })
 

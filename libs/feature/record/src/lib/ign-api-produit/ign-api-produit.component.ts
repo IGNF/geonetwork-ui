@@ -7,7 +7,6 @@ import {
   OnInit,
   Output,
 } from '@angular/core'
-import { DatasetDistribution } from '@geonetwork-ui/common/domain/model/record'
 import { Observable, catchError, map, mergeMap, tap, throwError } from 'rxjs'
 
 @Component({
@@ -25,23 +24,22 @@ export class IgnApiProduitComponent implements OnInit {
   liste$: Observable<any>
 
   ngOnInit(): void {
-    this.liste$ = this.http.get(this.link['id']).pipe(
-
-      map((response) => response['entry'],
-      // tap(el=> console.log(el)),
-      )
-    )
-    }
-
-  downloadListe():void{
-    this.http.get(this.link['id']).pipe(
-      map((response) => response['entry']),
-      mergeMap((response) => response)
-    ).subscribe(reponse=>this.download(reponse['id']))
+    this.liste$ = this.http
+      .get(this.link['id'])
+      .pipe(map((response) => response['entry']))
   }
 
-  download(url):void{
-    console.log(url)
+  downloadListe(): void {
+    this.http
+      .get(this.link['id'])
+      .pipe(
+        map((response) => response['entry']),
+        mergeMap((response) => response)
+      )
+      .subscribe((reponse) => this.download(reponse['id']))
+  }
+
+  download(url): void {
     this.http.get(url).subscribe()
   }
 }

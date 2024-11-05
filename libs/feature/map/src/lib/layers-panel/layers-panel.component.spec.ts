@@ -1,33 +1,26 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { LayersPanelComponent } from './layers-panel.component'
-import { UtilI18nModule } from '@geonetwork-ui/util/i18n'
-import { TranslateModule } from '@ngx-translate/core'
-import { MatIconModule } from '@angular/material/icon'
 import { of } from 'rxjs'
-import { MAP_CTX_LAYER_XYZ_FIXTURE } from '../map-context/map-context.fixtures'
+import { MockBuilder, MockProvider } from 'ng-mocks'
 import { MapFacade } from '../+state/map.facade'
-import { NO_ERRORS_SCHEMA } from '@angular/core'
-
-class MapFacadeMock {
-  layers$ = of([MAP_CTX_LAYER_XYZ_FIXTURE])
-  removeLayer = jest.fn()
-}
+import { mapCtxFixture } from '@geonetwork-ui/common/fixtures'
 
 describe('LayersPanelComponent', () => {
   let component: LayersPanelComponent
   let fixture: ComponentFixture<LayersPanelComponent>
 
+  beforeEach(() => {
+    return MockBuilder(LayersPanelComponent)
+  })
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [UtilI18nModule, TranslateModule.forRoot(), MatIconModule],
-      declarations: [LayersPanelComponent],
+      imports: [LayersPanelComponent],
       providers: [
-        {
-          provide: MapFacade,
-          useClass: MapFacadeMock,
-        },
+        MockProvider(MapFacade, {
+          context$: of(mapCtxFixture()),
+        }),
       ],
-      schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents()
   })
 

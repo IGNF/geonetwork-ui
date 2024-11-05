@@ -68,7 +68,7 @@ Toutes ces données sont reprises dans BDR.`,
   resourceCreated: new Date('2002-01-01'),
   resourceUpdated: new Date('2022-06-16'),
   resourcePublished: new Date('2022-06-16'),
-  distributions: [
+  onlineResources: [
     {
       description:
         "Application de consultation des routes et autoroutes de Wallonie. Cette application est sécurisée et n'est accessible que pour les agents de la DGO1 du SPW.",
@@ -388,7 +388,11 @@ Depuis, ce sont les Districts routiers qui assurent la tenue à jour de ces info
     name: 'Direction Asset Management (SPW - Mobilité et Infrastructures - Direction Asset Management)',
   },
   securityConstraints: [],
-  spatialExtents: [],
+  spatialExtents: [
+    {
+      bbox: [2.75, 49.45, 6.5, 50.85],
+    },
+  ],
   spatialRepresentation: 'vector',
   status: 'ongoing',
   temporalExtents: [],

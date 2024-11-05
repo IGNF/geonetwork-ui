@@ -2,9 +2,10 @@
 :host ::ng-deep .markdown-body {
   -ms-text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
-  margin: 0px 0px 1.5rem 0px;
+  margin: 0;
   line-height: 1.5;
   word-wrap: break-word;
+  height: 100%;
 }
 
 /** Emphasis **/
@@ -26,6 +27,11 @@
   margin-bottom: 16px;
   line-height: 1.25;
   @apply text-title font-title font-bold;
+}
+
+/** No margin for first child/heading, that cannot be detected by getBoundingClientRect() **/
+:host ::ng-deep .markdown-body :first-child {
+  margin-top: 0;
 }
 
 :host ::ng-deep .markdown-body h1 {

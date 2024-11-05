@@ -5,7 +5,7 @@
 
 [global]
 # This URL (relative or absolute) must point to the API endpoint of a GeoNetwork4 instance
-geonetwork4_api_url = "https://gpf-geonetwork-qua.priv.geopf.fr/geonetwork/srv/api"
+geonetwork4_api_url = "https://data.geopf.fr/catalog"
 datahub_url = "/catalogue"
 # This should point to a proxy to avoid CORS errors on some requests (data preview, OGC capabilities etc.)
 # The actual URL will be appended after this path, e.g. : https://my.proxy/?url=http%3A%2F%2Fencoded.url%2Fows`
@@ -45,7 +45,7 @@ proxy_path = ""
 #  - for background: https://developer.mozilla.org/en-US/docs/Web/CSS/background
 [theme]
 primary_color = "#000091"
-secondary_color = "#cacafb"
+secondary_color = "#6a6af4"
 main_color = "#212029" # All-purpose text color
 background_color = "#fdfbff"
 
@@ -65,7 +65,7 @@ header_foreground_color = '#212029'
 # fonts_stylesheet_url = "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Permanent+Marker&display=swap"
 
 # Use it to set custom location for the favicon; by default, the path `/favicon.ico` will be used
-favicon = "/assets/img/favicon.ico"
+favicon = "/catalogue/assets/img/favicon.ico"
 
 ### SEARCH SETTINGS
 
@@ -79,9 +79,9 @@ favicon = "/assets/img/favicon.ico"
 # filter_geometry_data = '{ "coordinates": [...], "type": "Polygon" }'
 
 # The advanced search filters available to the user can be customized with this setting.
-# The following fields can be used for filtering: 'publisher', 'format', 'publicationYear', 'standard', 'inspireKeyword', 'keyword', 'topic', 'isSpatial', 'license', 'resourceType', 'representationType'
+# The following fields can be used for filtering: 'organization', 'format', 'publicationYear', 'standard', 'inspireKeyword', 'keyword', 'topic', 'isSpatial', 'license', 'resourceType', 'representationType', 'producerOrg', 'publisherOrg'
 # any other field will be ignored
-advanced_filters = ['publisher', 'topic', 'publicationYear', 'format', 'inspireKeyword', 'isSpatial', 'license']
+advanced_filters = ['topic', 'resourceType', 'publicationYear', 'format', 'inspireKeyword', 'isSpatial', 'license', 'organization']
 
 # One or several search presets can be defined here; every search preset is composed of:
 # - a name (which can be a translation key)
@@ -90,7 +90,7 @@ advanced_filters = ['publisher', 'topic', 'publicationYear', 'format', 'inspireK
 # [[search_preset]]
 #     name = 'filterByName'
 #     filters.q = 'Full text search'
-#     filters.publisher = ['Org 1', 'Org 2']
+#     filters.organization = ['Org 1', 'Org 2']
 #     filters.format = ['format 1', 'format 2']
 #     filters.documentStandard = ['iso19115-3.2018']
 #     filters.inspireKeyword = ['keyword 1', 'keyword 2']
@@ -175,7 +175,6 @@ do_not_use_default_basemap = true
 type = 'wms'
 url = 'https://data.geopf.fr/wms-r'
 name = 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2'
-attributions = 'Géoservices © IGN-France'
 
 ### TRANSLATIONS
 
@@ -198,3 +197,5 @@ attributions = 'Géoservices © IGN-France'
 search.filters.title= "Affiner votre recherche"
 datahub.header.title.html="<div>Catalogue de données et de services</div>"
 datahub.header.datasets="Données et services"
+ogc.unreachable.unknown="Le flux n'est pas accessible ou est à accès restreint"
+wfs.unreachable.unknown="Le service n'est pas accessible ou est à accès restreint"

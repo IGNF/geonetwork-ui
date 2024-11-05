@@ -1,11 +1,12 @@
 import {
-  Component,
   ChangeDetectionStrategy,
-  Input,
-  Output,
+  Component,
   EventEmitter,
+  Input,
+  OnInit,
+  Output,
 } from '@angular/core'
-import { DatasetDistribution } from '@geonetwork-ui/common/domain/model/record'
+import { DatasetOnlineResource } from '@geonetwork-ui/common/domain/model/record'
 
 @Component({
   selector: 'gn-ui-download-item',
@@ -13,14 +14,27 @@ import { DatasetDistribution } from '@geonetwork-ui/common/domain/model/record'
   styleUrls: ['./download-item.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DownloadItemComponent {
-  @Input() link: DatasetDistribution
+export class DownloadItemComponent implements OnInit {
+  @Input() link: DatasetOnlineResource
   @Input() color: string
   @Input() format: string
   @Input() isFromWfs: boolean
   @Output() exportUrl = new EventEmitter<string>()
+  isModalGPF: boolean
 
   openUrl() {
     this.exportUrl.emit(this.link.url.toString())
+  }
+
+  ngOnInit(): void {
+    this.isModalGPF = false
+  }
+
+  openModalLayer() {
+    this.isModalGPF = true
+  }
+
+  closeModalLayer() {
+    this.isModalGPF = false
   }
 }

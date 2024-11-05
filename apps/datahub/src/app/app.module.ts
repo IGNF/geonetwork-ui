@@ -9,6 +9,8 @@ import {
   ORGANIZATION_URL_TOKEN,
 } from '@geonetwork-ui/feature/catalog'
 import {
+  EXTERNAL_VIEWER_OPEN_NEW_TAB,
+  EXTERNAL_VIEWER_URL_TEMPLATE,
   FeatureRecordModule,
   GN_UI_VERSION,
   WEB_COMPONENT_EMBEDDER_URL,
@@ -45,6 +47,8 @@ import { IgnApiDlComponent } from '@geonetwork-ui/feature/record'
 
 import {
   getGlobalConfig,
+  getMapContextLayerFromConfig,
+  getOptionalMapConfig,
   getOptionalSearchConfig,
   getThemeConfig,
   TRANSLATE_WITH_OVERRIDES_CONFIG,
@@ -97,6 +101,11 @@ import { UiWidgetsModule } from '@geonetwork-ui/ui/widgets'
 import { RecordUserFeedbacksComponent } from './record/record-user-feedbacks/record-user-feedbacks.component'
 import { LetDirective } from '@ngrx/component'
 import { OrganizationPageComponent } from './organization/organization-page/organization-page.component'
+import {
+  BASEMAP_LAYERS,
+  DO_NOT_USE_DEFAULT_BASEMAP,
+  MAP_VIEW_CONSTRAINTS,
+} from '@geonetwork-ui/ui/map'
 import { MatButtonToggleModule } from '@angular/material/button-toggle'
 import { DsfrHeaderModule } from '@edugouvfr/ngx-dsfr'
 import { DsfrFooterModule } from '@edugouvfr/ngx-dsfr'
@@ -236,6 +245,30 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     {
       provide: ORGANIZATION_URL_TOKEN,
       useValue: `${ROUTER_ROUTE_SEARCH}?${ROUTE_PARAMS.PUBLISHER}=\${name}`,
+    },
+    {
+      provide: DO_NOT_USE_DEFAULT_BASEMAP,
+      useFactory: () => getOptionalMapConfig()?.DO_NOT_USE_DEFAULT_BASEMAP,
+    },
+    {
+      provide: BASEMAP_LAYERS,
+      useFactory: () =>
+        getOptionalMapConfig()?.MAP_LAYERS.map(getMapContextLayerFromConfig),
+    },
+    {
+      provide: MAP_VIEW_CONSTRAINTS,
+      useFactory: () => ({
+        maxExtent: getOptionalMapConfig()?.MAX_EXTENT,
+        maxZoom: getOptionalMapConfig()?.MAX_ZOOM,
+      }),
+    },
+    {
+      provide: EXTERNAL_VIEWER_URL_TEMPLATE,
+      useFactory: () => getOptionalMapConfig()?.EXTERNAL_VIEWER_URL_TEMPLATE,
+    },
+    {
+      provide: EXTERNAL_VIEWER_OPEN_NEW_TAB,
+      useFactory: () => getOptionalMapConfig()?.EXTERNAL_VIEWER_OPEN_NEW_TAB,
     },
   ],
   bootstrap: [AppComponent],

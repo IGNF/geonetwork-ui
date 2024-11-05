@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitepress'
-const packageJson = require('../../package.json')
+import packageJson from '../../package.json'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -8,7 +8,7 @@ export default defineConfig({
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
-      { text: 'Guide', link: '/guide/why', activeMatch: '/guide/' },
+      { text: 'Guide', link: '/guide/introduction', activeMatch: '/guide/' },
       {
         text: 'Reference',
         link: '/reference/principles',
@@ -49,11 +49,10 @@ function sidebarGuide() {
     {
       text: 'Guide',
       items: [
-        { text: 'Why?', link: '/guide/why' },
-        { text: 'Getting started', link: '/guide/getting-started' },
+        { text: 'Introduction', link: '/guide/introduction' },
         { text: 'Prerequisites', link: '/guide/prerequisites' },
-        { text: 'Configure', link: '/guide/configure' },
         { text: 'Deploy', link: '/guide/deploy' },
+        { text: 'Configure', link: '/guide/configure' },
         { text: 'Theming', link: '/guide/theming' },
         { text: 'Web components', link: '/guide/webcomponents' },
         { text: 'Custom Applications', link: '/guide/custom-app' },
@@ -77,7 +76,7 @@ function sidebarGuide() {
       items: [
         { text: 'Development environment', link: '/guide/dev-environment' },
         { text: 'Create a Pull Request', link: '/guide/create-a-pr' },
-        { text: 'Best practices', link: '/guide/best-practices' },
+        { text: 'Code guide', link: '/guide/code-guide' },
         { text: 'Versioning', link: '/guide/versioning' },
       ],
     },
@@ -99,6 +98,10 @@ function sidebarReference() {
         {
           text: 'Pivot Format',
           link: '/reference/pivot-format',
+        },
+        {
+          text: 'Interactive maps',
+          link: '/reference/maps',
         },
       ],
     },

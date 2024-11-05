@@ -1,18 +1,17 @@
-import { Component } from '@angular/core'
 import { CommonModule } from '@angular/common'
-import { TranslateModule } from '@ngx-translate/core'
-import { RecordsListComponent } from '../records-list.component'
-import { ResultsTableContainerComponent } from '@geonetwork-ui/feature/search'
-import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
+import { Component } from '@angular/core'
 import { MatIconModule } from '@angular/material/icon'
-import { RecordsCountComponent } from '../records-count/records-count.component'
-import { UiElementsModule } from '@geonetwork-ui/ui/elements'
-import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
-import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { Router } from '@angular/router'
+import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
+import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
+import { ResultsTableContainerComponent } from '@geonetwork-ui/feature/search'
+import { UiElementsModule } from '@geonetwork-ui/ui/elements'
+import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
 import { ResultsTableComponent } from '@geonetwork-ui/ui/search'
-import { startWith } from 'rxjs'
-
+import { TranslateModule } from '@ngx-translate/core'
+import { startWith, switchMap } from 'rxjs'
+import { RecordsCountComponent } from '../records-count/records-count.component'
+import { RecordsListComponent } from '../records-list.component'
 @Component({
   selector: 'md-editor-my-my-draft',
   templateUrl: './my-draft.component.html',
@@ -31,8 +30,15 @@ import { startWith } from 'rxjs'
   ],
 })
 export class MyDraftComponent {
-  records$ = this.recordsRepository.getAllDrafts().pipe(startWith([]))
+  records$ = this.recordsRepository.draftsChanged$.pipe(
+    startWith(void 0),
+    switchMap(() => this.recordsRepository.getAllDrafts()),
+    startWith([])
+  )
   hasDraft = () => true
+  canDuplicate = (): boolean => false
+  isUnsavedDraft = (record: CatalogRecord): boolean =>
+    this.recordsRepository.isRecordNotYetSaved(record.uniqueIdentifier)
 
   constructor(
     private router: Router,
@@ -41,5 +47,9 @@ export class MyDraftComponent {
 
   editRecord(record: CatalogRecord) {
     this.router.navigate(['/edit', record.uniqueIdentifier])
+  }
+
+  deleteDraft(record: CatalogRecord) {
+    this.recordsRepository.clearRecordDraft(record.uniqueIdentifier)
   }
 }

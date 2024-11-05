@@ -1,3 +1,9 @@
+:host {
+  --gn-ui-text-input-rounded: 8px;
+  --gn-ui-text-input-padding: 14px;
+  --gn-ui-text-input-font-size: 14px;
+}
+
 .card {
   @apply border border-gray-200 rounded-md bg-white;
 }

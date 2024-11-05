@@ -18,7 +18,6 @@ import {
   readAbstract,
   readContacts,
   readContactsForResource,
-  readDistributions,
   readIsoTopics,
   readKeywords,
   readKind,
@@ -34,6 +33,7 @@ import {
   readResourcePublished,
   readResourceUpdated,
   readSecurityConstraints,
+  readSpatialExtents,
   readSpatialRepresentation,
   readStatus,
   readTemporalExtents,
@@ -45,7 +45,6 @@ import {
   writeAbstract,
   writeContacts,
   writeContactsForResource,
-  writeDistributions,
   writeGraphicOverviews,
   writeKeywords,
   writeKind,
@@ -54,12 +53,12 @@ import {
   writeLineage,
   writeOnlineResources,
   writeOtherConstraints,
-  writeOwnerOrganization,
   writeRecordUpdated,
   writeResourceCreated,
   writeResourcePublished,
   writeResourceUpdated,
   writeSecurityConstraints,
+  writeSpatialExtents,
   writeSpatialRepresentation,
   writeStatus,
   writeTemporalExtents,
@@ -98,11 +97,10 @@ export class Iso19139Converter extends BaseConverter<string> {
     spatialRepresentation: readSpatialRepresentation,
     overviews: readOverviews,
     lineage: readLineage,
-    distributions: readDistributions,
     onlineResources: readOnlineResources,
     temporalExtents: readTemporalExtents,
+    spatialExtents: readSpatialExtents,
     // TODO
-    spatialExtents: () => [],
     extras: () => undefined,
     landingPage: () => undefined,
     languages: () => [],
@@ -114,7 +112,7 @@ export class Iso19139Converter extends BaseConverter<string> {
   > = {
     uniqueIdentifier: writeUniqueIdentifier,
     kind: writeKind,
-    ownerOrganization: writeOwnerOrganization,
+    ownerOrganization: () => undefined, // fixme: find a way to store this value properly
     recordUpdated: writeRecordUpdated,
     recordCreated: () => undefined, // not supported in ISO19139
     recordPublished: () => undefined, // not supported in ISO19139
@@ -136,11 +134,10 @@ export class Iso19139Converter extends BaseConverter<string> {
     spatialRepresentation: writeSpatialRepresentation,
     overviews: writeGraphicOverviews,
     lineage: writeLineage,
-    distributions: writeDistributions,
     onlineResources: writeOnlineResources,
     temporalExtents: writeTemporalExtents,
+    spatialExtents: writeSpatialExtents,
     // TODO
-    spatialExtents: () => undefined,
     extras: () => undefined,
     landingPage: () => undefined,
     languages: () => undefined,
@@ -175,6 +172,7 @@ export class Iso19139Converter extends BaseConverter<string> {
     const licenses = this.readers['licenses'](rootEl)
     const overviews = this.readers['overviews'](rootEl)
     const landingPage = this.readers['landingPage'](rootEl)
+    const onlineResources = this.readers['onlineResources'](rootEl)
 
     if (kind === 'dataset') {
       const status = this.readers['status'](rootEl)
@@ -183,7 +181,6 @@ export class Iso19139Converter extends BaseConverter<string> {
       const spatialExtents = this.readers['spatialExtents'](rootEl)
       const temporalExtents = this.readers['temporalExtents'](rootEl)
       const lineage = this.readers['lineage'](rootEl)
-      const distributions = this.readers['distributions'](rootEl)
       const updateFrequency = this.readers['updateFrequency'](rootEl)
 
       return {
@@ -213,12 +210,11 @@ export class Iso19139Converter extends BaseConverter<string> {
         overviews,
         spatialExtents,
         temporalExtents,
-        distributions,
+        onlineResources,
         updateFrequency,
         ...(landingPage && { landingPage }),
       } as DatasetRecord
     } else {
-      const onlineResources = this.readers['onlineResources'](rootEl)
       return {
         uniqueIdentifier,
         kind,
@@ -305,6 +301,8 @@ export class Iso19139Converter extends BaseConverter<string> {
     fieldChanged('licenses') && this.writers['licenses'](record, rootEl)
     fieldChanged('otherConstraints') &&
       this.writers['otherConstraints'](record, rootEl)
+    fieldChanged('onlineResources') &&
+      this.writers['onlineResources'](record, rootEl)
 
     if (record.kind === 'dataset') {
       fieldChanged('status') && this.writers['status'](record, rootEl)
@@ -315,12 +313,9 @@ export class Iso19139Converter extends BaseConverter<string> {
       fieldChanged('overviews') && this.writers['overviews'](record, rootEl)
       fieldChanged('temporalExtents') &&
         this.writers['temporalExtents'](record, rootEl)
-      fieldChanged('distributions') &&
-        this.writers['distributions'](record, rootEl)
+      fieldChanged('spatialExtents') &&
+        this.writers['spatialExtents'](record, rootEl)
       fieldChanged('lineage') && this.writers['lineage'](record, rootEl)
-    } else {
-      fieldChanged('onlineResources') &&
-        this.writers['onlineResources'](record, rootEl)
     }
 
     this.beforeDocumentCreation(rootEl)
