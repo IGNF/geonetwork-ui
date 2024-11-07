@@ -155,15 +155,15 @@ export class IgnApiDlComponent implements OnInit {
 
   setZone(value: string) {
     if (this.bucketPromisesZone.map((choice) => choice.value).includes(value)) {
-      this.zone$.next(value)
       this.resetPage()
+      this.zone$.next(value)
     }
   }
 
   setCrs(value: string) {
     if (this.bucketPromisesCrs.map((choice) => choice.value).includes(value)) {
-      this.crs$.next(value)
       this.resetPage()
+      this.crs$.next(value)
     }
   }
 
@@ -171,8 +171,8 @@ export class IgnApiDlComponent implements OnInit {
     if (
       this.bucketPromisesFormat.map((choice) => choice.value).includes(value)
     ) {
-      this.format$.next(value)
       this.resetPage()
+      this.format$.next(value)
     }
   }
 
