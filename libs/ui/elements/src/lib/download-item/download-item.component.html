@@ -61,12 +61,14 @@
           </mat-icon>
         </button>
       </div>
-      <div class="grow">
-        <gn-ui-map-container
-          #mapContainer
-          [context]="mapContext$ | async"
-          (featuresClick)="onMapFeatureSelect($event)"
-        ></gn-ui-map-container>
+      <div class="flex grow justify-stretch">
+        <div class="grow">
+          <gn-ui-map-container
+            #mapContainer
+            [context]="context"
+          ></gn-ui-map-container>
+        </div>
+        <div class="container w-1/3">Je suis la partie de droite</div>
       </div>
     </div>
   </div>
