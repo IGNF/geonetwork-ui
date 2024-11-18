@@ -372,6 +372,7 @@
   "record.metadata.api.form.customUrl": "Custom URL",
   "record.metadata.api.form.limit": "Count of records",
   "record.metadata.api.form.limit.all": "All",
+  "record.metadata.api.form.noData": "No data for selected filters",
   "record.metadata.api.form.offset": "Count of first record",
   "record.metadata.api.form.openForm": "Open the form",
   "record.metadata.api.form.reset": "Reset",
