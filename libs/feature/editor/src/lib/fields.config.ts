@@ -18,6 +18,40 @@ import { Keyword } from '@geonetwork-ui/common/domain/model/record'
  ************************************************************
  */
 
+export const RECORD_UNIQUE_IDENTIFIER_FIELD: EditorField = {
+  model: 'uniqueIdentifier',
+  formFieldConfig: {
+    labelKey: marker('editor.record.form.field.uniqueIdentifier'),
+  },
+  hidden: true,
+}
+
+export const CONSTRAINTS_SHORTCUTS: EditorField = {
+  componentName: 'form-field-constraints-shortcuts',
+  formFieldConfig: {
+    labelKey: marker('editor.record.form.field.constraintsShortcuts'),
+  },
+}
+
+export const LEGAL_CONSTRAINTS_FIELD: EditorField = {
+  model: 'legalConstraints',
+  formFieldConfig: {
+    labelKey: marker('editor.record.form.field.legalConstraints'),
+  },
+}
+export const SECURITY_CONSTRAINTS_FIELD: EditorField = {
+  model: 'securityConstraints',
+  formFieldConfig: {
+    labelKey: marker('editor.record.form.field.securityConstraints'),
+  },
+}
+export const OTHER_CONSTRAINTS_FIELD: EditorField = {
+  model: 'otherConstraints',
+  formFieldConfig: {
+    labelKey: marker('editor.record.form.field.otherConstraints'),
+  },
+}
+
 export const RECORD_LICENSE_FIELD: EditorField = {
   model: 'licenses',
   formFieldConfig: {
@@ -29,14 +63,6 @@ export const RECORD_KEYWORDS_FIELD: EditorField = {
   model: 'keywords',
   formFieldConfig: {
     labelKey: marker('editor.record.form.field.keywords'),
-  },
-}
-
-export const RECORD_UNIQUE_IDENTIFIER_FIELD: EditorField = {
-  model: 'uniqueIdentifier',
-  formFieldConfig: {
-    labelKey: marker('editor.record.form.field.uniqueIdentifier'),
-    locked: true,
   },
 }
 
@@ -52,10 +78,10 @@ export const RECORD_UPDATED_FIELD: EditorField = {
   model: 'recordUpdated',
   formFieldConfig: {
     labelKey: marker('editor.record.form.field.recordUpdated'),
-    locked: true,
   },
   onSaveProcess: '${dateNow()}',
   gridColumnSpan: 1,
+  hidden: true,
 }
 
 export const RECORD_UPDATE_FREQUENCY_FIELD: EditorField = {
@@ -191,7 +217,13 @@ export const CLASSIFICATION_SECTION: EditorSection = {
 export const USE_AND_ACCESS_CONDITIONS_SECTION: EditorSection = {
   labelKey: marker('editor.record.form.section.useAndAccessConditions.label'),
   hidden: false,
-  fields: [RECORD_LICENSE_FIELD],
+  fields: [
+    RECORD_LICENSE_FIELD,
+    CONSTRAINTS_SHORTCUTS,
+    LEGAL_CONSTRAINTS_FIELD,
+    SECURITY_CONSTRAINTS_FIELD,
+    OTHER_CONSTRAINTS_FIELD,
+  ],
 }
 
 export const DATA_MANAGERS_SECTION: EditorSection = {
@@ -240,13 +272,29 @@ export const DEFAULT_CONFIGURATION: EditorConfig = {
  ***************           LICENSES            **************
  ************************************************************
  */
-export const OPEN_DATA_LICENSES: string[] = [
+export const AVAILABLE_LICENSES: string[] = [
+  'cc-by',
+  'cc-by-sa',
+  'cc-zero',
   'etalab',
   'etalab-v2',
   'odbl',
   'odc-by',
   'pddl',
+  'unknown',
 ]
+
+export const OPEN_DATA_LICENSE = 'etalab'
+
+marker('editor.record.form.license.cc-by')
+marker('editor.record.form.license.cc-by-sa')
+marker('editor.record.form.license.cc-zero')
+marker('editor.record.form.license.etalab')
+marker('editor.record.form.license.etalab-v2')
+marker('editor.record.form.license.odbl')
+marker('editor.record.form.license.odc-by')
+marker('editor.record.form.license.pddl')
+marker('editor.record.form.license.unknown')
 
 export const MAX_UPLOAD_SIZE_MB = 10
 /************************************************************

@@ -13,6 +13,7 @@ import {
   FeatureRecordModule,
   GN_UI_VERSION,
   WEB_COMPONENT_EMBEDDER_URL,
+  RecordMetaComponent,
 } from '@geonetwork-ui/feature/record'
 import {
   DefaultRouterModule,
@@ -111,12 +112,12 @@ import {
   matCloseOutline,
   matEditOutline,
   matExpandMoreOutline,
+  matLocationSearchingOutline,
   matMenuOutline,
   matMoreHorizOutline,
   matRemoveOutline,
-  matStarOutline,
-  matMyLocationOutline,
   matSendOutline,
+  matStarOutline,
 } from '@ng-icons/material-icons/outline'
 import { NgIconsModule, provideNgIconsConfig } from '@ng-icons/core'
 import { MatButtonToggleModule } from '@angular/material/button-toggle'
@@ -194,6 +195,7 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     CarouselComponent,
     BlockListComponent,
     PreviousNextButtonsComponent,
+    RecordMetaComponent,
     LetDirective,
     // FIXME: these imports are required by non-standalone components and should be removed once all components have been made standalone
     NgIconsModule.withIcons({
@@ -206,7 +208,7 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
       matEditOutline,
       matAccountBoxOutline,
       matStarOutline,
-      matMyLocationOutline,
+      matLocationSearchingOutline,
       matSendOutline,
     }),
     MatButtonToggleModule,
@@ -284,7 +286,8 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     {
       provide: BASEMAP_LAYERS,
       useFactory: () =>
-        getOptionalMapConfig()?.MAP_LAYERS.map(getMapContextLayerFromConfig),
+        getOptionalMapConfig()?.MAP_LAYERS.map(getMapContextLayerFromConfig) ??
+        [],
     },
     {
       provide: MAP_VIEW_CONSTRAINTS,

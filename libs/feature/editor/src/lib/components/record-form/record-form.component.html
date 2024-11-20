@@ -18,7 +18,11 @@
           >
             {{ section.labelKey }}
           </div>
-          <div *ngIf="section.descriptionKey" class="text-gray-800" translate>
+          <div
+            *ngIf="section.descriptionKey"
+            class="text-gray-800 text-sm"
+            translate
+          >
             {{ section.descriptionKey }}
           </div>
         </div>
@@ -41,6 +45,7 @@
                 [modelSpecifier]="field.config.modelSpecifier!"
                 [config]="field.config.formFieldConfig"
                 [value]="field.value"
+                [componentName]="field.config.componentName"
                 (valueChange)="
                   handleFieldValueChange(field.config.model!, $event)
                 "

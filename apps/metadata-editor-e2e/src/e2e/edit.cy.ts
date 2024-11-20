@@ -18,7 +18,7 @@ describe('editor form', () => {
           return
         }
         // there is a copy: delete it
-        cy.get('[data-test="record-menu-button"]').eq(1).click()
+        cy.get('[data-test="record-menu-button"]').eq(0).click()
         cy.get('[data-test="record-menu-delete-button"]').click()
         cy.get('[data-cy="confirm-button"]').click()
         cy.log('An existing copy of the test record was found and deleted.')
@@ -35,11 +35,8 @@ describe('editor form', () => {
       .click()
     cy.get('[data-test="record-menu-duplicate-button"]').click()
     cy.url().should('include', '/duplicate/')
-    cy.editor_readFormUniqueIdentifier().then((recordUuid) => {
-      cy.window()
-        .its('localStorage')
-        .invoke('getItem', `geonetwork-ui-draft-${recordUuid}`)
-        .should('exist')
+    cy.editor_findDraftInLocalStorage().then((value) => {
+      expect(value).to.not.equal(null)
     })
     cy.get('md-editor-publish-button').click()
 
@@ -47,7 +44,7 @@ describe('editor form', () => {
     cy.visit('/catalog/search')
     cy.get('gn-ui-fuzzy-search input').type('station épuration copy{enter}')
     cy.get('[data-cy="table-row"]').first().children('div').eq(2).click()
-
+    cy.url().should('include', '/edit/')
     cy.editor_readFormUniqueIdentifier().then((uuid) => {
       recordUuid = uuid
     })
@@ -220,19 +217,6 @@ describe('editor form', () => {
           .children('div')
           .eq(1)
           .as('aboutSection')
-      })
-      describe('unique identifier', () => {
-        it('shows the unique identifier', () => {
-          cy.get('@aboutSection')
-            .find('gn-ui-form-field')
-            .eq(0)
-            .find('gn-ui-form-field-simple')
-            .find('input')
-            .invoke('val')
-            .then((val) => {
-              cy.get('@recordUuid').should('eq', val)
-            })
-        })
       })
       describe('resource updated', () => {
         beforeEach(() => {
@@ -691,32 +675,33 @@ describe('editor form', () => {
       })
     })
     describe('Access and constraints', () => {
-      describe('Open data switch', () => {
-        beforeEach(() => {
-          cy.get('@accessContactPageBtn').click()
-        })
-        describe('When the open data switch is unchecked', () => {
-          it('should display the licence form field', () => {
-            cy.get('gn-ui-form-field-license').should('be.visible')
-            cy.get('gn-ui-form-field-license')
-              .find('button')
-              .children('div')
-              .first()
-              .invoke('text')
-              .should('eq', ' Creative Commons CC-BY ')
-          })
-        })
-        describe('When the open data switch is checked', () => {
-          it('should not display the licence form field', () => {
-            cy.get('[data-cy="openDataToggle"]').click()
-            cy.get('gn-ui-form-field-license').should('not.exist')
-          })
-        })
+      beforeEach(() => {
+        cy.get('@accessContactPageBtn').click()
       })
+      // TEMPORARY - to be removed when the open data switch is back
+      // describe('Open data switch', () => {
+      //   beforeEach(() => {
+      //     cy.get('@accessContactPageBtn').click()
+      //   })
+      //   describe('When the open data switch is unchecked', () => {
+      //     it('should display the licence form field', () => {
+      //       cy.get('gn-ui-form-field-license').should('be.visible')
+      //       cy.get('gn-ui-form-field-license')
+      //         .find('button')
+      //         .children('div')
+      //         .first()
+      //         .invoke('text')
+      //         .should('eq', ' Creative Commons CC-BY ')
+      //     })
+      //   })
+      //   describe('When the open data switch is checked', () => {
+      //     it('should not display the licence form field', () => {
+      //       cy.get('[data-cy="openDataToggle"]').click()
+      //       cy.get('gn-ui-form-field-license').should('not.exist')
+      //     })
+      //   })
+      // })
       describe('licenses', () => {
-        beforeEach(() => {
-          cy.get('@accessContactPageBtn').click()
-        })
         it('should select a new license and show it on reload', () => {
           cy.get('gn-ui-form-field-license')
             .find('button')
@@ -740,6 +725,120 @@ describe('editor form', () => {
             .first()
             .invoke('text')
             .should('eq', ' Creative Commons CC-0 ')
+        })
+      })
+      describe('constraints', () => {
+        it('should add a few constraints and show it on reload', () => {
+          cy.editor_wrapPreviousDraft()
+          cy.get('[data-cy=legalConstraints]')
+            .find('gn-ui-button[data-cy=add-constraint-btn] button')
+            .click()
+          cy.get('[data-cy=legalConstraints]')
+            .find('textarea')
+            .last()
+            .type('new legal constraint')
+
+          // add from shortcuts
+          cy.get('[data-cy=constraints-shortcut-btns]')
+            .find('gn-ui-button')
+            .eq(1)
+            .click()
+          cy.get('[data-cy=securityConstraints]')
+            .find('textarea')
+            .last()
+            .type('new security constraint')
+
+          // add from shortcuts
+          cy.get('[data-cy=constraints-shortcut-btns]')
+            .find('gn-ui-button')
+            .eq(2)
+            .click()
+          cy.get('[data-cy=otherConstraints]')
+            .find('textarea')
+            .last()
+            .type('new other constraint')
+          cy.get('[data-cy=otherConstraints]')
+            .find('gn-ui-button[data-cy=add-url-btn] button')
+            .click()
+          cy.get('[data-cy=otherConstraints]')
+            .find('gn-ui-url-input')
+            .last()
+            .find('input')
+            .type('http://www.example.com/abcd/1234')
+
+          cy.screenshot({ capture: 'fullPage' })
+          cy.editor_publishAndReload()
+          cy.get('@saveStatus').should('eq', 'record_up_to_date')
+          cy.get('@accessContactPageBtn').click()
+
+          cy.get('[data-cy=legalConstraints]')
+            .find('gn-ui-constraint-card')
+            .should('have.length', 5)
+          cy.get('[data-cy=legalConstraints]')
+            .find('textarea')
+            .last()
+            .invoke('val')
+            .should('eq', 'new legal constraint')
+
+          cy.get('[data-cy=securityConstraints]')
+            .find('gn-ui-constraint-card')
+            .should('have.length', 1)
+          cy.get('[data-cy=securityConstraints]')
+            .find('textarea')
+            .last()
+            .invoke('val')
+            .should('eq', 'new security constraint')
+
+          cy.get('[data-cy=otherConstraints]')
+            .find('gn-ui-constraint-card')
+            .should('have.length', 1)
+          cy.get('[data-cy=otherConstraints]')
+            .find('textarea')
+            .last()
+            .invoke('val')
+            .should('eq', 'new other constraint')
+          cy.get('[data-cy=otherConstraints]')
+            .find('gn-ui-url-input input')
+            .invoke('val')
+            .should('eq', 'http://www.example.com/abcd/1234')
+        })
+
+        it('should enable "no applicable constraints" and stay enabled', () => {
+          cy.editor_wrapPreviousDraft()
+          cy.get('[data-cy=constraints-shortcut-toggles]')
+            .find('gn-ui-check-toggle label')
+            .eq(0)
+            .click()
+
+          cy.editor_publishAndReload()
+          cy.get('@saveStatus').should('eq', 'record_up_to_date')
+          cy.get('@accessContactPageBtn').click()
+
+          cy.get('[data-cy=constraints-shortcut-toggles]')
+            .find('gn-ui-check-toggle input[type=checkbox]')
+            .eq(0)
+            .invoke('val')
+            .should('eq', 'on')
+
+          // constraints are hidden
+          cy.get('[data-cy=legalConstraints]').should('not.exist')
+          cy.get('[data-cy=securityConstraints]').should('not.exist')
+          cy.get('[data-cy=otherConstraints]').should('not.exist')
+
+          // uncheck toggle
+          cy.get('[data-cy=constraints-shortcut-toggles]')
+            .find('gn-ui-check-toggle label')
+            .eq(0)
+            .click()
+
+          // remaining constraints are shown
+          cy.get('[data-cy=legalConstraints]').should('not.exist')
+          cy.get('[data-cy=securityConstraints]')
+            .find('gn-ui-constraint-card')
+            .should('have.length', 1)
+          cy.get('[data-cy=otherConstraints]')
+            .find('gn-ui-constraint-card')
+            .should('have.length', 1)
         })
       })
     })
