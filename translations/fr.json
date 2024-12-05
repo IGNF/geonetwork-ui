@@ -372,6 +372,7 @@
   "record.metadata.api.form.customUrl": "URL personnalisée",
   "record.metadata.api.form.limit": "Nombre d'enregistrements",
   "record.metadata.api.form.limit.all": "Tous",
+  "record.metadata.api.form.noData": "Aucune donnée pour les filtres sélectionnés",
   "record.metadata.api.form.offset": "Numéro du 1er enregistrement",
   "record.metadata.api.form.openForm": "Ouvrir le panneau de personnalisation",
   "record.metadata.api.form.reset": "Réinitialiser",
