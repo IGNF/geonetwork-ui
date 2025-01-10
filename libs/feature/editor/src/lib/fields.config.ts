@@ -66,6 +66,21 @@ export const RECORD_KEYWORDS_FIELD: EditorField = {
   },
 }
 
+export const RECORD_RESOURCE_CREATED_FIELD: EditorField = {
+  model: 'resourceCreated',
+  formFieldConfig: {
+    labelKey: marker('editor.record.form.field.resourceCreated'),
+  },
+  gridColumnSpan: 1,
+}
+
+export const RESOURCE_IDENTIFIER_FIELD: EditorField = {
+  model: 'resourceIdentifier',
+  formFieldConfig: {
+    labelKey: marker('editor.record.form.field.resourceIdentifier'),
+  },
+}
+
 export const RECORD_RESOURCE_UPDATED_FIELD: EditorField = {
   model: 'resourceUpdated',
   formFieldConfig: {
@@ -133,6 +148,12 @@ export const RECORD_GRAPHICAL_OVERVIEW_FIELD: EditorField = {
   },
 }
 
+export const RECORD_SPATIAL_TOGGLE_FIELD: EditorField = {
+  componentName: 'form-field-spatial-toggle',
+  formFieldConfig: {},
+  hidden: true,
+}
+
 export const RECORD_SPATIAL_EXTENTS_FIELD: EditorField = {
   model: 'spatialExtents',
   formFieldConfig: {
@@ -176,6 +197,8 @@ export const ABOUT_SECTION: EditorSection = {
   hidden: false,
   fields: [
     RECORD_UNIQUE_IDENTIFIER_FIELD,
+    RESOURCE_IDENTIFIER_FIELD,
+    RECORD_RESOURCE_CREATED_FIELD,
     RECORD_RESOURCE_UPDATED_FIELD,
     RECORD_UPDATED_FIELD,
     RECORD_UPDATE_FREQUENCY_FIELD,
@@ -186,7 +209,7 @@ export const ABOUT_SECTION: EditorSection = {
 export const GEOGRAPHICAL_COVERAGE_SECTION: EditorSection = {
   labelKey: marker('editor.record.form.section.geographicalCoverage.label'),
   hidden: false,
-  fields: [RECORD_SPATIAL_EXTENTS_FIELD],
+  fields: [RECORD_SPATIAL_TOGGLE_FIELD, RECORD_SPATIAL_EXTENTS_FIELD],
 }
 
 export const ASSOCIATED_RESOURCES_SECTION: EditorSection = {

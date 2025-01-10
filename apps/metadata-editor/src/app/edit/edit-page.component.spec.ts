@@ -39,6 +39,7 @@ class EditorFacadeMock {
   editorConfig$ = new BehaviorSubject(editorConfigFixture())
   currentPage$ = new BehaviorSubject(0)
   pagesCount$ = new BehaviorSubject(2)
+  hasRecordChanged$ = new BehaviorSubject(false)
 }
 class NotificationsServiceMock {
   showNotification = jest.fn()
@@ -121,24 +122,32 @@ describe('EditPageComponent', () => {
     describe('publish version error', () => {
       it('shows notification', () => {
         ;(facade.saveError$ as any).next(new PublicationVersionError('1.0.0'))
-        expect(notificationsService.showNotification).toHaveBeenCalledWith({
-          type: 'error',
-          title: 'editor.record.publishVersionError.title',
-          text: 'editor.record.publishVersionError.body',
-          closeMessage: 'editor.record.publishVersionError.closeMessage',
-        })
+        expect(notificationsService.showNotification).toHaveBeenCalledWith(
+          {
+            type: 'error',
+            title: 'editor.record.publishVersionError.title',
+            text: 'editor.record.publishVersionError.body',
+            closeMessage: 'editor.record.publishVersionError.closeMessage',
+          },
+          undefined,
+          expect.any(PublicationVersionError)
+        )
       })
     })
 
     describe('publish error', () => {
       it('shows notification', () => {
         ;(facade.saveError$ as any).next(new Error('oopsie'))
-        expect(notificationsService.showNotification).toHaveBeenCalledWith({
-          type: 'error',
-          title: 'editor.record.publishError.title',
-          text: 'editor.record.publishError.body oopsie',
-          closeMessage: 'editor.record.publishError.closeMessage',
-        })
+        expect(notificationsService.showNotification).toHaveBeenCalledWith(
+          {
+            type: 'error',
+            title: 'editor.record.publishError.title',
+            text: 'editor.record.publishError.body oopsie',
+            closeMessage: 'editor.record.publishError.closeMessage',
+          },
+          undefined,
+          expect.any(Error)
+        )
       })
     })
 
@@ -202,6 +211,27 @@ describe('EditPageComponent', () => {
       editorFacade.currentPage$.next(1)
       editorFacade.pagesCount$.next(3)
       expect(await firstValueFrom(component.isLastPage$)).toBe(false)
+    })
+  })
+
+  describe('subscriptions', () => {
+    it('should add 5 subscriptions to component.subscription', () => {
+      const addSpy = jest.spyOn(component.subscription, 'add')
+      component.ngOnInit()
+      expect(addSpy).toHaveBeenCalledTimes(5)
+    })
+    it('should add 6 subscriptions to component.subscription when on /create route', () => {
+      const activatedRoute = TestBed.inject(ActivatedRoute)
+      activatedRoute.snapshot.routeConfig.path = '/create'
+      fixture.detectChanges()
+      const addSpy = jest.spyOn(component.subscription, 'add')
+      component.ngOnInit()
+      expect(addSpy).toHaveBeenCalledTimes(6)
+    })
+    it('unsubscribes', () => {
+      const unsubscribeSpy = jest.spyOn(component.subscription, 'unsubscribe')
+      component.ngOnDestroy()
+      expect(unsubscribeSpy).toHaveBeenCalled()
     })
   })
 })

@@ -63,13 +63,13 @@ export class ImportRecordComponent {
   @Output() closeImportMenu = new EventEmitter<void>()
 
   importMenuItems: ImportMenuItems[] = [
-    {
-      label: this.translateService.instant('dashboard.importRecord.useModel'),
-      icon: 'iconoirLightBulbOn',
-      action: () => null,
-      dataTest: 'useAModelButton',
-      disabled: true,
-    },
+    // {
+    //   label: this.translateService.instant('dashboard.importRecord.useModel'),
+    //   icon: 'iconoirLightBulbOn',
+    //   action: () => null,
+    //   dataTest: 'useAModelButton',
+    //   disabled: true,
+    // },
     {
       label: this.translateService.instant(
         'dashboard.importRecord.importExternal'
@@ -142,7 +142,8 @@ export class ImportRecordComponent {
               'editor.record.importFromExternalFile.failure.body'
             )} ${error.message ?? ''}`,
           },
-          2500
+          2500,
+          error
         )
         this.isRecordImportInProgress = false
         this.cdr.markForCheck()

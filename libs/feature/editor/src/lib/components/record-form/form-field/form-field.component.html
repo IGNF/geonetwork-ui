@@ -24,20 +24,24 @@
   <ng-container [ngSwitch]="model">
     <ng-container *ngSwitchCase="'title'">
       <div class="flex flex-row flex-start items-center gap-3 mb-[12px]">
-        <span
+        <textarea
           #titleInput
+          cdkTextareaAutosize
+          #autosize="cdkTextareaAutosize"
+          cdkAutosizeMinRows="1"
           data-test="recordTitleInput"
-          class="grow font-title text-3xl font-normal"
-          [gnUiEditableLabel]="valueAsString"
-          (editableLabelChanged)="valueChange.emit($event)"
-        ></span>
-        <div class="flex flex-row justify-between">
+          class="grow font-title text-3xl font-normal overflow-hidden"
+          (change)="valueChange.emit($event.target.value)"
+          >{{ valueAsString }}</textarea
+        >
+        <div class="flex flex-row justify-between self-start mt-0.5">
           <span
             class="material-symbols-outlined gn-ui-icon-small m-2 cursor-pointer"
             (click)="focusTitleInput()"
             >edit</span
           >
           <span
+            *ngIf="config.hintKey"
             class="material-symbols-outlined gn-ui-icon-small m-2"
             [matTooltip]="config.hintKey! | translate"
             matTooltipPosition="above"
@@ -62,11 +66,24 @@
         (valueChange)="valueChange.emit($event)"
       ></gn-ui-form-field-overviews>
     </ng-container>
-    <ng-container *ngSwitchCase="'resourceUpdated'">
-      <gn-ui-form-field-date-updated
+    <ng-container *ngSwitchCase="'resourceIdentifier'">
+      <gn-ui-form-field-simple
+        [type]="'text'"
+        [value]="valueAsString"
+        (valueChange)="valueChange.emit($event)"
+      ></gn-ui-form-field-simple>
+    </ng-container>
+    <ng-container *ngSwitchCase="'resourceCreated'">
+      <gn-ui-form-field-date
         [value]="valueAsDate"
         (valueChange)="valueChange.emit($event)"
-      ></gn-ui-form-field-date-updated>
+      ></gn-ui-form-field-date>
+    </ng-container>
+    <ng-container *ngSwitchCase="'resourceUpdated'">
+      <gn-ui-form-field-date
+        [value]="valueAsDate"
+        (valueChange)="valueChange.emit($event)"
+      ></gn-ui-form-field-date>
     </ng-container>
     <ng-container *ngSwitchCase="'updateFrequency'">
       <gn-ui-form-field-update-frequency
@@ -149,6 +166,9 @@
     <ng-container [ngSwitch]="componentName">
       <ng-container *ngSwitchCase="'form-field-constraints-shortcuts'">
         <gn-ui-form-field-constraints-shortcuts></gn-ui-form-field-constraints-shortcuts>
+      </ng-container>
+      <ng-container *ngSwitchCase="'form-field-spatial-toggle'">
+        <gn-ui-form-field-spatial-toggle></gn-ui-form-field-spatial-toggle>
       </ng-container>
     </ng-container>
   </ng-container>

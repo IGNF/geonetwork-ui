@@ -140,24 +140,10 @@ describe('dashboard (authenticated)', () => {
 
     it('should show nothing when none are selected', () => {
       cy.visit('/catalog/search')
-      cy.get('gn-ui-results-table')
-        .find('.table-row-cell')
-        .get('gn-ui-checkbox')
-        .each(($checkbox) => cy.wrap($checkbox).click())
       cy.get('[data-cy=records-information]').should(
         'not.have.descendants',
         '[data-test=selected-count]'
       )
-    })
-
-    it('should select all records when the "select all" checkbox is checked', () => {
-      cy.visit('/catalog/search')
-      cy.get('gn-ui-results-table')
-        .find('.table-row-cell')
-        .get('gn-ui-checkbox')
-        .first()
-        .click()
-      cy.get('[data-test=selected-count]').contains('15 selected')
     })
   })
   describe('columns', () => {
@@ -225,7 +211,7 @@ describe('dashboard (authenticated)', () => {
     })
     describe('my records', () => {
       it('should only display records I own', () => {
-        cy.get('md-editor-dashboard-menu').find('a').eq(5).click()
+        cy.get('md-editor-dashboard-menu').find('a').eq(3).click()
         cy.get('gn-ui-results-table')
           .find('[data-cy="table-row"]')
           .find('ng-icon')
@@ -233,19 +219,18 @@ describe('dashboard (authenticated)', () => {
           .should('contain', 'admin admin')
       })
       it('should display the correct amount of records', () => {
-        cy.get('md-editor-dashboard-menu').find('a').eq(5).click()
+        cy.get('md-editor-dashboard-menu').find('a').eq(3).click()
         cy.get('gn-ui-results-table')
           .find('[data-cy="table-row"]')
           .should('have.length', '10')
       })
       it('should sort the records by title', () => {
-        cy.get('md-editor-dashboard-menu').find('a').eq(5).click()
+        cy.get('md-editor-dashboard-menu').find('a').eq(3).click()
         cy.get('gn-ui-results-table')
           .find('[data-cy="table-row"]')
           .first()
           .invoke('text')
           .then((firstRecord) => {
-            console.log(firstRecord)
             cy.get('gn-ui-results-table')
               .find('.table-header-cell')
               .eq(1)
@@ -287,10 +272,6 @@ describe('dashboard (authenticated)', () => {
         cy.get('md-editor-dashboard-menu').find('a').eq(5).click()
         cy.get('gn-ui-autocomplete').should('have.value', '')
       })
-      it('should hide the search input when navigating to my drafts', () => {
-        cy.get('md-editor-dashboard-menu').find('a').eq(6).click()
-        cy.get('gn-ui-autocomplete').should('not.exist')
-      })
     })
     describe('myRecords search input', () => {
       beforeEach(() => {
@@ -308,19 +289,59 @@ describe('dashboard (authenticated)', () => {
         cy.get('md-editor-dashboard-menu').find('a').first().click()
         cy.get('gn-ui-autocomplete').should('have.value', '')
       })
+      it('should allow to search in the entire catalog', () => {
+        cy.get('gn-ui-autocomplete').type('mat{enter}')
+        cy.get('gn-ui-interactive-table')
+          .find('[data-cy="table-row"]')
+          .should('have.length', '1')
+        cy.url().should('include', '/search?q=mat')
+        cy.url().should('not.include', 'owner')
+      })
     })
   })
   describe('search filters', () => {
+    function selectUser(index = 0, openDropdown = true) {
+      if (openDropdown) {
+        cy.get('md-editor-search-filters').find('gn-ui-button').first().click()
+      }
+      cy.get('.cdk-overlay-container')
+        .find('input[type="checkbox"]')
+        .eq(index)
+        .check()
+    }
+    function selectDateRange() {
+      cy.get('mat-calendar-header').find('button').first().click()
+      cy.get('mat-multi-year-view').contains('button', '2024').click()
+      cy.get('mat-year-view').contains('button', 'AUG').click()
+      cy.get('mat-month-view').contains('button', '1').click()
+      cy.get('mat-month-view').contains('button', '30').click()
+    }
+    function closeDropDown() {
+      cy.get('body').click(0, 0)
+    }
+    function checkFilterByChangeDate() {
+      cy.get('gn-ui-interactive-table')
+        .find('[data-cy="table-row"]')
+        .should('have.length', '1')
+      cy.get('gn-ui-results-table')
+        .find('[data-cy="resultItemTitle"]')
+        .each(($resultItemTitle) => {
+          cy.wrap($resultItemTitle)
+            .invoke('text')
+            .should('eq', 'Accroches vélos MEL')
+        })
+    }
     describe('allRecords search filter', () => {
       beforeEach(() => {
         cy.visit('/catalog/search')
       })
-      it('should filter the record list by editor (Barbara Roberts)', () => {
-        cy.get('md-editor-search-filters').find('gn-ui-button').first().click()
-        cy.get('.cdk-overlay-container')
-          .find('input[type="checkbox"]')
-          .eq(1)
-          .check()
+      it('should contain filter component with two search filters', () => {
+        cy.get('md-editor-search-filters')
+          .find('gn-ui-button')
+          .should('have.length', 2)
+      })
+      it('should filter the record list by user (Barbara Roberts)', () => {
+        selectUser(1)
         cy.get('gn-ui-interactive-table')
           .find('[data-cy="table-row"]')
           .should('have.length', '5')
@@ -330,25 +351,207 @@ describe('dashboard (authenticated)', () => {
             cy.wrap($ownerInfo).invoke('text').should('eq', 'Barbara Roberts')
           })
       })
+      it('should filter the record list by last update (changeDate)', () => {
+        cy.get('md-editor-search-filters').find('gn-ui-button').eq(1).click()
+        selectDateRange()
+        checkFilterByChangeDate()
+      })
+      it('should display the expand icon for the date range dropdown correctly', () => {
+        cy.get('md-editor-search-filters')
+          .find('gn-ui-date-range-dropdown')
+          .find('ng-icon')
+          .should('have.attr', 'ng-reflect-name', 'matExpandMore')
+        cy.get('md-editor-search-filters').find('gn-ui-button').eq(1).click()
+        cy.get('md-editor-search-filters')
+          .find('gn-ui-date-range-dropdown')
+          .find('ng-icon')
+          .should('have.attr', 'ng-reflect-name', 'matExpandLess')
+      })
     })
     describe('myRecords search filters', () => {
       beforeEach(() => {
         cy.visit('/my-space/my-records')
       })
-      it('should contain filter component with no search filter for now', () => {
+      it('should contain filter component with one search filter', () => {
         cy.get('md-editor-search-filters')
           .find('gn-ui-button')
-          .should('not.exist')
+          .should('have.length', 1)
       })
+      it('should filter the record list by last update (changeDate)', () => {
+        cy.get('md-editor-search-filters').find('gn-ui-button').first().click()
+        selectDateRange()
+        checkFilterByChangeDate()
+      })
+    })
+    describe('allRecord search filters summary', () => {
+      beforeEach(() => {
+        cy.visit('/catalog/search')
+      })
+      it('should not display anything without selected filters', () => {
+        cy.get('gn-ui-search-filters-summary-item').should('not.exist')
+      })
+      describe('selecting users', () => {
+        beforeEach(() => {
+          selectUser(1)
+        })
+        it('should display a label for badges of selected users', () => {
+          cy.get('gn-ui-search-filters-summary')
+            .find('[data-cy="filterSummaryLabel"]')
+            .invoke('text')
+            .should('eq', 'Modified by: ')
+        })
+        it('should display the badge for a selected user', () => {
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .should('have.length', 1)
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .invoke('text')
+            .should('eq', 'Barbara Roberts')
+        })
+        it('should display a second badge for a second selected user', () => {
+          selectUser(0, false)
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .should('have.length', 2)
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .eq(1)
+            .invoke('text')
+            .should('eq', 'admin admin')
+        })
+        it('should remove one of two badges when a badge cross is clicked', () => {
+          selectUser(0, false)
+          closeDropDown()
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .eq(0)
+            .find('ng-icon')
+            .click()
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .should('have.length', 1)
+        })
+      })
+      describe('selecting date range', () => {
+        beforeEach(() => {
+          cy.get('md-editor-search-filters').find('gn-ui-button').eq(1).click()
+          selectDateRange()
+        })
+        it('should display a label for the date range', () => {
+          cy.get('gn-ui-search-filters-summary')
+            .find('[data-cy="filterSummaryLabel"]')
+            .invoke('text')
+            .should('eq', 'Modified on: ')
+        })
+        it('should display the badge for the selected date range', () => {
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .invoke('text')
+            .should('eq', '01.08.2024 - 30.08.2024')
+        })
+        it('should remove the badge when the badge cross is clicked', () => {
+          closeDropDown()
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .find('ng-icon')
+            .click()
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .should('not.exist')
+        })
+      })
+      describe('selecting multiple filters (users and date range)', () => {
+        beforeEach(() => {
+          selectUser(0)
+          closeDropDown()
+          cy.get('md-editor-search-filters').find('gn-ui-button').eq(1).click()
+          selectDateRange()
+        })
+        it('should display both badges', () => {
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .should('have.length', 2)
+        })
+        it('should clear all filters when the clear button is clicked', () => {
+          cy.get('gn-ui-search-filters-summary').find('button').last().click()
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .should('have.length', 0)
+          cy.get('gn-ui-search-filters-summary-item').should('not.exist')
+        })
+      })
+    })
+    describe('myRecords search filters summary', () => {
+      beforeEach(() => {
+        cy.visit('/my-space/my-records')
+      })
+      it('should not display anything without selected filters', () => {
+        cy.get('gn-ui-search-filters-summary-item').should('not.exist')
+      })
+      describe('selecting date range', () => {
+        beforeEach(() => {
+          cy.get('md-editor-search-filters').find('gn-ui-button').eq(0).click()
+          selectDateRange()
+        })
+        it('should display a label for the date range', () => {
+          cy.get('gn-ui-search-filters-summary')
+            .find('[data-cy="filterSummaryLabel"]')
+            .invoke('text')
+            .should('eq', 'Modified on: ')
+        })
+        it('should display the badge for the selected date range', () => {
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .invoke('text')
+            .should('eq', '01.08.2024 - 30.08.2024')
+        })
+        it('should remove the badge when the badge cross is clicked', () => {
+          closeDropDown()
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .find('ng-icon')
+            .click()
+          cy.get('gn-ui-search-filters-summary')
+            .find('gn-ui-badge')
+            .should('not.exist')
+        })
+      })
+    })
+  })
+  describe('Account settings access', () => {
+    it('should navigate to the account settings page', () => {
+      cy.visit('/catalog/search')
+      cy.get('md-editor-sidebar')
+        .find('gn-ui-button')
+        .first()
+        .find('a')
+        .invoke('removeAttr', 'target')
+        .click()
+      cy.url().should('include', '/admin.console')
     })
   })
 })
 
-describe('when the user is not logged in', () => {
-  beforeEach(() => {
-    cy.visit('/catalog/search')
+describe('Logging in and out', () => {
+  describe('when the user is not logged in', () => {
+    beforeEach(() => {
+      cy.visit('/catalog/search')
+    })
+    it('redirects to the login page', () => {
+      cy.url().should('include', '/catalog.signin?redirect=')
+    })
   })
-  it('redirects to the login page', () => {
-    cy.url().should('include', '/catalog.signin?redirect=')
+  describe('Logging out', () => {
+    beforeEach(() => {
+      cy.login('admin', 'admin', false)
+      cy.visit('/catalog/search')
+    })
+    it('logs out the user', () => {
+      cy.get('gn-ui-avatar').should('be.visible')
+      cy.get('md-editor-sidebar').find('gn-ui-button').eq(1).click()
+      cy.url().should('include', '/catalog.signin?redirect=')
+      cy.get('gn-ui-avatar').should('not.exist')
+    })
   })
 })

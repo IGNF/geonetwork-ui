@@ -1,11 +1,4 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  EventEmitter,
-  Input,
-  NO_ERRORS_SCHEMA,
-  Output,
-} from '@angular/core'
+import { ChangeDetectorRef, Component, Input } from '@angular/core'
 import {
   ComponentFixture,
   discardPeriodicTasks,
@@ -25,12 +18,19 @@ import { pointFeatureCollectionFixture } from '@geonetwork-ui/common/fixtures'
 import { Collection } from 'ol'
 import { Interaction } from 'ol/interaction'
 import { DataService } from '@geonetwork-ui/feature/dataviz'
-import { DatasetOnlineResource } from '@geonetwork-ui/common/domain/model/record'
 import * as geoSdkCore from '@geospatial-sdk/core'
 import { MapContext } from '@geospatial-sdk/core'
-import { prioritizePageScroll } from '@geonetwork-ui/ui/map'
+import {
+  MapContainerComponent,
+  MapLegendComponent,
+  prioritizePageScroll,
+} from '@geonetwork-ui/ui/map'
+import { MockBuilder } from 'ng-mocks'
+import { ExternalViewerButtonComponent } from '../external-viewer-button/external-viewer-button.component'
+import { LoadingMaskComponent } from '@geonetwork-ui/ui/widgets'
 
 jest.mock('@geonetwork-ui/ui/map', () => ({
+  ...jest.requireActual('@geonetwork-ui/ui/map'),
   prioritizePageScroll: jest.fn(),
 }))
 
@@ -121,43 +121,12 @@ class InteractionsMock extends Collection<Interaction> {}
 @Component({
   selector: 'gn-ui-map-container',
   template: '<div></div>',
+  standalone: true,
 })
 export class MockMapContainerComponent {
   @Input() context: MapContext
   openlayersMap = Promise.resolve(new OpenLayersMapMock())
 }
-
-@Component({
-  selector: 'gn-ui-dropdown-selector',
-  template: '<div></div>',
-})
-export class MockDropdownSelectorComponent {
-  @Input() choices: unknown[]
-  @Input() showTitle
-  @Output() selectValue = new EventEmitter()
-}
-
-@Component({
-  selector: 'gn-ui-external-viewer-button',
-  template: '<div></div>',
-})
-export class MockExternalViewerButtonComponent {
-  @Input() link: DatasetOnlineResource
-}
-
-@Component({
-  selector: 'gn-ui-loading-mask',
-  template: '<div></div>',
-})
-export class MockLoadingMaskComponent {
-  @Input() message
-}
-
-@Component({
-  selector: 'gn-ui-popup-alert',
-  template: '<div></div>',
-})
-export class MockPopupAlertComponent {}
 
 describe('MapViewComponent', () => {
   let component: MapViewComponent
@@ -170,17 +139,15 @@ describe('MapViewComponent', () => {
     geoSdkCore.returnImmediately(true)
   })
 
+  beforeEach(() =>
+    MockBuilder(MapViewComponent).replace(
+      MapContainerComponent,
+      MockMapContainerComponent
+    )
+  )
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [
-        MapViewComponent,
-        MockMapContainerComponent,
-        MockDropdownSelectorComponent,
-        MockExternalViewerButtonComponent,
-        MockLoadingMaskComponent,
-        MockPopupAlertComponent,
-      ],
-      schemas: [NO_ERRORS_SCHEMA],
       providers: [
         {
           provide: MdViewFacade,
@@ -195,7 +162,7 @@ describe('MapViewComponent', () => {
           useClass: DataServiceMock,
         },
       ],
-      imports: [TranslateModule.forRoot()],
+      imports: [TranslateModule.forRoot(), MapLegendComponent],
     }).compileComponents()
     mdViewFacade = TestBed.inject(MdViewFacade)
   })
@@ -216,14 +183,14 @@ describe('MapViewComponent', () => {
 
   describe('map layers', () => {
     let dropdownComponent: DropdownSelectorComponent
-    let externalViewerButtonComponent: MockExternalViewerButtonComponent
+    let externalViewerButtonComponent: ExternalViewerButtonComponent
 
     beforeEach(() => {
       dropdownComponent = fixture.debugElement.query(
-        By.directive(MockDropdownSelectorComponent)
+        By.directive(DropdownSelectorComponent)
       ).componentInstance
       externalViewerButtonComponent = fixture.debugElement.query(
-        By.directive(MockExternalViewerButtonComponent)
+        By.directive(ExternalViewerButtonComponent)
       ).componentInstance
     })
 
@@ -516,7 +483,7 @@ describe('MapViewComponent', () => {
         })
         it('shows a loading indicator', () => {
           expect(
-            fixture.debugElement.query(By.directive(MockLoadingMaskComponent))
+            fixture.debugElement.query(By.directive(LoadingMaskComponent))
           ).toBeTruthy()
         })
       })
@@ -548,7 +515,7 @@ describe('MapViewComponent', () => {
         it('does not show a loading indicator', () => {
           fixture.detectChanges()
           expect(
-            fixture.debugElement.query(By.directive(MockLoadingMaskComponent))
+            fixture.debugElement.query(By.directive(LoadingMaskComponent))
           ).toBeFalsy()
         })
       })
@@ -802,6 +769,25 @@ describe('MapViewComponent', () => {
     })
   })
 
+  describe('display legend', () => {
+    it('should render the MapLegendComponent', () => {
+      const legendComponent = fixture.debugElement.query(
+        By.directive(MapLegendComponent)
+      )
+      expect(legendComponent).toBeTruthy()
+    })
+    it('should handle legendStatusChange event', () => {
+      const legendComponent = fixture.debugElement.query(
+        By.directive(MapLegendComponent)
+      ).componentInstance
+      const legendStatusChangeSpy = jest.spyOn(
+        component,
+        'onLegendStatusChange'
+      )
+      legendComponent.legendStatusChange.emit(true)
+      expect(legendStatusChangeSpy).toHaveBeenCalledWith(true)
+    })
+  })
   describe('map view extent', () => {
     describe('if no record extent', () => {
       beforeEach(fakeAsync(() => {

@@ -331,10 +331,12 @@ describe('dataset pages', () => {
           .children('button')
           .should('have.length.gt', 1)
       })
-      it('should display the map', () => {
+      it('should display the map and the legend', () => {
         cy.get('@previewSection')
           .find('gn-ui-map-container')
           .should('be.visible')
+
+        cy.get('@previewSection').find('gn-ui-map-legend').should('be.visible')
       })
       it('should display the table', () => {
         cy.get('@previewSection')
@@ -529,12 +531,12 @@ describe('dataset pages', () => {
       })
       it('should not display carousel dot button for 4 link cards', () => {
         cy.get('datahub-record-otherlinks')
-          .find('.carousel-step-dot')
+          .find('.pagination-dot')
           .should('exist')
       })
       it('should not display carousel dot button for 2 API cards', () => {
         cy.get('datahub-record-apis')
-          .find('.carousel-step-dot')
+          .find('.pagination-dot')
           .should('not.exist')
       })
     })

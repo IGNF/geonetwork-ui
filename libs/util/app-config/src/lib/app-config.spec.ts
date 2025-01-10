@@ -133,6 +133,7 @@ describe('app config utils', () => {
           PROXY_PATH: '/proxy/?url=',
           METADATA_LANGUAGE: 'fre',
           LOGIN_URL: '/cas/login?service=',
+          LOGOUT_URL: '/geonetwork/signout',
           WEB_COMPONENT_EMBEDDER_URL: '/datahub/wc-embedder.html',
         })
       })
@@ -277,7 +278,11 @@ describe('app config utils', () => {
             [[map_layer]]
             type = "wfs"
             url = "https://www.geo2france.fr/geoserver/cr_hdf/ows"
-            name = "masque_hdf_ign_carto_latin1"`
+            name = "masque_hdf_ign_carto_latin1"
+            [[map_layer]]
+            type = "maplibre-style"
+            styleUrl = "https://data.geopf.fr/annexes/ressources/vectorTiles/styles/PLAN.IGN/standard.json"
+            accessToken = "any_token"`
         )
         await loadAppConfig()
       })
@@ -301,6 +306,12 @@ describe('app config utils', () => {
               TYPE: 'wfs',
               URL: 'https://www.geo2france.fr/geoserver/cr_hdf/ows',
               NAME: 'masque_hdf_ign_carto_latin1',
+            },
+            {
+              TYPE: 'maplibre-style',
+              STYLE_URL:
+                'https://data.geopf.fr/annexes/ressources/vectorTiles/styles/PLAN.IGN/standard.json',
+              ACCESS_TOKEN: 'any_token',
             },
           ],
         })

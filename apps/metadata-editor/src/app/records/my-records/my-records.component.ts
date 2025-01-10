@@ -13,7 +13,7 @@ import { RecordsListComponent } from '../records-list.component'
 import {
   FeatureSearchModule,
   FieldsService,
-  ResultsTableContainerComponent,
+  FILTER_SUMMARY_IGNORE_LIST,
   SearchFacade,
 } from '@geonetwork-ui/feature/search'
 import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
@@ -24,8 +24,6 @@ import { TemplatePortal } from '@angular/cdk/portal'
 import { RecordsCountComponent } from '../records-count/records-count.component'
 import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
 import { ImportRecordComponent } from '@geonetwork-ui/feature/editor'
-import { SearchHeaderComponent } from '../../dashboard/search-header/search-header.component'
-import { map, Observable } from 'rxjs'
 import { SearchFiltersComponent } from '../../dashboard/search-filters/search-filters.component'
 import {
   NgIconComponent,
@@ -38,6 +36,8 @@ import {
   iconoirPagePlus,
 } from '@ng-icons/iconoir'
 
+const FILTER_OWNER = 'owner'
+
 @Component({
   selector: 'md-editor-my-records',
   templateUrl: './my-records.component.html',
@@ -47,13 +47,11 @@ import {
     CommonModule,
     TranslateModule,
     RecordsListComponent,
-    ResultsTableContainerComponent,
     UiElementsModule,
     RecordsCountComponent,
     ButtonComponent,
     ImportRecordComponent,
     FeatureSearchModule,
-    SearchHeaderComponent,
     SearchFiltersComponent,
     NgIconComponent,
   ],
@@ -66,6 +64,7 @@ import {
     provideNgIconsConfig({
       size: '1.5rem',
     }),
+    { provide: FILTER_SUMMARY_IGNORE_LIST, useValue: [FILTER_OWNER] },
   ],
 })
 export class MyRecordsComponent implements OnInit {
@@ -73,8 +72,7 @@ export class MyRecordsComponent implements OnInit {
   private importRecordButton!: ElementRef
   @ViewChild('template') template!: TemplateRef<any>
   private overlayRef!: OverlayRef
-  searchFields = []
-  searchText$: Observable<string | null>
+  searchFields = ['changeDate']
 
   isImportMenuOpen = false
 
@@ -93,15 +91,11 @@ export class MyRecordsComponent implements OnInit {
 
     this.platformService.getMe().subscribe((user) => {
       this.fieldsService
-        .buildFiltersFromFieldValues({ owner: user.id })
+        .buildFiltersFromFieldValues({ [FILTER_OWNER]: user.id })
         .subscribe((filters) => {
           this.searchFacade.updateFilters(filters)
         })
     })
-
-    this.searchText$ = this.searchFacade.searchFilters$.pipe(
-      map((filters) => ('any' in filters ? (filters['any'] as string) : null))
-    )
   }
 
   createRecord() {

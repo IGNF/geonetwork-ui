@@ -14,14 +14,21 @@ import { SearchEffects } from './state/effects'
 import { initialState, reducer, SEARCH_FEATURE_KEY } from './state/reducer'
 import { ResultsHitsContainerComponent } from './results-hits-number/results-hits.container.component'
 import { SearchStateContainerDirective } from './state/container/search-state.container.directive'
-import { AutocompleteComponent, UiInputsModule } from '@geonetwork-ui/ui/inputs'
+import {
+  AutocompleteComponent,
+  DateRangeDropdownComponent,
+  UiInputsModule,
+} from '@geonetwork-ui/ui/inputs'
 import { NgModule } from '@angular/core'
-import { UiElementsModule } from '@geonetwork-ui/ui/elements'
-import { FavoriteStarComponent } from './favorites/favorite-star/favorite-star.component'
+import { ErrorComponent, UiElementsModule } from '@geonetwork-ui/ui/elements'
 import { FilterDropdownComponent } from './filter-dropdown/filter-dropdown.component'
-import { UiWidgetsModule } from '@geonetwork-ui/ui/widgets'
+import {
+  SpinningLoaderComponent,
+  UiWidgetsModule,
+} from '@geonetwork-ui/ui/widgets'
 import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
 import { Gn4Repository } from '@geonetwork-ui/api/repository'
+import { FavoriteStarComponent } from './favorites/favorite-star/favorite-star.component'
 
 @NgModule({
   declarations: [
@@ -32,7 +39,6 @@ import { Gn4Repository } from '@geonetwork-ui/api/repository'
     ResultsListContainerComponent,
     ResultsHitsContainerComponent,
     SearchStateContainerDirective,
-    FavoriteStarComponent,
     FilterDropdownComponent,
   ],
   imports: [
@@ -50,6 +56,10 @@ import { Gn4Repository } from '@geonetwork-ui/api/repository'
     FacetsModule,
     UiWidgetsModule,
     AutocompleteComponent,
+    SpinningLoaderComponent,
+    ErrorComponent,
+    FavoriteStarComponent,
+    DateRangeDropdownComponent,
   ],
   exports: [
     SortByComponent,
@@ -60,7 +70,6 @@ import { Gn4Repository } from '@geonetwork-ui/api/repository'
     ResultsHitsContainerComponent,
     FacetsModule,
     SearchStateContainerDirective,
-    FavoriteStarComponent,
     FilterDropdownComponent,
   ],
   providers: [

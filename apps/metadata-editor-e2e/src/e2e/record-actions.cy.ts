@@ -114,6 +114,52 @@ describe('record-actions', () => {
         .should('contain.text', 'Next')
     })
 
+    it('the created record should not allow upload of resources and show info message as it was not saved yet', () => {
+      // first page
+      cy.get('gn-ui-form-field-overviews')
+        .find('gn-ui-image-input')
+        .find('input')
+        .should('be.disabled')
+      cy.get('gn-ui-form-field-overviews')
+        .children()
+        .find('[data-test="disabled-message"]')
+        .should(
+          'contain.text',
+          ' This field will be enabled once the data has been published '
+        )
+
+      // second page
+      cy.get('[data-test="previousNextPageButtons"]')
+        .children()
+        .eq(1)
+        .should('contain.text', 'Next')
+        .click()
+      cy.get('gn-ui-form-field-online-resources')
+        .find('gn-ui-switch-toggle')
+        .find('mat-button-toggle-group')
+        .find('button')
+        .should('be.disabled')
+      cy.get('gn-ui-file-input').find('input').should('be.disabled')
+      cy.get('gn-ui-form-field-online-resources')
+        .children()
+        .find('div')
+        .should(
+          'contain.text',
+          ' This field will be enabled once the data has been published '
+        )
+
+      cy.get('gn-ui-form-field-online-link-resources')
+        .find('input')
+        .should('be.disabled')
+      cy.get('gn-ui-form-field-online-link-resources')
+        .children()
+        .find('div')
+        .should(
+          'contain.text',
+          ' This field will be enabled once the data has been published '
+        )
+    })
+
     it('back navigation should go to search after creating a record', () => {
       cy.go('back')
       cy.url().should('include', '/catalog/search')
@@ -189,7 +235,7 @@ describe('record-actions', () => {
 
       cy.get('gn-ui-form-field')
         .first()
-        .find('input')
+        .find('textarea')
         .invoke('val')
         .should('eq', 'Accroches vélos MEL (Copy)')
 
@@ -254,7 +300,7 @@ describe('record-actions', () => {
         cy.get('gn-ui-record-form')
           .find('gn-ui-form-field')
           .eq(0)
-          .find('input')
+          .find('textarea')
           .invoke('val')
           .should('contain', 'Copy')
       })
@@ -268,6 +314,69 @@ describe('record-actions', () => {
         cy.get('[data-test="importMenuImportExternalFileSection"]').should(
           'not.exist'
         )
+      })
+    })
+  })
+  describe('drafting', () => {
+    let recordUuid: any
+    describe('if a user edits the record in the meantime', () => {
+      beforeEach(() => {
+        cy.visit('/edit/9e1ea778-d0ce-4b49-90b7-37bc0e448300')
+        cy.url().should('include', '/edit/')
+        cy.editor_readFormUniqueIdentifier().then((uuid) => {
+          recordUuid = uuid
+          cy.wrap(uuid).as('recordUuid')
+        })
+        cy.get('gn-ui-form-field[ng-reflect-model=abstract] textarea').as(
+          'abstractField'
+        )
+        cy.get('@abstractField').clear()
+        cy.get('@abstractField').type('modified abstract')
+        cy.editor_findDraftInLocalStorage().then((value) => {
+          expect(value).to.contain('modified abstract')
+        })
+        cy.editor_wrapFirstDraft()
+        cy.clearRecordDrafts()
+        cy.visit('/edit/9e1ea778-d0ce-4b49-90b7-37bc0e448300')
+        cy.editor_wrapPreviousDraft()
+        cy.get('gn-ui-form-field[ng-reflect-model=abstract] textarea').as(
+          'abstractField'
+        )
+        cy.get('@abstractField').clear()
+        cy.get('@abstractField').type('modified by someone else')
+        cy.editor_publishAndReload()
+        cy.window().then((win) => {
+          cy.get('@firstDraft').then((firstDraft) => {
+            return win.localStorage.setItem(
+              `geonetwork-ui-draft-${recordUuid}`,
+              firstDraft.toString()
+            )
+          })
+        })
+        cy.visit('/edit/9e1ea778-d0ce-4b49-90b7-37bc0e448300')
+      })
+      it('should show the warning banner and the warning menu when publishing', () => {
+        cy.get('[data-test="draft-alert"]').should('be.visible')
+        cy.get('md-editor-publish-button').click()
+        cy.get('[data-test="publish-warning"]').should('be.visible')
+      })
+    })
+    describe('if nobody edits the record in the meantime', () => {
+      beforeEach(() => {
+        cy.clearRecordDrafts()
+        cy.visit('/edit/9e1ea778-d0ce-4b49-90b7-37bc0e448300')
+        cy.get('gn-ui-form-field[ng-reflect-model=abstract] textarea').as(
+          'abstractField'
+        )
+        cy.get('@abstractField').clear()
+        cy.get('@abstractField').type('modified abstract')
+        cy.visit('/catalog/search')
+      })
+      it('should not show any warning', () => {
+        cy.visit('/edit/9e1ea778-d0ce-4b49-90b7-37bc0e448300')
+        cy.get('[data-test="draft-alert"]').should('not.exist')
+        cy.get('md-editor-publish-button').click()
+        cy.get('[data-test="publish-warning"]').should('not.exist')
       })
     })
   })

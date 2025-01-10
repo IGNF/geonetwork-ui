@@ -4,9 +4,12 @@ import {
   Component,
   ElementRef,
   EventEmitter,
+  Injector,
   Input,
   Output,
   ViewChild,
+  afterNextRender,
+  inject,
 } from '@angular/core'
 import { MatTooltipModule } from '@angular/material/tooltip'
 import {
@@ -23,7 +26,7 @@ import { EditableLabelDirective } from '@geonetwork-ui/ui/inputs'
 import { FormFieldWrapperComponent } from '@geonetwork-ui/ui/layout'
 import { TranslateModule } from '@ngx-translate/core'
 import {
-  FormFieldDateUpdatedComponent,
+  FormFieldDateComponent,
   FormFieldLicenseComponent,
   FormFieldTemporalExtentsComponent,
 } from '.'
@@ -48,6 +51,8 @@ import { FormFieldSpatialExtentComponent } from './form-field-spatial-extent/for
 import { FormFieldUpdateFrequencyComponent } from './form-field-update-frequency/form-field-update-frequency.component'
 import { FormFieldConstraintsShortcutsComponent } from './form-field-constraints-shortcuts/form-field-constraints-shortcuts.component'
 import { FormFieldConstraintsComponent } from './form-field-constraints/form-field-constraints.component'
+import { TextFieldModule } from '@angular/cdk/text-field'
+import { FormFieldSpatialToggleComponent } from './form-field-spatial-toggle/form-field-spatial-toggle.component'
 
 @Component({
   selector: 'gn-ui-form-field',
@@ -62,7 +67,7 @@ import { FormFieldConstraintsComponent } from './form-field-constraints/form-fie
     MatTooltipModule,
     FormFieldWrapperComponent,
     FormFieldLicenseComponent,
-    FormFieldDateUpdatedComponent,
+    FormFieldDateComponent,
     FormFieldUpdateFrequencyComponent,
     FormFieldTemporalExtentsComponent,
     FormFieldSimpleComponent,
@@ -80,6 +85,8 @@ import { FormFieldConstraintsComponent } from './form-field-constraints/form-fie
     FormFieldContactsComponent,
     FormFieldConstraintsComponent,
     FormFieldConstraintsShortcutsComponent,
+    FormFieldSpatialToggleComponent,
+    TextFieldModule,
   ],
 })
 export class FormFieldComponent {
@@ -101,7 +108,7 @@ export class FormFieldComponent {
   }
 
   focusTitleInput() {
-    this.titleInput.nativeElement.children[0].focus()
+    this.titleInput.nativeElement.focus()
   }
 
   get withoutWrapper() {

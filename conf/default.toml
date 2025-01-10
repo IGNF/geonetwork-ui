@@ -23,6 +23,8 @@ proxy_path = ""
 #  - ${lang2}, ${lang3}: indicates if and where the current language should be part of the login URL in language 2 or 3 letter code
 # Example to use the georchestra login page:
 # login_url = "/cas/login?service=${current_url}"
+# logout_url = "/geonetwork/signout"
+# settings_url = "/geonetwork/srv/\${lang3}/admin.console#/organization/users?userOrGroup="
 # This optional URL should point to the static html page wc-embedder.html which allows to display a web component (like chart and table) via a permalink.
 # URLs can be indicated from the root of the same server starting with a "/" or as an external URL. Be conscious of potential CORS issues when using an external URL.
 # The default location in the dockerized datahub app for example is "/datahub/wc-embedder.html".
@@ -157,6 +159,9 @@ do_not_use_default_basemap = true
 # Layer order in the config is the same as in the map, the first one being the bottom one.
 # Each layer is defined in its own [[map_layer]] section.
 # Example:
+# [[map_layer]]
+# type = "maplibre-style"
+# styleUrl = "https://data.geopf.fr/annexes/ressources/vectorTiles/styles/PLAN.IGN/gris.json"
 # [[map_layer]]
 # type = "xyz"
 # url = "https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"

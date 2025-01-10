@@ -11,6 +11,20 @@
     </div>
     <div class="grow overflow-auto p-[32px]" #scrollContainer>
       <div class="container-lg mx-auto flex flex-col gap-[32px]">
+        <div *ngIf="hasRecordChanged$ | async as hasChanged">
+          <div
+            *ngIf="hasChanged.user && hasChanged.date"
+            class="p-4 border border-primary bg-primary-lightest rounded-lg text-center"
+            translate
+            [translateParams]="{
+              date: formatDate(hasChanged.date),
+              user: hasChanged.user
+            }"
+            data-test="draft-alert"
+          >
+            editor.record.form.draft.updateAlert
+          </div>
+        </div>
         <md-editor-page-selector></md-editor-page-selector>
         <gn-ui-record-form></gn-ui-record-form>
         <div
