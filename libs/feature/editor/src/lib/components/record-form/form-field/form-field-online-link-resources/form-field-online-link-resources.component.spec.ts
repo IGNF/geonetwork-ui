@@ -3,19 +3,33 @@ import { FormFieldOnlineLinkResourcesComponent } from './form-field-online-link-
 import { aSetOfLinksFixture } from '@geonetwork-ui/common/fixtures'
 import { MockBuilder, MockProvider } from 'ng-mocks'
 import { TranslateModule } from '@ngx-translate/core'
-import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
+import {
+  PlatformServiceInterface,
+  RecordAttachment,
+} from '@geonetwork-ui/common/domain/platform.service.interface'
 import { NotificationsService } from '@geonetwork-ui/feature/notifications'
-import { Subject } from 'rxjs'
+import { BehaviorSubject, Subject } from 'rxjs'
 import { MatDialog, MatDialogRef } from '@angular/material/dialog'
 import { OnlineLinkResource } from '@geonetwork-ui/common/domain/model/record'
 import { ModalDialogComponent } from '@geonetwork-ui/ui/layout'
+import { ChangeDetectorRef } from '@angular/core'
+import { EditorFacade } from '../../../../+state/editor.facade'
 
 let uploadSubject: Subject<any>
+
+const recordAttachments = new BehaviorSubject<RecordAttachment[]>([
+  {
+    url: new URL('https://www.fakedomain.com/test.txt'),
+    fileName: 'test.txt',
+  },
+])
+
 class PlatformServiceInterfaceMock {
   attachFileToRecord = jest.fn(() => {
     uploadSubject = new Subject()
     return uploadSubject
   })
+  getRecordAttachments = jest.fn(() => recordAttachments)
 }
 export class MatDialogMock {
   _subject = new Subject()
@@ -23,6 +37,10 @@ export class MatDialogMock {
   open = jest.fn(() => ({
     afterClosed: () => this._subject,
   }))
+}
+
+class EditorFacadeMock {
+  alreadySavedOnce$ = new BehaviorSubject(false)
 }
 
 describe('FormFieldOnlineLinkResourcesComponent', () => {
@@ -44,9 +62,15 @@ describe('FormFieldOnlineLinkResourcesComponent', () => {
           PlatformServiceInterfaceMock,
           'useClass'
         ),
-        MockProvider(NotificationsService),
+        MockProvider(NotificationsService, {
+          showNotification: jest.fn(),
+        }),
         MockProvider(MatDialogRef),
+        MockProvider(ChangeDetectorRef, {
+          detectChanges: jest.fn(),
+        }),
         MockProvider(MatDialog, MatDialogMock, 'useClass'),
+        MockProvider(EditorFacade, EditorFacadeMock, 'useClass'),
       ],
     }).compileComponents()
 
@@ -125,12 +149,16 @@ describe('FormFieldOnlineLinkResourcesComponent', () => {
       expect(component.uploadProgress).toBeUndefined()
       component.handleFileChange(file)
       uploadSubject.error(new Error('something went wrong'))
-      expect(notificationsService.showNotification).toHaveBeenCalledWith({
-        type: 'error',
-        closeMessage: 'editor.record.onlineResourceError.closeMessage',
-        text: 'editor.record.onlineResourceError.body something went wrong',
-        title: 'editor.record.onlineResourceError.title',
-      })
+      expect(notificationsService.showNotification).toHaveBeenCalledWith(
+        {
+          type: 'error',
+          closeMessage: 'editor.record.onlineResourceError.closeMessage',
+          text: 'editor.record.onlineResourceError.body something went wrong',
+          title: 'editor.record.onlineResourceError.title',
+        },
+        undefined,
+        expect.any(Error)
+      )
     })
   })
   describe('handleUploadCancel', () => {

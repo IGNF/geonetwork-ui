@@ -10,10 +10,13 @@ import { datasetRecordsFixture } from '@geonetwork-ui/common/fixtures'
 import { EditorService } from '../services/editor.service'
 import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
 import { EditorPartialState } from './editor.reducer'
+import { MockProvider } from 'ng-mocks'
+import { Gn4PlatformService } from '@geonetwork-ui/api/repository'
 
 class EditorServiceMock {
   saveRecord = jest.fn((record) => of([record, '<xml>blabla</xml>']))
   saveRecordAsDraft = jest.fn(() => of('<xml>blabla</xml>'))
+  hasRecordChangedSinceDraft = jest.fn((record) => of(['change1', 'change2']))
 }
 class RecordsRepositoryMock {
   recordHasDraft = jest.fn(() => true)
@@ -54,6 +57,9 @@ describe('EditorEffects', () => {
           provide: RecordsRepositoryInterface,
           useClass: RecordsRepositoryMock,
         },
+        MockProvider(Gn4PlatformService, {
+          cleanRecordAttachments: jest.fn(() => of(undefined)),
+        }),
       ],
     })
 
@@ -78,6 +84,7 @@ describe('EditorEffects', () => {
         expect(effects.saveRecord$).toBeObservable(expected)
         expect(service.saveRecord).toHaveBeenCalledWith(
           datasetRecordsFixture()[0],
+          '<xml>blabla</xml>',
           [],
           false
         )
@@ -94,6 +101,7 @@ describe('EditorEffects', () => {
         await firstValueFrom(effects.saveRecord$)
         expect(service.saveRecord).toHaveBeenCalledWith(
           datasetRecordsFixture()[0],
+          '<xml>blabla</xml>',
           [],
           true
         )
@@ -111,7 +119,7 @@ describe('EditorEffects', () => {
           a: EditorActions.saveRecord(),
         })
         const expected = hot('-a-|', {
-          a: EditorActions.saveRecordFailure({ error: 'oopsie' }),
+          a: EditorActions.saveRecordFailure({ error: new Error('oopsie') }),
         })
         expect(effects.saveRecord$).toBeObservable(expected)
       })
@@ -158,7 +166,8 @@ describe('EditorEffects', () => {
           })
         )
         expect(service.saveRecordAsDraft).toHaveBeenCalledWith(
-          datasetRecordsFixture()[0]
+          datasetRecordsFixture()[0],
+          '<xml>blabla</xml>'
         )
       })
     })
@@ -195,6 +204,21 @@ describe('EditorEffects', () => {
         const expected = hot('---|')
         expect(effects.checkHasChangesOnOpen$).toBeObservable(expected)
       })
+    })
+  })
+  describe('hasRecordChangedSinceDraft$', () => {
+    it('dispatches hasRecordChangedSinceDraftSuccess on success', () => {
+      const record = datasetRecordsFixture()[0]
+      actions = hot('-a-|', {
+        a: EditorActions.hasRecordChangedSinceDraft({ record }),
+      })
+      const expected = hot('-a-|', {
+        a: EditorActions.hasRecordChangedSinceDraftSuccess({
+          changes: ['change1', 'change2'],
+        }),
+      })
+      expect(effects.hasRecordChangedSinceDraft$).toBeObservable(expected)
+      expect(service.hasRecordChangedSinceDraft).toHaveBeenCalledWith(record)
     })
   })
 })

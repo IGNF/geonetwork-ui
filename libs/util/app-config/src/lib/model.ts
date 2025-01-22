@@ -6,16 +6,20 @@ export interface GlobalConfig {
   PROXY_PATH?: string
   METADATA_LANGUAGE?: string
   LOGIN_URL?: string
+  LOGOUT_URL?: string
+  SETTINGS_URL?: string
   WEB_COMPONENT_EMBEDDER_URL?: string
   LANGUAGES?: string[]
   CONTACT_EMAIL?: string
 }
 
 export interface LayerConfig {
-  TYPE: 'xyz' | 'wms' | 'wfs' | 'geojson'
+  TYPE: 'xyz' | 'wms' | 'wfs' | 'geojson' | 'maplibre-style'
   URL?: string
   NAME?: string
   DATA?: string
+  STYLE_URL?: string
+  ACCESS_TOKEN?: string
 }
 
 export interface MapConfig {

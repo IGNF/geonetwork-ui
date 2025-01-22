@@ -49,13 +49,17 @@ describe('EditorFacade', () => {
       facade = TestBed.inject(EditorFacade)
     })
 
-    it('openRecord() should dispatch openRecord action', () => {
+    it('openRecord() should dispatch openRecord action and set the currentPage to 0', () => {
       const spy = jest.spyOn(store, 'dispatch')
-      facade.openRecord(datasetRecordsFixture()[0])
+      facade.openRecord(datasetRecordsFixture()[0], '', true)
       const action = EditorActions.openRecord({
         record: datasetRecordsFixture()[0],
+        recordSource: '',
+        alreadySavedOnce: true,
       })
+      const setPage = EditorActions.setCurrentPage({ page: 0 })
       expect(spy).toHaveBeenCalledWith(action)
+      expect(spy).toHaveBeenCalledWith(setPage)
     })
 
     it('saveRecord() should dispatch saveRecord action', () => {
@@ -72,6 +76,13 @@ describe('EditorFacade', () => {
         field: 'title',
         value: 'new title',
       })
+      expect(spy).toHaveBeenCalledWith(action)
+    })
+    it('checkHasRecordChanged() should dispatch hasRecordChangedSinceDraft action', () => {
+      const spy = jest.spyOn(store, 'dispatch')
+      const record = datasetRecordsFixture()[0]
+      facade.checkHasRecordChanged(record)
+      const action = EditorActions.hasRecordChangedSinceDraft({ record })
       expect(spy).toHaveBeenCalledWith(action)
     })
   })

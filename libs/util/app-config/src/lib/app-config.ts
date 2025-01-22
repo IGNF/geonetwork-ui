@@ -98,6 +98,7 @@ export function loadAppConfig() {
           'proxy_path',
           'metadata_language',
           'login_url',
+          'logout_url',
           'web_component_embedder_url',
           'languages',
           'contact_email',
@@ -124,6 +125,8 @@ export function loadAppConfig() {
                   ).toLowerCase()
                 : undefined,
               LOGIN_URL: parsedGlobalSection.login_url,
+              LOGOUT_URL: parsedGlobalSection.logout_url,
+              SETTINGS_URL: parsedGlobalSection.settings_url,
               WEB_COMPONENT_EMBEDDER_URL:
                 parsedGlobalSection.web_component_embedder_url,
               LANGUAGES: parsedGlobalSection.languages,
@@ -134,7 +137,7 @@ export function loadAppConfig() {
         parsed,
         'map_layer',
         ['type'],
-        ['name', 'url', 'data'],
+        ['name', 'url', 'data', 'styleUrl', 'accessToken'],
         warnings,
         errors
       )
@@ -174,6 +177,8 @@ export function loadAppConfig() {
                     URL: map_layer.url,
                     NAME: map_layer.name,
                     DATA: map_layer.data,
+                    STYLE_URL: map_layer.styleUrl,
+                    ACCESS_TOKEN: map_layer.accessToken,
                   } as LayerConfig)
               ),
             } as MapConfig)

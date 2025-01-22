@@ -7,13 +7,41 @@ import {
 } from '@angular/core'
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
 import { MdViewFacade } from '@geonetwork-ui/feature/record'
-import { CarouselComponent } from '@geonetwork-ui/ui/layout'
+import {
+  CarouselComponent,
+  PreviousNextButtonsComponent,
+} from '@geonetwork-ui/ui/layout'
+import {
+  ApiCardComponent,
+  RecordApiFormComponent,
+} from '@geonetwork-ui/ui/elements'
+import { CommonModule } from '@angular/common'
+import { NgIcon, provideIcons } from '@ng-icons/core'
+import { matCloseOutline } from '@ng-icons/material-icons/outline'
+import { TranslateModule } from '@ngx-translate/core'
+import { FeatureRecordModule } from '@geonetwork-ui/feature/record'
 
 @Component({
   selector: 'datahub-record-apis',
   templateUrl: './record-apis.component.html',
   styleUrls: ['./record-apis.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [
+    CommonModule,
+    CarouselComponent,
+    PreviousNextButtonsComponent,
+    ApiCardComponent,
+    RecordApiFormComponent,
+    NgIcon,
+    TranslateModule,
+    FeatureRecordModule,
+  ],
+  viewProviders: [
+    provideIcons({
+      matCloseOutline,
+    }),
+  ],
 })
 export class RecordApisComponent implements OnInit {
   @ViewChild(CarouselComponent) carousel: CarouselComponent
@@ -35,20 +63,8 @@ export class RecordApisComponent implements OnInit {
     this.selectedApiLink = undefined
   }
 
-  get hasPagination() {
-    return this.carousel?.stepsCount > 1
-  }
-
   updateView() {
     this.changeDetector.detectChanges()
-  }
-
-  get isFirstStep() {
-    return this.carousel?.isFirstStep
-  }
-
-  get isLastStep() {
-    return this.carousel?.isLastStep
   }
 
   openRecordApiForm(link: DatasetServiceDistribution) {
@@ -66,13 +82,5 @@ export class RecordApisComponent implements OnInit {
   setStyle(link: DatasetServiceDistribution) {
     this.maxHeight = link === undefined ? '0px' : '700px'
     this.opacity = link === undefined ? 0 : 1
-  }
-
-  changeStepOrPage(direction: string) {
-    if (direction === 'next') {
-      this.carousel?.slideToNext()
-    } else {
-      this.carousel?.slideToPrevious()
-    }
   }
 }

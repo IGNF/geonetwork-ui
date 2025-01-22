@@ -7,10 +7,11 @@ import {
   Output,
 } from '@angular/core'
 import { MatButtonToggleModule } from '@angular/material/button-toggle'
+import { TranslateModule } from '@ngx-translate/core'
 
 export type SwitchToggleOption = {
   label: string
-  value: string
+  value?: unknown
   checked: boolean
 }
 
@@ -20,17 +21,18 @@ export type SwitchToggleOption = {
   styleUrls: ['./switch-toggle.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [MatButtonToggleModule, CommonModule],
+  imports: [MatButtonToggleModule, CommonModule, TranslateModule],
 })
 export class SwitchToggleComponent {
   @Input() options: SwitchToggleOption[]
   @Input() ariaLabel? = ''
   @Input() extraClasses? = ''
+  @Input() disabled? = false
   @Output() selectedValue = new EventEmitter<SwitchToggleOption>()
 
   onChange(selectedOption: SwitchToggleOption) {
     this.options.find(
-      (option) => option.value === selectedOption.value
+      (option) => option.label === selectedOption.label
     ).checked = true
 
     this.selectedValue.emit(selectedOption)

@@ -24,12 +24,14 @@ import { TranslateService } from '@ngx-translate/core'
   imports: [CommonModule, ResultsTableComponent],
 })
 export class ResultsTableContainerComponent implements OnDestroy {
+  @Input() canDuplicate: (record: CatalogRecord) => boolean = () => true
+  @Input() canDelete: (record: CatalogRecord) => boolean = () => true
+
   @Output() recordClick = new EventEmitter<CatalogRecord>()
   @Output() duplicateRecord = new EventEmitter<CatalogRecord>()
 
   subscription = new Subscription()
 
-  records$ = this.searchFacade.results$
   selectedRecords$ = this.selectionService.selectedRecordsIdentifiers$
   sortBy$ = this.searchFacade.sortBy$
 
@@ -40,7 +42,7 @@ export class ResultsTableContainerComponent implements OnDestroy {
     this.recordsRepository.isRecordNotYetSaved(record.uniqueIdentifier)
 
   constructor(
-    private searchFacade: SearchFacade,
+    protected searchFacade: SearchFacade,
     private searchService: SearchService,
     private selectionService: SelectionService,
     private recordsRepository: RecordsRepositoryInterface,
@@ -77,18 +79,22 @@ export class ResultsTableContainerComponent implements OnDestroy {
           )
         },
         error: (error) => {
-          this.notificationsService.showNotification({
-            type: 'error',
-            title: this.translateService.instant(
-              'editor.record.deleteError.title'
-            ),
-            text: `${this.translateService.instant(
-              'editor.record.deleteError.body'
-            )} ${error}`,
-            closeMessage: this.translateService.instant(
-              'editor.record.deleteError.closeMessage'
-            ),
-          })
+          this.notificationsService.showNotification(
+            {
+              type: 'error',
+              title: this.translateService.instant(
+                'editor.record.deleteError.title'
+              ),
+              text: `${this.translateService.instant(
+                'editor.record.deleteError.body'
+              )} ${error}`,
+              closeMessage: this.translateService.instant(
+                'editor.record.deleteError.closeMessage'
+              ),
+            },
+            undefined,
+            error
+          )
         },
       })
     )

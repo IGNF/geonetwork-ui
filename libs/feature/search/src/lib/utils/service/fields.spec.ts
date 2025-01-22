@@ -8,6 +8,8 @@ import {
   OrganizationSearchField,
   SimpleSearchField,
   MultilingualSearchField,
+  UserSearchField,
+  DateRangeSearchField,
 } from './fields'
 import { TestBed } from '@angular/core/testing'
 import { Injector } from '@angular/core'
@@ -94,6 +96,25 @@ class RecordsRepositoryMock {
             {
               term: '30',
               count: 1489,
+            },
+          ],
+        },
+      })
+    if (aggName === 'userinfo.keyword')
+      return of({
+        'userinfo.keyword': {
+          buckets: [
+            {
+              term: 'admin|admin|admin|Administrator',
+              count: 10,
+            },
+            {
+              term: 'barbie|Roberts|Barbara|UserAdmin',
+              count: 5,
+            },
+            {
+              term: 'johndoe|Doe|John|Editor',
+              count: 1,
             },
           ],
         },
@@ -254,15 +275,26 @@ describe('search fields implementations', () => {
       let filter
       beforeEach(async () => {
         filter = await lastValueFrom(
-          searchField.getFiltersForValues(['First value', 'Second value'])
+          searchField.getFiltersForValues(['First value', 'Second value', ''])
         )
       })
-      it('returns appropriate filters', () => {
+      it('returns appropriate filters (ignoring empty strings)', () => {
         expect(filter).toEqual({
           myField: {
             'First value': true,
             'Second value': true,
           },
+        })
+      })
+    })
+    describe('#getFiltersForValues with empty value', () => {
+      let filter
+      beforeEach(async () => {
+        filter = await lastValueFrom(searchField.getFiltersForValues(['']))
+      })
+      it('returns empty filter', () => {
+        expect(filter).toEqual({
+          myField: {},
         })
       })
     })
@@ -305,6 +337,83 @@ describe('search fields implementations', () => {
         })
         it('returns an empty array', () => {
           expect(values).toEqual([])
+        })
+      })
+    })
+  })
+
+  describe('DateRangeSearchField (SimpleSearchField with date range)', () => {
+    beforeEach(() => {
+      searchField = new DateRangeSearchField('changeDate', injector, 'desc')
+    })
+    describe('#getAvailableValues', () => {
+      let values
+      beforeEach(async () => {
+        values = await lastValueFrom(searchField.getAvailableValues())
+      })
+      it('returns an empty list of values for now', () => {
+        expect(values).toEqual([])
+      })
+    })
+    describe('#getFiltersForValues', () => {
+      let filter
+      beforeEach(async () => {
+        filter = await lastValueFrom(
+          searchField.getFiltersForValues([
+            { start: new Date('2020-01-01'), end: new Date('2020-12-31') },
+          ])
+        )
+      })
+      it('returns appropriate filters', () => {
+        expect(filter).toEqual({
+          changeDate: {
+            start: new Date('2020-01-01'),
+            end: new Date('2020-12-31'),
+          },
+        })
+      })
+    })
+    describe('#getFiltersForValues with empty value', () => {
+      let filter
+      beforeEach(async () => {
+        filter = await lastValueFrom(searchField.getFiltersForValues(['']))
+      })
+      it('returns empty filter', () => {
+        expect(filter).toEqual({
+          changeDate: {},
+        })
+      })
+    })
+    describe('#getValuesForFilters', () => {
+      let values
+      describe('with several values', () => {
+        beforeEach(async () => {
+          values = await lastValueFrom(
+            searchField.getValuesForFilter({
+              changeDate: {
+                start: new Date('2020-01-01'),
+                end: new Date('2020-12-31'),
+              },
+            })
+          )
+        })
+        it('returns filtered values', () => {
+          expect(values).toEqual({
+            start: new Date('2020-01-01'),
+            end: new Date('2020-12-31'),
+          })
+        })
+      })
+      describe('with a unique value', () => {
+        beforeEach(async () => {
+          values = await lastValueFrom(
+            searchField.getValuesForFilter({
+              changeDate: { start: new Date('2020-01-01') },
+            })
+          )
+        })
+        it('returns the only value', () => {
+          expect(values).toEqual({ start: new Date('2020-01-01') })
         })
       })
     })
@@ -661,6 +770,43 @@ describe('search fields implementations', () => {
           {
             label: 'Office fédéral du développement territorial ARE (20)',
             value: 'Office fédéral du développement territorial ARE',
+          },
+        ])
+      })
+    })
+  })
+  describe('UserSearchField', () => {
+    beforeEach(() => {
+      searchField = new UserSearchField(injector)
+    })
+    describe('#getAvailableValues', () => {
+      let values
+      beforeEach(async () => {
+        values = await lastValueFrom(searchField.getAvailableValues())
+      })
+      it('calls aggregate with expected payload', () => {
+        expect(repository.aggregate).toHaveBeenCalledWith({
+          'userinfo.keyword': {
+            type: 'terms',
+            limit: 1000,
+            field: 'userinfo.keyword',
+            sort: ['asc', 'key'],
+          },
+        })
+      })
+      it('returns the available users, in expected format', () => {
+        expect(values).toEqual([
+          {
+            label: 'admin admin (10)',
+            value: 'admin|admin|admin|Administrator',
+          },
+          {
+            label: 'Barbara Roberts (5)',
+            value: 'barbie|Roberts|Barbara|UserAdmin',
+          },
+          {
+            label: 'John Doe (1)',
+            value: 'johndoe|Doe|John|Editor',
           },
         ])
       })

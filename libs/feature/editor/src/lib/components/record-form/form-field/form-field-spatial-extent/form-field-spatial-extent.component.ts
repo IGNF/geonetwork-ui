@@ -11,6 +11,7 @@ import { EditorFacade } from '../../../../+state/editor.facade'
 import { switchMap } from 'rxjs/operators'
 import { FormFieldMapContainerComponent } from '../form-field-map-container/form-field-map-container.component'
 import { TranslateService } from '@ngx-translate/core'
+import { SPATIAL_SCOPES } from '../../../../fields.config'
 
 // This intermediary type will let us keep track of which keyword is bound to
 // which extent; these properties will not be persisted
@@ -40,6 +41,10 @@ type KeywordWithExtent = Keyword & {
 export class FormFieldSpatialExtentComponent {
   spatialExtents$ = this.editorFacade.record$.pipe(
     map((record) => ('spatialExtents' in record ? record?.spatialExtents : []))
+  )
+
+  allKeywords$ = this.editorFacade.record$.pipe(
+    map((record) => record?.keywords)
   )
 
   shownKeywords$ = this.editorFacade.record$.pipe(
@@ -150,16 +155,27 @@ export class FormFieldSpatialExtentComponent {
             ...(thesaurus && { thesaurus }),
           } as Keyword)
       )
-    const notPlaceKeywords = await firstValueFrom(
+
+    const notPlaceKwAndSpatialScopeKw = await firstValueFrom(
       this.editorFacade.record$.pipe(
-        map((record) => record.keywords.filter((k) => k.type !== 'place'))
+        map((record) =>
+          record.keywords.filter(
+            (k) =>
+              k.type !== 'place' ||
+              SPATIAL_SCOPES.some(
+                (spatialScope) => spatialScope.label === k.label // get back spatialScope keywords
+              )
+          )
+        )
       )
     )
 
-    this.editorFacade.updateRecordField('keywords', [
-      ...notPlaceKeywords,
+    const allKeywords = [
+      ...notPlaceKwAndSpatialScopeKw,
       ...filteredPlaceKeywords,
-    ])
+    ]
+
+    this.editorFacade.updateRecordField('keywords', allKeywords)
     this.editorFacade.updateRecordField('spatialExtents', spatialExtents)
   }
 }

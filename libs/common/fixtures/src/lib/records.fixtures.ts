@@ -1,6 +1,11 @@
-import { DatasetRecord } from '@geonetwork-ui/common/domain/model/record'
+import {
+  CatalogRecord,
+  DatasetRecord,
+  DatasetSpatialExtent,
+  Keyword,
+} from '@geonetwork-ui/common/domain/model/record'
 
-export const datasetRecordsFixture = () => [
+export const datasetRecordsFixture: () => CatalogRecord[] = () => [
   {
     uniqueIdentifier: 'my-dataset-001',
     kind: 'dataset',
@@ -128,10 +133,6 @@ Cette section contient des *caractères internationaux* (ainsi que des "caractè
     lineage: `This record was edited manually to test the conversion processes
 
 As such, **it is not very interesting at all.**`,
-    useLimitations: [
-      'Should only be used as a testing tool',
-      'Might cause minor annoyance in people',
-    ],
     licenses: [
       {
         text: 'Licence ODbL mai 2013 (basée sur ODbL 1.0)',
@@ -141,11 +142,9 @@ As such, **it is not very interesting at all.**`,
     legalConstraints: [
       {
         text: "Dataset access isn't possible since it does not really exist",
-        type: 'other',
       },
       {
         text: 'Contains sensitive information related to national defense',
-        type: 'security',
       },
     ],
     securityConstraints: [],
@@ -156,7 +155,8 @@ As such, **it is not very interesting at all.**`,
       updatedTimes: 3,
       per: 'month',
     },
-    languages: ['en'],
+    otherLanguages: ['de'],
+    defaultLanguage: 'en',
   },
   {
     uniqueIdentifier: '7d002c4c-92ef-4b9f-a568-d732f740b99e',
@@ -177,7 +177,7 @@ As such, **it is not very interesting at all.**`,
     contactsForResource: [],
     recordCreated: new Date('2022-04-15T14:18:19'),
     recordUpdated: new Date('2022-04-15T14:18:19'),
-    datasetUpdated: new Date('2022-03-29'),
+    resourceUpdated: new Date('2022-03-29'),
     title:
       "Plan local d'urbanisme (PLU) dématérialisé - commune d'Avrigny - approbation du 29/03/2022",
     abstract: `Plan local d'urbanisme (PLU) dématérialisé - commune d'Avrigny - approbation du 29/03/2022.
@@ -246,7 +246,6 @@ Ce lot de données produit en 2019, a été numérisé à partir du PCI Vecteur 
     legalConstraints: [],
     securityConstraints: [],
     otherConstraints: [],
-    useLimitations: ["Aucune condition ne s'applique", 'Licence Ouverte 2.0'],
     licenses: [
       {
         text: "En dépit des efforts et diligences mis en œuvre pour en vérifier la fiabilité, le fournisseur n’est pas en mesure de garantir l’exactitude, la mise à jour, l’intégrité, l’exhaustivité des données et en particulier que les données sont exemptes d'erreurs, notamment de localisation, d’identification ou d’actualisation ou d’imprécisions. Les données ne sont pas fournies en vue d'une utilisation particulière et aucune garantie quant à leur aptitude à un usage particulier n'est apportée par le fournisseur. En conséquence, les utilisateurs utilisent les données sous leur responsabilité pleine et entière, à leurs risques et périls, sans recours possible contre le fournisseur dont la responsabilité ne saurait être engagée du fait d’un dommage résultant directement ou indirectement de l’utilisation de ces données. En particulier, il appartient aux utilisateurs d’apprécier, sous leur seule responsabilité : – l'opportunité d'utiliser les données ; – la compatibilité des fichiers avec leurs systèmes informatiques ; – l’adéquation des données à leurs besoins ; – qu’ils disposent de la compétence suffisante pour utiliser les données ; – l’opportunité d’utiliser la documentation ou les outils d’analyse fournis ou préconisés, en relation avec l’utilisation des données, le cas échéant. Le fournisseur n’est en aucune façon responsable des éléments extérieurs aux données et notamment des outils d’analyse, matériels, logiciels, réseaux..., utilisés pour consulter et/ou traiter les données, même s’il a préconisé ces éléments. L’utilisateur veille à vérifier que l’actualité des informations mises à disposition est compatible avec l’usage qu’il en fait.",
@@ -256,26 +255,28 @@ Ce lot de données produit en 2019, a été numérisé à partir du PCI Vecteur 
     temporalExtents: [],
     status: 'completed',
     updateFrequency: 'unknown',
-    languages: ['fr', 'de'],
+    otherLanguages: ['en', 'de'],
+    defaultLanguage: 'fr',
   },
 ]
 
 export const simpleDatasetRecordFixture = (): DatasetRecord => ({
   uniqueIdentifier: 'my-dataset-001',
   kind: 'dataset',
-  languages: [],
+  otherLanguages: [],
+  defaultLanguage: 'en',
   recordUpdated: new Date('2022-02-01T14:12:00.000Z'),
   resourceCreated: new Date('2022-09-01T12:18:19.000Z'),
   resourceUpdated: new Date('2022-12-04T14:12:00.000Z'),
   status: 'ongoing',
   title: 'A very interesting dataset (un jeu de données très intéressant)',
   abstract: `This dataset has been established for testing purposes.`,
-  ownerOrganization: { name: 'MyOrganization' },
+  ownerOrganization: { name: 'MyOrganization', translations: {} },
   contacts: [
     {
       email: 'bob@org.net',
       position: 'developer',
-      organization: { name: 'MyOrganization' },
+      organization: { name: 'MyOrganization', translations: {} },
       role: 'point_of_contact',
       firstName: 'Bob',
       lastName: 'TheGreat',
@@ -300,9 +301,11 @@ export const simpleDatasetRecordFixture = (): DatasetRecord => ({
       name: 'Direct download',
       description: 'Dataset downloaded as a shapefile',
       mimeType: 'x-gis/x-shapefile',
+      translations: {},
     },
   ],
   updateFrequency: { per: 'month', updatedTimes: 3 },
+  translations: {},
 })
 
 export const simpleDatasetRecordAsXmlFixture =
@@ -463,3 +466,102 @@ export const simpleDatasetRecordAsXmlFixture =
         </mrl:LI_Lineage>
     </mdb:resourceLineage>
 </mdb:MD_Metadata>`
+
+export const NATIONAL_KEYWORD = {
+  key: 'http://inspire.ec.europa.eu/metadata-codelist/SpatialScope/national',
+  label: 'National',
+  description: '',
+  type: 'theme',
+}
+
+export const SAMPLE_PLACE_KEYWORDS: Keyword[] = [
+  // these keywords come from a thesaurus available locally
+  {
+    key: 'uri1',
+    label: 'Berlin',
+    thesaurus: {
+      id: '1',
+      name: 'places',
+    },
+    type: 'place',
+    bbox: [13.27, 52.63, 52.5, 13.14],
+  },
+  {
+    key: 'uri2',
+    label: 'Hamburg',
+    thesaurus: {
+      id: '1',
+      name: 'places',
+    },
+    type: 'place',
+    bbox: [10.5, 53.66, 53.53, 10],
+  },
+  // this keyword is available locally but has no extent linked to it
+  {
+    key: 'uri3',
+    label: 'Munich',
+    thesaurus: {
+      id: '1',
+      name: 'places',
+    },
+    type: 'place',
+    bbox: [11.64, 48.65, 48.51, 11.5],
+  },
+  // this keyword comes from a thesaurus not available locally
+  {
+    label: 'Europe',
+    thesaurus: {
+      id: '2',
+      name: 'otherPlaces',
+    },
+    type: 'place',
+  },
+  // this keyword has no thesaurus
+  {
+    label: 'Narnia',
+    type: 'place',
+  },
+]
+
+// records coming from XML do not have a key or a bbox in them
+export const SAMPLE_PLACE_KEYWORDS_FROM_XML = SAMPLE_PLACE_KEYWORDS.map(
+  ({ label, thesaurus, type }) => ({
+    label,
+    type,
+    ...(thesaurus && { thesaurus }),
+  })
+)
+
+export const SAMPLE_SPATIAL_EXTENTS: DatasetSpatialExtent[] = [
+  // these extents are linked to keywords known locally
+  {
+    description: 'uri1',
+    bbox: [13.5, 52.5, 14.5, 53.5],
+  },
+  {
+    description: 'uri2',
+    bbox: [10, 53.5, 11, 53.4],
+  },
+  {
+    description: 'uri4',
+    bbox: [11.5, 48.5, 11.5, 48.3],
+  },
+  // this extent is linked to a keyword not available locally
+  {
+    description: 'URI-Paris',
+    bbox: [1, 2, 3, 4],
+  },
+  // this extent is not linked to any keyword
+  {
+    bbox: [5, 6, 7, 8],
+  },
+]
+
+export const SAMPLE_RECORD = {
+  ...datasetRecordsFixture()[0],
+  spatialExtents: SAMPLE_SPATIAL_EXTENTS,
+  keywords: [
+    ...datasetRecordsFixture()[0].keywords,
+    ...SAMPLE_PLACE_KEYWORDS_FROM_XML,
+  ],
+}

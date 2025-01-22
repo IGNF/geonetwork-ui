@@ -25,6 +25,7 @@ export const editorSectionAboutFixture = () => ({
   fields: [
     editorFieldTitleFixture(),
     editorFieldAbstractFixture(),
+    editorFieldResourceCreatedFixture(),
     editorFieldResourceUpdatedFixture(),
     editorFieldRecordUpdatedFixture(),
     editorFieldUpdateFrequencyFixture(),
@@ -71,6 +72,14 @@ export const editorFieldAbstractFixture = () => ({
   },
 })
 
+export const editorFieldResourceCreatedFixture = () => ({
+  model: 'resourceCreated',
+  hidden: false,
+  formFieldConfig: {
+    labelKey: 'editor.record.form.field.resourceCreated',
+  },
+})
+
 export const editorFieldResourceUpdatedFixture = () => ({
   model: 'resourceUpdated',
   hidden: false,
@@ -84,7 +93,6 @@ export const editorFieldRecordUpdatedFixture = () => ({
   hidden: false,
   formFieldConfig: {
     labelKey: 'editor.record.form.field.recordUpdated',
-    locked: true,
   },
   value: '2024-07-16T05:18:53.000Z',
   onSaveProcess: '${dateNow()}',
@@ -129,7 +137,6 @@ export const editorFieldUniqueIdentifierFixture = () => ({
   hidden: false,
   formFieldConfig: {
     labelKey: 'editor.record.form.field.uniqueIdentifier',
-    locked: true,
   },
   value: 'accroche_velos',
 })
@@ -139,7 +146,6 @@ export const editorFieldLicenseFixture = () => ({
   hidden: false,
   formFieldConfig: {
     labelKey: 'editor.record.form.field.license',
-    locked: true,
   },
 })
 
@@ -147,6 +153,7 @@ export const editorFieldsFixture = () => [
   editorFieldTitleFixture(),
   editorFieldAbstractFixture(),
   editorFieldResourceUpdatedFixture(),
+  editorFieldResourceCreatedFixture(),
   editorFieldRecordUpdatedFixture(),
   editorFieldUpdateFrequencyFixture(),
   editorFieldTemporalExtentsFixture(),

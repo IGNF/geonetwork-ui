@@ -4,9 +4,10 @@
     [displayWithFn]="displayWithFn"
     [action]="autoCompleteAction"
     (itemSelected)="handleItemSelection($event)"
-    [preventCompleteOnSelection]="true"
-    [minCharacterCount]="0"
+    [preventCompleteOnSelection]="false"
+    [minCharacterCount]="1"
     [allowSubmit]="false"
+    [clearOnSelection]="true"
   ></gn-ui-autocomplete>
   <div class="flex gap-2 flex-wrap">
     <gn-ui-badge
@@ -15,12 +16,12 @@
       (badgeRemoveClicked)="removeKeyword(keyword)"
       >{{ keyword.label }}
 
-      <mat-icon
+      <ng-icon
         *ngIf="isPlaceWithoutExtent(keyword)"
         [title]="'editor.form.placeKeywordWithoutExtent' | translate"
-        class="material-symbols-outlined"
-        >warning</mat-icon
-      >
+        class="badge-warning"
+        name="matWarningAmberOutline"
+      ></ng-icon>
     </gn-ui-badge>
   </div>
 </div>

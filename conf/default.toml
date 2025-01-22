@@ -23,6 +23,8 @@ proxy_path = ""
 #  - ${lang2}, ${lang3}: indicates if and where the current language should be part of the login URL in language 2 or 3 letter code
 # Example to use the georchestra login page:
 # login_url = "/cas/login?service=${current_url}"
+# logout_url = "/geonetwork/signout"
+# settings_url = "/geonetwork/srv/\${lang3}/admin.console#/organization/users?userOrGroup="
 # This optional URL should point to the static html page wc-embedder.html which allows to display a web component (like chart and table) via a permalink.
 # URLs can be indicated from the root of the same server starting with a "/" or as an external URL. Be conscious of potential CORS issues when using an external URL.
 # The default location in the dockerized datahub app for example is "/datahub/wc-embedder.html".
@@ -80,8 +82,9 @@ favicon = "/catalogue/assets/img/favicon.ico"
 
 # The advanced search filters available to the user can be customized with this setting.
 # The following fields can be used for filtering: 'organization', 'format', 'publicationYear', 'standard', 'inspireKeyword', 'keyword', 'topic', 'isSpatial', 'license', 'resourceType', 'representationType', 'producerOrg', 'publisherOrg'
-# any other field will be ignored
-advanced_filters = ['publisher', 'topic', 'resourceType', 'publicationYear', 'format', 'inspireKeyword', 'isSpatial', 'license']
+# If not configured, the default values are 'organization', 'format', 'publicationYear', 'topic', 'isSpatial', 'license'
+# Note that some links in the datahub app set an 'organization' filter. So this field is needed to allow unsetting such filters.
+advanced_filters = ['topic', 'resourceType', 'publicationYear', 'format', 'inspireKeyword', 'isSpatial', 'license', 'organization']
 
 # One or several search presets can be defined here; every search preset is composed of:
 # - a name (which can be a translation key)
@@ -157,6 +160,9 @@ do_not_use_default_basemap = true
 # Each layer is defined in its own [[map_layer]] section.
 # Example:
 # [[map_layer]]
+# type = "maplibre-style"
+# styleUrl = "https://data.geopf.fr/annexes/ressources/vectorTiles/styles/PLAN.IGN/gris.json"
+# [[map_layer]]
 # type = "xyz"
 # url = "https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
 # [[map_layer]]
@@ -197,3 +203,5 @@ name = 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2'
 search.filters.title= "Affiner votre recherche"
 datahub.header.title.html="<div>Catalogue de données et de services</div>"
 datahub.header.datasets="Données et services"
+ogc.unreachable.unknown="Le flux n'est pas accessible ou est à accès restreint"
+wfs.unreachable.unknown="Le service n'est pas accessible ou est à accès restreint"

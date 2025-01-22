@@ -1,0 +1,18 @@
+<div class="flex flex-row gap-x-4 items-center">
+  <gn-ui-button
+    data-test="previousButton"
+    type="outline"
+    [disabled]="listComponent.isFirstPage"
+    (buttonClick)="listComponent.goToPrevPage()"
+  >
+    <ng-icon name="matArrowBack"></ng-icon>
+  </gn-ui-button>
+  <gn-ui-button
+    data-test="nextButton"
+    type="outline"
+    [disabled]="listComponent.isLastPage"
+    (buttonClick)="listComponent.goToNextPage()"
+  >
+    <ng-icon name="matArrowForward"></ng-icon>
+  </gn-ui-button>
+</div>

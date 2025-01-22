@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common'
 import { Component } from '@angular/core'
-import { MatIconModule } from '@angular/material/icon'
 import { Router } from '@angular/router'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
@@ -13,7 +12,7 @@ import { startWith, switchMap } from 'rxjs'
 import { RecordsCountComponent } from '../records-count/records-count.component'
 import { RecordsListComponent } from '../records-list.component'
 @Component({
-  selector: 'md-editor-my-my-draft',
+  selector: 'md-editor-my-draft',
   templateUrl: './my-draft.component.html',
   styleUrls: ['./my-draft.component.css'],
   standalone: true,
@@ -22,7 +21,6 @@ import { RecordsListComponent } from '../records-list.component'
     TranslateModule,
     RecordsListComponent,
     ButtonComponent,
-    MatIconModule,
     RecordsCountComponent,
     ResultsTableContainerComponent,
     UiElementsModule,

@@ -1,55 +1,20 @@
 import {
   ChangeDetectionStrategy,
-  Component,
   DebugElement,
-  EventEmitter,
-  Input,
   NO_ERRORS_SCHEMA,
-  Output,
 } from '@angular/core'
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
-import { ContentGhostComponent } from '@geonetwork-ui/ui/elements'
-import { Organization } from '@geonetwork-ui/common/domain/model/record'
 import { firstValueFrom, of } from 'rxjs'
 import { someOrganizationsFixture } from '@geonetwork-ui/common/fixtures'
 import { OrganisationsComponent } from './organisations.component'
 import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
-
-@Component({
-  selector: 'gn-ui-organisations-filter',
-  template: '<div></div>',
-})
-class OrganisationsFilterMockComponent {
-  @Output() sortBy = new EventEmitter<string>()
-}
-@Component({
-  selector: 'gn-ui-organisation-preview',
-  template: '<div></div>',
-})
-class OrganisationPreviewMockComponent {
-  @Input() organization: Organization
-  @Output() clickedOrganization = new EventEmitter<Organization>()
-}
-
-@Component({
-  selector: 'gn-ui-organisations-result',
-  template: '<div></div>',
-})
-class OrganisationsResultMockComponent {
-  @Input() hits: number
-  @Input() total: number
-}
-
-@Component({
-  selector: 'gn-ui-pagination',
-  template: '<div></div>',
-})
-class PaginationMockComponent {
-  @Input() currentPage: number
-  @Input() nPages: number
-  @Output() newCurrentPageEvent = new EventEmitter<number>()
-}
+import { MockBuilder } from 'ng-mocks'
+import {
+  OrganisationPreviewComponent,
+  OrganisationsFilterComponent,
+  OrganisationsResultComponent,
+} from '@geonetwork-ui/ui/catalog'
 
 class OrganisationsServiceMock {
   organisations$ = of(someOrganizationsFixture())
@@ -70,16 +35,10 @@ describe('OrganisationsComponent', () => {
   let fixture: ComponentFixture<OrganisationsComponent>
   let de: DebugElement
 
+  beforeEach(() => MockBuilder(OrganisationsComponent))
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [
-        OrganisationsComponent,
-        OrganisationsFilterMockComponent,
-        OrganisationPreviewMockComponent,
-        PaginationMockComponent,
-        OrganisationsResultMockComponent,
-        ContentGhostComponent,
-      ],
       providers: [
         {
           provide: OrganizationsServiceInterface,
@@ -105,18 +64,13 @@ describe('OrganisationsComponent', () => {
   })
 
   describe('on component init', () => {
-    let orgPreviewComponents: OrganisationPreviewMockComponent[]
-    let orgResultComponent: OrganisationsResultMockComponent
-    let paginationComponentDE: DebugElement
-    let setCurrentPageSpy
+    let orgPreviewComponents: OrganisationPreviewComponent[]
+    let orgResultComponent: OrganisationsResultComponent
     let setSortBySpy
-    beforeEach(() => {
-      paginationComponentDE = de.query(By.directive(PaginationMockComponent))
-    })
     describe('pass organisations to ui preview components', () => {
       beforeEach(() => {
         orgPreviewComponents = de
-          .queryAll(By.directive(OrganisationPreviewMockComponent))
+          .queryAll(By.directive(OrganisationPreviewComponent))
           .map((debugElement) => debugElement.componentInstance)
       })
       it('should pass first organisation (sorted by name-asc) to first ui preview component', () => {
@@ -128,30 +82,26 @@ describe('OrganisationsComponent', () => {
     })
     describe('pass params to ui pagination component', () => {
       it('should init ui pagination component with currentPage = 1', () => {
-        expect(paginationComponentDE.componentInstance.currentPage).toEqual(1)
+        expect(component.currentPage).toEqual(1)
       })
       it('should init ui pagination component with correct value for total nPages', () => {
-        expect(paginationComponentDE.componentInstance.nPages).toEqual(
+        expect(component.pagesCount).toEqual(
           Math.ceil(someOrganizationsFixture().length / ITEMS_ON_PAGE)
         )
       })
-      describe('navigate to second page (and trigger newCurrentPageEvent output)', () => {
+      describe('navigate to second page', () => {
         beforeEach(() => {
-          setCurrentPageSpy = jest.spyOn(component, 'setCurrentPage')
-          paginationComponentDE.triggerEventHandler('newCurrentPageEvent', 2)
+          component.goToPage(2)
           fixture.detectChanges()
           orgPreviewComponents = de
-            .queryAll(By.directive(OrganisationPreviewMockComponent))
+            .queryAll(By.directive(OrganisationPreviewComponent))
             .map((debugElement) => debugElement.componentInstance)
         })
         afterEach(() => {
           jest.restoreAllMocks()
         })
-        it('should call setcurrentPage() with correct value', () => {
-          expect(setCurrentPageSpy).toHaveBeenCalledWith(2)
-        })
         it('should set currentPage in ui component to correct value', () => {
-          expect(paginationComponentDE.componentInstance.currentPage).toEqual(2)
+          expect(component.currentPage).toEqual(2)
         })
         it('should pass first organisation of second page (sorted by name-asc) to first ui preview component', () => {
           expect(orgPreviewComponents[0].organization.name).toEqual(
@@ -167,12 +117,12 @@ describe('OrganisationsComponent', () => {
         it('should not change currentPage when sorting results', () => {
           component['setSortBy'](['desc', 'recordCount'])
           fixture.detectChanges()
-          expect(paginationComponentDE.componentInstance.currentPage).toEqual(2)
+          expect(component.currentPage).toEqual(2)
         })
         it('should set currentPage to 1 when filtering to display results', () => {
           component['setFilterBy']('Data')
           fixture.detectChanges()
-          expect(paginationComponentDE.componentInstance.currentPage).toEqual(1)
+          expect(component.currentPage).toEqual(1)
         })
       })
     })
@@ -180,11 +130,11 @@ describe('OrganisationsComponent', () => {
       beforeEach(() => {
         setSortBySpy = jest.spyOn(component, 'setSortBy')
         de.query(
-          By.directive(OrganisationsFilterMockComponent)
+          By.directive(OrganisationsFilterComponent)
         ).triggerEventHandler('sortBy', ['desc', 'recordCount'])
         fixture.detectChanges()
         orgPreviewComponents = de
-          .queryAll(By.directive(OrganisationPreviewMockComponent))
+          .queryAll(By.directive(OrganisationPreviewComponent))
           .map((debugElement) => debugElement.componentInstance)
       })
       it('should call setSortBy', () => {
@@ -209,7 +159,7 @@ describe('OrganisationsComponent', () => {
       describe('initial state', () => {
         beforeEach(() => {
           orgResultComponent = de.query(
-            By.directive(OrganisationsResultMockComponent)
+            By.directive(OrganisationsResultComponent)
           ).componentInstance
         })
         it('should display number of organisations found to equal all', () => {
@@ -226,7 +176,7 @@ describe('OrganisationsComponent', () => {
       describe('entering search terms', () => {
         beforeEach(() => {
           orgResultComponent = de.query(
-            By.directive(OrganisationsResultMockComponent)
+            By.directive(OrganisationsResultComponent)
           ).componentInstance
         })
         it('should ignore case and display 11 matches for "Data", "DATA" or "data"', () => {
@@ -247,7 +197,7 @@ describe('OrganisationsComponent', () => {
         orgSelected = []
         component.orgSelect.subscribe((org) => orgSelected.push(org))
         de.query(
-          By.directive(OrganisationPreviewMockComponent)
+          By.directive(OrganisationPreviewComponent)
         ).triggerEventHandler('clickedOrganisation', organisationMock)
         fixture.detectChanges()
       })
