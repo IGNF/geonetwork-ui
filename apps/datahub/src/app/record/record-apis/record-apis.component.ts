@@ -19,6 +19,7 @@ import { CommonModule } from '@angular/common'
 import { NgIcon, provideIcons } from '@ng-icons/core'
 import { matCloseOutline } from '@ng-icons/material-icons/outline'
 import { TranslateModule } from '@ngx-translate/core'
+import { FeatureRecordModule } from '@geonetwork-ui/feature/record'
 
 @Component({
   selector: 'datahub-record-apis',
@@ -34,6 +35,7 @@ import { TranslateModule } from '@ngx-translate/core'
     RecordApiFormComponent,
     NgIcon,
     TranslateModule,
+    FeatureRecordModule,
   ],
   viewProviders: [
     provideIcons({

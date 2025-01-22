@@ -47,12 +47,12 @@ export interface Field {
 }
 
 @Component({
-  selector: 'gn-ui-ign-api-dl',
-  templateUrl: './ign-api-dl.component.html',
-  styleUrls: ['./ign-api-dl.component.css'],
+  selector: 'gn-ui-gpf-api-dl',
+  templateUrl: './gpf-api-dl.component.html',
+  styleUrls: ['./gpf-api-dl.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class IgnApiDlComponent implements OnInit {
+export class GpfApiDlComponent implements OnInit {
   isOpen = false
   collapsed = false
   initialLimit = 50
@@ -119,11 +119,8 @@ export class IgnApiDlComponent implements OnInit {
 
   listFilteredProduct$ = this.apiQueryUrl$.pipe(
     mergeMap((url) => {
-      console.log(url)
-
       return this.getFilteredProduct$(url).pipe(
         map((response) => response['entry'])
-        // startWith([])
       )
     })
   )
@@ -155,15 +152,15 @@ export class IgnApiDlComponent implements OnInit {
 
   setZone(value: string) {
     if (this.bucketPromisesZone.map((choice) => choice.value).includes(value)) {
-      this.zone$.next(value)
       this.resetPage()
+      this.zone$.next(value)
     }
   }
 
   setCrs(value: string) {
     if (this.bucketPromisesCrs.map((choice) => choice.value).includes(value)) {
-      this.crs$.next(value)
       this.resetPage()
+      this.crs$.next(value)
     }
   }
 
@@ -171,8 +168,8 @@ export class IgnApiDlComponent implements OnInit {
     if (
       this.bucketPromisesFormat.map((choice) => choice.value).includes(value)
     ) {
-      this.format$.next(value)
       this.resetPage()
+      this.format$.next(value)
     }
   }
 

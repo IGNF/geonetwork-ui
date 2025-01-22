@@ -1,7 +1,4 @@
-<a
-  class="group flex justify-between card-shadow px-6 py-5 cursor-pointer"
-  rel="noopener"
->
+<div class="group flex justify-between card-shadow px-6 py-5" rel="noopener">
   <div class="grow-1 w-full overflow-hidden">
     <div
       class="text-16 text-black truncate font-title w-11/12"
@@ -16,22 +13,16 @@
         data-cy="download-format"
         >{{ format || ('downloads.format.unknown' | translate) }}</span
       >
-      <span
-        class="pl-2 inline-flex items-center text-gray-800 text-sm"
-        *ngIf="isFromWfs"
-        translate=""
-        >datahub.search.filter.generatedByWfs</span
-      >
     </div>
     <div *ngFor="let entry of liste$ | async">
       <a [href]="entry['link'][0]['href']"
         >{{ entry['link'][0]['href'].split('/').slice(-1) }}
-        <mat-icon
-          class="!w-7 !h-7 card-icon text-3xl material-symbols-outlined"
+        <ng-icon
+          class="text-primary opacity-45 mr-3"
+          name="matCloudDownloadOutline"
         >
-          cloud_download
-        </mat-icon></a
-      >
+        </ng-icon>
+      </a>
     </div>
   </div>
-</a>
+</div>

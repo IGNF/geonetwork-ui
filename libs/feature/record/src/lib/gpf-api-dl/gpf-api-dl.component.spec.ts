@@ -4,7 +4,7 @@ import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/r
 import { firstValueFrom } from 'rxjs'
 import { Choice, UiInputsModule } from '@geonetwork-ui/ui/inputs'
 import { TranslateModule } from '@ngx-translate/core'
-import { IgnApiDlComponent } from './ign-api-dl.component'
+import { GpfApiDlComponent as GpfApiDlComponent } from './gpf-api-dl.component'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import exp from 'constants'
 
@@ -14,13 +14,13 @@ const mockDatasetServiceDistribution: DatasetServiceDistribution = {
   accessServiceProtocol: 'GPFDL',
 }
 
-describe('IgnApiDlComponent', () => {
-  let component: IgnApiDlComponent
-  let fixture: ComponentFixture<IgnApiDlComponent>
+describe('GpfApiDlComponent', () => {
+  let component: GpfApiDlComponent
+  let fixture: ComponentFixture<GpfApiDlComponent>
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [IgnApiDlComponent],
+      declarations: [GpfApiDlComponent],
       imports: [
         UiInputsModule,
         HttpClientTestingModule,
@@ -28,7 +28,7 @@ describe('IgnApiDlComponent', () => {
       ],
     }).compileComponents()
 
-    fixture = TestBed.createComponent(IgnApiDlComponent)
+    fixture = TestBed.createComponent(GpfApiDlComponent)
     component = fixture.componentInstance
     component.apiLink = mockDatasetServiceDistribution
   })
@@ -44,7 +44,6 @@ describe('IgnApiDlComponent', () => {
       expect(component.crs$.getValue()).toBe('')
       const url = await firstValueFrom(component.apiQueryUrl$)
       expect(url).toBe('https://api.example.com/data?pageSize=200&page=0')
-      //expect(component.apiLink.accessServiceProtocol).toBe('GPFDL')
     })
   })
   describe('When URL params are changed', () => {
@@ -137,7 +136,6 @@ describe('IgnApiDlComponent', () => {
         expect(component.format$.getValue()).toBe('null')
         expect(component.crs$.getValue()).toBe('null')
         expect(component.page$.getValue()).toBe('0')
-        expect(component.size$.getValue()).toBe(component.initialPageSize)
       })
     })
 

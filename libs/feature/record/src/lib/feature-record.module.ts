@@ -12,14 +12,18 @@ import {
   METADATA_VIEW_FEATURE_STATE_KEY,
   reducer,
 } from './state/mdview.reducer'
+import { GpfApiDlComponent } from './gpf-api-dl/gpf-api-dl.component'
+import { GpfApiDlProduitComponent } from './gpf-api-dl-produit/gpf-api-dl-produit.component'
 import { MatTabsModule } from '@angular/material/tabs'
 import { UiWidgetsModule } from '@geonetwork-ui/ui/widgets'
 import { TranslateModule } from '@ngx-translate/core'
 import { FeatureCatalogModule } from '@geonetwork-ui/feature/catalog'
 import { TableComponent } from '@geonetwork-ui/ui/dataviz'
 import { NgIconsModule, provideNgIconsConfig } from '@ng-icons/core'
+import { DropdownSelectorComponent } from '@geonetwork-ui/ui/inputs'
 
 @NgModule({
+  declarations: [GpfApiDlComponent, GpfApiDlProduitComponent],
   imports: [
     CommonModule,
     StoreModule.forFeature(METADATA_VIEW_FEATURE_STATE_KEY, reducer),
@@ -34,6 +38,7 @@ import { NgIconsModule, provideNgIconsConfig } from '@ng-icons/core'
     TranslateModule,
     TableComponent,
     NgIconsModule,
+    DropdownSelectorComponent,
   ],
   providers: [
     MdViewFacade,
@@ -41,5 +46,6 @@ import { NgIconsModule, provideNgIconsConfig } from '@ng-icons/core'
       size: '1.5em',
     }),
   ],
+  exports: [GpfApiDlComponent],
 })
-export class FeatureRecordModule { }
+export class FeatureRecordModule {}
