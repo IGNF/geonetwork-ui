@@ -226,7 +226,7 @@ describe('dataset pages', () => {
             .children('div')
             .should('have.length', 4)
         })
-        it('should display the creation date, the publication date, the frequency, the languages and the temporal extent', () => {
+        it('should display the resource creation date (for resource), the publication date (for resource), the frequency, the languages and the temporal extent', () => {
           cy.get('datahub-record-metadata')
             .find('[id="about"]')
             .find('gn-ui-expandable-panel')
@@ -239,7 +239,33 @@ describe('dataset pages', () => {
             .children('div')
             .eq(2)
             .children('div')
-            .should('have.length', 5)
+            .as('aboutContent')
+          cy.get('@aboutContent').should('have.length', 5)
+          cy.get('@aboutContent')
+            .eq(0)
+            .children('p')
+            .eq(1)
+            .should('contain.text', '9/22/2020')
+          cy.get('@aboutContent')
+            .eq(1)
+            .children('p')
+            .eq(1)
+            .should('contain.text', '3/17/2024')
+        })
+        it('should not display the same text twice in the constraints', () => {
+          // this dataset has the same text for the license and the legal constraints
+          cy.visit('/dataset/9e1ea778-d0ce-4b49-90b7-37bc0e448300')
+          cy.get('datahub-record-metadata')
+            .find('gn-ui-expandable-panel')
+            .first()
+            .click()
+          cy.get('datahub-record-metadata')
+            .find('gn-ui-expandable-panel')
+            .first()
+            .children('div')
+            .eq(1)
+            .children('div')
+            .should('have.length', 1)
         })
       })
     })
@@ -300,12 +326,37 @@ describe('dataset pages', () => {
         })
         cy.reload()
       })
-
-      it('should display quality widget', () => {
-        cy.get('gn-ui-metadata-quality gn-ui-progress-bar')
-          .eq(0)
-          .should('have.attr', 'ng-reflect-value', 87)
-        cy.screenshot({ capture: 'fullPage' })
+      describe('Score is less than 100%', () => {
+        it('should display the score', () => {
+          cy.get('gn-ui-metadata-quality gn-ui-progress-bar')
+            .eq(0)
+            .should('have.attr', 'ng-reflect-value', 87)
+          cy.screenshot({ capture: 'fullPage' })
+        })
+        it('should not check all the criteria', () => {
+          cy.get('gn-ui-metadata-quality').realHover()
+          cy.get('gn-ui-metadata-quality-item')
+            .find('ng-icon')
+            .eq(4)
+            .should('have.attr', 'ng-reflect-name', 'matWarningAmber')
+        })
+      })
+      describe('Score is 100%', () => {
+        beforeEach(() => {
+          cy.visit('/dataset/6d0bfdf4-4e94-48c6-9740-3f9facfd453c')
+        })
+        it('should display the score', () => {
+          cy.get('gn-ui-metadata-quality gn-ui-progress-bar')
+            .eq(0)
+            .should('have.attr', 'ng-reflect-value', 100)
+        })
+        it('should check all the criteria if score is 100%', () => {
+          cy.get('gn-ui-metadata-quality').realHover()
+          cy.get('gn-ui-metadata-quality-item')
+            .find('ng-icon')
+            .eq(4)
+            .should('have.attr', 'ng-reflect-name', 'matCheck')
+        })
       })
     })
   })
@@ -722,7 +773,7 @@ describe('api form', () => {
       cy.get('@secondInput').type('87')
 
       cy.get('@apiForm').find('gn-ui-dropdown-selector').as('dropdown')
-      cy.get('@dropdown').eq(0).selectDropdownOption('geojson')
+      cy.get('@dropdown').eq(0).selectDropdownOption('application/geo+json')
 
       cy.get('@apiForm')
         .find('gn-ui-copy-text-button')
@@ -743,7 +794,7 @@ describe('api form', () => {
         .find('gn-ui-copy-text-button')
         .find('input')
         .invoke('val')
-        .should('include', 'f=json&limit=-1')
+        .should('include', 'f=application%2Fjson&limit=-1')
     })
     it('should close the panel on click', () => {
       cy.get('gn-ui-record-api-form').prev().find('button').click()

@@ -3,6 +3,8 @@ import { DataService } from './data.service'
 import { openDataset } from '@geonetwork-ui/data-fetcher'
 import { PROXY_PATH } from '@geonetwork-ui/util/shared'
 import { lastValueFrom } from 'rxjs'
+import { MockProvider } from 'ng-mocks'
+import { Location } from '@angular/common'
 
 const newEndpointCall = jest.fn()
 
@@ -50,6 +52,13 @@ jest.mock('@camptocamp/ogc-client', () => ({
                 ? ['csv', 'xls', 'gml']
                 : ['csv', 'xls', 'json', 'gml'],
           }
+    }
+    getFeatureTypeFull(name) {
+      return name.indexOf('missing') > -1
+        ? Promise.resolve(null)
+        : Promise.resolve({
+            objectCount: 100,
+          })
     }
     getFeatureTypes() {
       if (this.url.indexOf('unique-feature-type') > -1) {
@@ -393,6 +402,65 @@ describe('DataService', () => {
       })
     })
 
+    describe('#getWfsFeatureCount', () => {
+      it('should return the feature count when feature type is found', async () => {
+        const wfsUrl = 'http://local/wfs'
+        const featureTypeName = 'validFeatureType'
+        const count = await lastValueFrom(
+          service.getWfsFeatureCount(wfsUrl, featureTypeName)
+        )
+        expect(count).toBe(100)
+      })
+
+      it('should throw an error when feature type is not found', async () => {
+        const wfsUrl = 'http://local/wfs'
+        const featureTypeName = 'missingFeatureType'
+        try {
+          await lastValueFrom(
+            service.getWfsFeatureCount(wfsUrl, featureTypeName)
+          )
+        } catch (e) {
+          expect(e.message).toBe('wfs.featuretype.notfound')
+        }
+      })
+
+      it('should throw a relevant error when WFS is unreachable (CORS)', async () => {
+        const wfsUrl = 'http://error.cors/wfs'
+        const featureTypeName = 'validFeatureType'
+        try {
+          await lastValueFrom(
+            service.getWfsFeatureCount(wfsUrl, featureTypeName)
+          )
+        } catch (e) {
+          expect(e.message).toBe('wfs.unreachable.cors')
+        }
+      })
+
+      it('should throw a relevant error when WFS is unreachable (HTTP error)', async () => {
+        const wfsUrl = 'http://error.http/wfs'
+        const featureTypeName = 'validFeatureType'
+        try {
+          await lastValueFrom(
+            service.getWfsFeatureCount(wfsUrl, featureTypeName)
+          )
+        } catch (e) {
+          expect(e.message).toBe('wfs.unreachable.http')
+        }
+      })
+
+      it('should throw a relevant error when WFS is unreachable (unknown)', async () => {
+        const wfsUrl = 'http://error/wfs'
+        const featureTypeName = 'validFeatureType'
+        try {
+          await lastValueFrom(
+            service.getWfsFeatureCount(wfsUrl, featureTypeName)
+          )
+        } catch (e) {
+          expect(e.message).toBe('wfs.unreachable.unknown')
+        }
+      })
+    })
+
     describe('#getGeoJsonDownloadUrlFromWfs', () => {
       describe('WFS with GeoJSON support', () => {
         it('returns an url', async () => {
@@ -637,6 +705,9 @@ describe('DataService', () => {
             provide: PROXY_PATH,
             useValue: 'http://proxy.local/?url=',
           },
+          MockProvider(Location, {
+            path: () => '/',
+          }),
         ],
       })
       service = TestBed.inject(DataService)

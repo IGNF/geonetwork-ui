@@ -6,7 +6,7 @@ import {
   ViewChild,
 } from '@angular/core'
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
-import { MdViewFacade } from '@geonetwork-ui/feature/record'
+import { GpfApiDlComponent, MdViewFacade } from '@geonetwork-ui/feature/record'
 import {
   CarouselComponent,
   PreviousNextButtonsComponent,
@@ -34,6 +34,7 @@ import { TranslateModule } from '@ngx-translate/core'
     RecordApiFormComponent,
     NgIcon,
     TranslateModule,
+    GpfApiDlComponent,
   ],
   viewProviders: [
     provideIcons({

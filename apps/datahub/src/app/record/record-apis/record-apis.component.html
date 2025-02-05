@@ -23,7 +23,7 @@
     class="w-[320px]"
     [ngClass]="{
       'card-shadow': link !== selectedApiLink || !selectedApiLink,
-      'bg-neutral-100': link === selectedApiLink
+      'bg-neutral-100': link === selectedApiLink,
     }"
     (openRecordApiForm)="openRecordApiForm($event)"
   >
@@ -40,10 +40,14 @@
       <div class="flex flex-wrap justify-between sm:mb-2 ng-star-inserted">
         <p
           class="text-[21px] text-title font-title"
-          *ngIf="selectedApiLink?.accessServiceProtocol !== 'GPFDL'"
+          *ngIf="selectedApiLink?.accessServiceProtocol"
           translate
         >
-          record.metadata.api.form.title
+          {{
+            selectedApiLink?.accessServiceProtocol === 'GPFDL'
+              ? 'record.metadata.api.form.title.gpf'
+              : 'record.metadata.api.form.title'
+          }}
         </p>
         <p
           class="text-[21px] text-title font-title"
@@ -71,12 +75,12 @@
         </button>
       </div>
 
-      <gn-ui-ign-api-dl
-        *ngIf="displayApiIgnForm"
+      <gn-ui-gpf-api-dl
+        *ngIf="selectedApiLink?.accessServiceProtocol === 'GPFDL'"
         [apiLink]="selectedApiLink"
-      ></gn-ui-ign-api-dl>
+      ></gn-ui-gpf-api-dl>
       <gn-ui-record-api-form
-        *ngIf="!displayApiIgnForm"
+        *ngIf="selectedApiLink?.accessServiceProtocol !== 'GPFDL'"
         [apiLink]="selectedApiLink"
       ></gn-ui-record-api-form>
     </div>

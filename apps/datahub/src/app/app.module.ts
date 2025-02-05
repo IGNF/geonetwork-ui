@@ -36,8 +36,7 @@ import {
 import { UiInputsModule } from '@geonetwork-ui/ui/inputs'
 import { UiLayoutModule } from '@geonetwork-ui/ui/layout'
 import { UiSearchModule } from '@geonetwork-ui/ui/search'
-import { IgnApiDlComponent } from '@geonetwork-ui/feature/record'
-
+import { GpfApiDlComponent } from '@geonetwork-ui/feature/record'
 import {
   getGlobalConfig,
   getMapContextLayerFromConfig,
@@ -90,6 +89,7 @@ import { MatTabsModule } from '@angular/material/tabs'
 import { UiWidgetsModule } from '@geonetwork-ui/ui/widgets'
 import { LetDirective } from '@ngrx/component'
 import { OrganizationPageComponent } from './organization/organization-page/organization-page.component'
+
 import {
   BASEMAP_LAYERS,
   DO_NOT_USE_DEFAULT_BASEMAP,
@@ -104,6 +104,7 @@ import {
   matStarOutline,
 } from '@ng-icons/material-icons/outline'
 import { NgIconsModule, provideNgIconsConfig } from '@ng-icons/core'
+import { MAX_FEATURE_COUNT } from './record/record-data-preview/record-data-preview.component'
 import { MatButtonToggleModule } from '@angular/material/button-toggle'
 import { MatIconModule } from '@angular/material/icon'
 import { DsfrHeaderModule } from '@edugouvfr/ngx-dsfr'
@@ -144,7 +145,9 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
         },
       }
     ),
-    !environment.production ? StoreDevtoolsModule.instrument() : [],
+    !environment.production
+      ? StoreDevtoolsModule.instrument({ connectInZone: true })
+      : [],
     EffectsModule.forRoot(),
     UtilI18nModule,
     TranslateModule.forRoot(TRANSLATE_WITH_OVERRIDES_CONFIG),
@@ -265,6 +268,10 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
       }),
     },
     {
+      provide: MAX_FEATURE_COUNT,
+      useFactory: () => getOptionalMapConfig()?.MAX_FEATURE_COUNT,
+    },
+    {
       provide: EXTERNAL_VIEWER_URL_TEMPLATE,
       useFactory: () => getOptionalMapConfig()?.EXTERNAL_VIEWER_URL_TEMPLATE,
     },
@@ -276,7 +283,10 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
   bootstrap: [AppComponent],
 })
 export class AppModule {
-  constructor(router: Router, @Inject(DOCUMENT) private document: Document) {
+  constructor(
+    router: Router,
+    @Inject(DOCUMENT) private document: Document
+  ) {
     ThemeService.applyCssVariables(
       getThemeConfig().PRIMARY_COLOR,
       getThemeConfig().SECONDARY_COLOR,

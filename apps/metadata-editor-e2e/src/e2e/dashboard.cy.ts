@@ -222,7 +222,7 @@ describe('dashboard (authenticated)', () => {
         cy.get('md-editor-dashboard-menu').find('a').eq(3).click()
         cy.get('gn-ui-results-table')
           .find('[data-cy="table-row"]')
-          .should('have.length', '10')
+          .should('have.length', '11')
       })
       it('should sort the records by title', () => {
         cy.get('md-editor-dashboard-menu').find('a').eq(3).click()
@@ -398,7 +398,7 @@ describe('dashboard (authenticated)', () => {
           cy.get('gn-ui-search-filters-summary')
             .find('[data-cy="filterSummaryLabel"]')
             .invoke('text')
-            .should('eq', 'Modified by: ')
+            .should('eq', 'Editor: ')
         })
         it('should display the badge for a selected user', () => {
           cy.get('gn-ui-search-filters-summary')
@@ -442,7 +442,7 @@ describe('dashboard (authenticated)', () => {
           cy.get('gn-ui-search-filters-summary')
             .find('[data-cy="filterSummaryLabel"]')
             .invoke('text')
-            .should('eq', 'Modified on: ')
+            .should('eq', 'Updated: ')
         })
         it('should display the badge for the selected date range', () => {
           cy.get('gn-ui-search-filters-summary')
@@ -498,7 +498,7 @@ describe('dashboard (authenticated)', () => {
           cy.get('gn-ui-search-filters-summary')
             .find('[data-cy="filterSummaryLabel"]')
             .invoke('text')
-            .should('eq', 'Modified on: ')
+            .should('eq', 'Updated: ')
         })
         it('should display the badge for the selected date range', () => {
           cy.get('gn-ui-search-filters-summary')
@@ -523,9 +523,7 @@ describe('dashboard (authenticated)', () => {
     it('should navigate to the account settings page', () => {
       cy.visit('/catalog/search')
       cy.get('md-editor-sidebar')
-        .find('gn-ui-button')
-        .first()
-        .find('a')
+        .find('[data-cy=account-link]')
         .invoke('removeAttr', 'target')
         .click()
       cy.url().should('include', '/admin.console')
@@ -546,10 +544,14 @@ describe('Logging in and out', () => {
     beforeEach(() => {
       cy.login('admin', 'admin', false)
       cy.visit('/catalog/search')
+      // wait for results
+      cy.get('gn-ui-results-table')
+        .find('[data-cy=table-row]')
+        .should('have.length.above', 1)
     })
     it('logs out the user', () => {
       cy.get('gn-ui-avatar').should('be.visible')
-      cy.get('md-editor-sidebar').find('gn-ui-button').eq(1).click()
+      cy.get('md-editor-sidebar').find('[data-cy=logout-button]').click()
       cy.url().should('include', '/catalog.signin?redirect=')
       cy.get('gn-ui-avatar').should('not.exist')
     })

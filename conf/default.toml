@@ -15,7 +15,7 @@ proxy_path = ""
 # Use ISO 639-2/B (https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) format to indicate the language of the metadata.
 # Setting to "current" will use the current language of the User Interface.
 # If not indicated, a wildcard is used and no language preference is applied for the search.
-# metadata_language = "current"
+metadata_language = "fr"
 # This optional URL should point to the login page that allows authentication to the datahub.
 # If not indicated, the default geonetwork login page is used.
 # The following three placeholders can be part of this URL:
@@ -129,6 +129,10 @@ enabled = true
 # Expressed in the map view projection (EPSG:3857)
 # max_extent = [-418263.418776, 5251529.591305, 961272.067714, 6706890.609855]
 
+# Optional; Will remove WFS from map layers if its features exceed the indicated number.
+# Data preview chart and table will be hidden in this case.
+# max_feature_count = 5000
+
 # Optional; URL template enabling to open map layers in an external viewer; if set, displays a button next to the map's layer drop down
 # The template must include the following placeholders, which allow the datahub to inject the correct values when adding a layer to a viewer:
 # ${service_url}: URL of the OWS or geojson file
@@ -205,3 +209,4 @@ datahub.header.title.html="<div>Catalogue de données et de services</div>"
 datahub.header.datasets="Données et services"
 ogc.unreachable.unknown="Le flux n'est pas accessible ou est à accès restreint"
 wfs.unreachable.unknown="Le service n'est pas accessible ou est à accès restreint"
+record.metadata.api="API et téléchargements"

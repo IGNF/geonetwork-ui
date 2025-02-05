@@ -27,6 +27,7 @@ import {
 import { matchProtocol } from '../common/distribution.mapper'
 import { Thesaurus } from './types'
 import { LANG_3_TO_2_MAPPER, LangService } from '@geonetwork-ui/util/i18n'
+import { getResourceType, getReuseType } from '../common/resource-types'
 
 type ESResponseSource = SourceWithUnknownProps
 
@@ -127,6 +128,12 @@ export class Gn4FieldMapper {
         getFirstValue(selectField<string>(source, 'revisionDateForResource'))
       ),
     }),
+    publicationDateForResource: (output, source) => ({
+      ...output,
+      resourcePublished: toDate(
+        selectField<string>(source, 'publicationDateForResource')
+      ),
+    }),
     createDate: (output, source) => ({
       ...output,
       recordCreated: toDate(selectField<string>(source, 'createDate')),
@@ -135,11 +142,9 @@ export class Gn4FieldMapper {
       ...output,
       recordUpdated: toDate(selectField<string>(source, 'changeDate')),
     }),
-    publicationDateForResource: (output, source) => ({
+    publicationDate: (output, source) => ({
       ...output,
-      recordPublished: toDate(
-        selectField<string>(source, 'publicationDateForResource')
-      ),
+      recordPublished: toDate(selectField<string>(source, 'publicationDate')),
     }),
     resourceLanguage: (output, source) => {
       const langList = getAsArray(
@@ -286,15 +291,14 @@ export class Gn4FieldMapper {
         },
         output
       ),
-    cl_hierarchyLevel: (output, source) => {
-      const hierarchyLevel = selectField(
-        getFirstValue(selectField(source, 'cl_hierarchyLevel')),
-        'key'
-      )
-      const kind = hierarchyLevel === 'service' ? 'service' : 'dataset'
+    resourceType: (output, source) => {
+      const resourceType = getFirstValue(selectField(source, 'resourceType'))
+      const kind = getResourceType(resourceType)
+      const reuseType = getReuseType(resourceType)
       return {
         ...output,
         kind,
+        ...(reuseType && { reuseType }),
       } as CatalogRecord
     },
     geom: (output, source) => {
@@ -378,16 +382,6 @@ export class Gn4FieldMapper {
       ...output,
       [outputField]: outputArray,
     }
-    // avoid legal constraints being duplicates of licenses
-    if (
-      'legalConstraints' in result &&
-      (type === 'legal' || type === 'license')
-    ) {
-      result.legalConstraints = result.legalConstraints.filter(
-        (constraint) =>
-          !output.licenses?.some((license) => license.text === constraint.text)
-      )
-    }
     return result
   }
 
@@ -405,7 +399,7 @@ export class Gn4FieldMapper {
       /^OGC:WFS/.test(protocol) ||
       /^OGC:WMTS/.test(protocol) ||
       /ogc\W*api\W*features/i.test(protocol) ||
-      /^WWW:DOWNLOAD-/.test(protocol)
+      (/^WWW:DOWNLOAD-/.test(protocol) && /data.geopf.fr/.test(url)) // TO DO : change with the good protocol when decided
     ) {
       return 'service'
     }

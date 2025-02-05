@@ -1,7 +1,9 @@
-import 'jest-preset-angular/setup-jest'
+import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone'
 import {
   elasticFullResponseFixture,
   elasticHitsOnlyFixture,
+  elasticServiceMetadataHistsFixture,
+  elasticReuseMetadataHitsFixture,
 } from '@geonetwork-ui/common/fixtures'
 import { Gn4Converter } from './gn4.converter'
 import { of } from 'rxjs'
@@ -14,6 +16,8 @@ import {
 } from '@geonetwork-ui/common/domain/model/record'
 import { TranslateService } from '@ngx-translate/core'
 import { Gn4Record } from '../gn4/types/metadata.model'
+
+setupZoneTestEnv()
 
 class MetadataUrlServiceMock {
   translate = undefined
@@ -857,7 +861,15 @@ describe('Gn4Converter', () => {
 
         it('parses the legal constraints', async () => {
           const record = (await service.readRecord(hit)) as DatasetRecord
-          expect(record.legalConstraints).toEqual([])
+          expect(record.legalConstraints).toEqual([
+            {
+              text: 'Öffentlich zugängliche Geobasisdaten: Zugangsberechtigungsstufe A (nach GeoIV, Art. 21).',
+              url: new URL('https://registry.geocat.ch/use-limitation/levelA'),
+            },
+            {
+              text: 'Es gelten die Nutzungsbedingungen für Geodaten des Kantons Wallis (https://www.vs.ch/de/web/guest/rechtliches).',
+            },
+          ])
         })
 
         it('parses the security constraints', async () => {
@@ -1013,6 +1025,15 @@ describe('Gn4Converter', () => {
             legalConstraints: [
               {
                 text: "Restriction légale d'utilisation à préciser",
+              },
+              {
+                text: 'Pas de restriction d’accès public',
+                url: new URL(
+                  'http://inspire.ec.europa.eu/metadatacodelist/LimitationsOnPublicAccess/noLimitations'
+                ),
+              },
+              {
+                text: 'Licence Ouverte version 2.0  https://www.etalab.gouv.fr/wp-content/uploads/2017/04/ETALAB-Licence-Ouverte-v2.0.pdf',
               },
             ],
             securityConstraints: [],
@@ -1628,9 +1649,10 @@ describe('Gn4Converter', () => {
             ],
             recordCreated: new Date('2021-10-05T12:48:57.678Z'),
             recordUpdated: new Date('2021-10-05T12:48:57.678Z'),
-            recordPublished: new Date('2021-04-01T00:00:00.000Z'),
+            recordPublished: new Date('2021-11-05T12:48:57.678Z'),
             resourceCreated: new Date('2012-01-01T00:00:00.000Z'),
             resourceUpdated: new Date('2021-12-13T00:00:00.000Z'),
+            resourcePublished: new Date('2021-04-01T00:00:00.000Z'),
             status: 'ongoing',
             topics: ['Installations de suivi environnemental', 'Océans'],
             title: 'Surval - Données par paramètre',
@@ -1909,7 +1931,14 @@ describe('Gn4Converter', () => {
             ),
             defaultLanguage: 'de',
             otherLanguages: ['fr', 'it'],
-            legalConstraints: [],
+            legalConstraints: [
+              {
+                text: 'Opendata BY: Freie Nutzung. Quellenangabe ist Pflicht.',
+                url: new URL(
+                  'https://opendata.swiss/en/terms-of-use/#terms_by'
+                ),
+              },
+            ],
             licenses: [
               {
                 text: 'Opendata BY: Freie Nutzung. Quellenangabe ist Pflicht.',
@@ -2051,6 +2080,1308 @@ describe('Gn4Converter', () => {
             uniqueIdentifier: '8698bf0b-fceb-4f0f-989b-111e7c4af0a4',
             updateFrequency: 'asNeeded',
           } as CatalogRecord)
+        })
+      })
+
+      describe('full record service metadata Wallonie', () => {
+        it('builds a complete record object', async () => {
+          const record = await service.readRecord(
+            elasticServiceMetadataHistsFixture().hits.hits[0] as Gn4Record
+          )
+          expect(record).toEqual({
+            kind: 'service',
+            status: null,
+            lineage: null,
+            recordUpdated: new Date('2024-10-15T07:37:39.350Z'),
+            recordPublished: null,
+            ownerOrganization: {
+              name: 'My Organization',
+              website: new URL('http://my.org/'),
+            },
+            licenses: [
+              {
+                text: 'No limitations to public access',
+                url: new URL(
+                  'http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations'
+                ),
+              },
+              {
+                text: "Aucune contrainte d'utilisation ne s'applique",
+              },
+            ],
+            legalConstraints: [
+              {
+                text: 'No limitations to public access',
+                url: new URL(
+                  'http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations'
+                ),
+              },
+              {
+                text: "Aucune contrainte d'utilisation ne s'applique",
+              },
+            ],
+            securityConstraints: [],
+            otherConstraints: [
+              {
+                text: "Aucune condition ne s'applique",
+              },
+            ],
+            contacts: [
+              {
+                lastName: '',
+                organization: {
+                  name: 'Gestion et valorisation de la donnée (SPW - Secrétariat général - SPW Digital - Département Données transversales - Gestion et valorisation de la donnée)',
+                },
+                email: 'helpdesk.carto@spw.wallonie.be',
+                role: 'point_of_contact',
+              },
+            ],
+            contactsForResource: [
+              {
+                lastName: '',
+                organization: {
+                  name: 'Helpdesk carto du SPW (SPW - Secrétariat général - SPW Digital - Département Données transversales - Gestion et valorisation de la donnée)',
+                },
+                email: 'helpdesk.carto@spw.wallonie.be',
+                role: 'point_of_contact',
+              },
+              {
+                lastName: '',
+                organization: {
+                  name: 'Gestion et valorisation de la donnée (SPW - Secrétariat général - SPW Digital - Département Données transversales - Gestion et valorisation de la donnée)',
+                },
+                email: 'helpdesk.carto@spw.wallonie.be',
+                role: 'custodian',
+              },
+              {
+                lastName: '',
+                organization: {
+                  name: 'Service public de Wallonie (SPW)',
+                  website: new URL('https://geoportail.wallonie.be/'),
+                },
+                email: '',
+                role: 'owner',
+              },
+            ],
+            keywords: [
+              {
+                label: 'métadonnées',
+                type: 'other',
+              },
+              {
+                label: 'ISO',
+                type: 'other',
+              },
+              {
+                label: 'CSW',
+                type: 'other',
+              },
+              {
+                label: '19115',
+                type: 'other',
+              },
+              {
+                label: '19139',
+                type: 'other',
+              },
+              {
+                label: 'description',
+                type: 'other',
+              },
+              {
+                label: 'MobilityDCAT',
+                type: 'other',
+              },
+              {
+                label: 'DCAT',
+                type: 'other',
+              },
+              {
+                label: 'MMTIS',
+                type: 'other',
+              },
+              {
+                label: 'SRTI',
+                type: 'other',
+              },
+              {
+                label: 'ITS',
+                type: 'other',
+              },
+              {
+                label: 'NAP',
+                type: 'other',
+              },
+              {
+                label: 'transportdata',
+                type: 'other',
+              },
+              {
+                label: 'RTTI',
+                type: 'other',
+              },
+              {
+                label: 'SSTP',
+                type: 'other',
+              },
+              {
+                label: 'Régional',
+                type: 'theme',
+                key: 'http://inspire.ec.europa.eu/metadata-codelist/SpatialScope/regional',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.httpinspireeceuropaeumetadatacodelistSpatialScope-SpatialScope',
+                  name: 'Champ géographique',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.httpinspireeceuropaeumetadatacodelistSpatialScope-SpatialScope'
+                  ),
+                },
+              },
+              {
+                label: 'Service de catalogue',
+                type: 'theme',
+                key: 'http://inspire.ec.europa.eu/metadata-codelist/SpatialDataServiceCategory/infoCatalogueService',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.httpinspireeceuropaeumetadatacodelistSpatialDataServiceCategory-SpatialDataServiceCategory',
+                  name: 'Classification of spatial data services',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.httpinspireeceuropaeumetadatacodelistSpatialDataServiceCategory-SpatialDataServiceCategory'
+                  ),
+                },
+              },
+              {
+                label: 'transport',
+                type: 'theme',
+                key: 'http://www.eionet.europa.eu/gemet/theme/37',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.gemet-theme',
+                  name: 'GEMET themes',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.gemet-theme'
+                  ),
+                },
+              },
+              {
+                label: 'Reporting INSPIRENO',
+                type: 'theme',
+                key: 'https://metawal.wallonie.be/thesaurus/infrasig#ReportingINSPIRENO',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.infraSIG',
+                  name: 'Mots-clés InfraSIG',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.infraSIG'
+                  ),
+                },
+              },
+              {
+                label: 'Mobilité (autre)',
+                type: 'theme',
+                key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#SubThemesGeoportailWallon/3099',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.Themes_geoportail_wallon_hierarchy',
+                  name: 'Thèmes du géoportail wallon',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.Themes_geoportail_wallon_hierarchy'
+                  ),
+                },
+              },
+              {
+                label: 'Données de base (autre)',
+                type: 'theme',
+                key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#SubThemesGeoportailWallon/5099',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.Themes_geoportail_wallon_hierarchy',
+                  name: 'Thèmes du géoportail wallon',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.Themes_geoportail_wallon_hierarchy'
+                  ),
+                },
+              },
+              {
+                label: 'Mobilité',
+                type: 'theme',
+                key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#ThemesGeoportailWallon/30',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.Themes_geoportail_wallon_hierarchy',
+                  name: 'Thèmes du géoportail wallon',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.Themes_geoportail_wallon_hierarchy'
+                  ),
+                },
+              },
+              {
+                label: 'Données de base',
+                type: 'theme',
+                key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#ThemesGeoportailWallon/50',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.Themes_geoportail_wallon_hierarchy',
+                  name: 'Thèmes du géoportail wallon',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.Themes_geoportail_wallon_hierarchy'
+                  ),
+                },
+              },
+            ],
+            topics: ['Infrastructures de transport'],
+            spatialExtents: [
+              {
+                description: 'Région wallonne',
+                geometry: {
+                  type: 'Polygon',
+                  coordinates: [
+                    [
+                      [2.75, 49.45],
+                      [6.5, 49.45],
+                      [6.5, 50.85],
+                      [2.75, 50.85],
+                      [2.75, 49.45],
+                    ],
+                  ],
+                },
+              },
+            ],
+            temporalExtents: [],
+            overviews: [
+              {
+                url: new URL(
+                  'https://metawal.wallonie.be/geonetwork/srv/api/records/fe1c1a3d-c75b-435c-a1d1-48426818f54d/attachments/echangeur.png'
+                ),
+              },
+            ],
+            defaultLanguage: 'fr',
+            otherLanguages: [],
+            title: 'Service OGC API Records du catalogue NAP-ITS-Wallonia',
+            resourceUpdated: new Date('2023-12-17T23:00:00.000Z'),
+            resourcePublished: new Date('2023-12-17T23:00:00.000Z'),
+            abstract:
+              "Point d'accès OGC API Records du catalogue NAP-ITS-Wallonia contenant la description des données régionales de mobilité telles que demandé par la législation sur les systèmes de transport intelligents.",
+            extras: {
+              isOpenData: false,
+              ownerInfo: 'vbombaerts_admin|Admin|Vincent|Administrator',
+              isPublishedToAll: true,
+              id: '53583',
+              favoriteCount: 0,
+              catalogUuid: 'metawal.wallonie.be',
+            },
+            onlineResources: [
+              {
+                name: "Point d'accès OGC API Records pour NAP-ITS-Wallonia",
+                description:
+                  "Point d'accès OGC API Records pour NAP-ITS-Wallonia.",
+                type: 'link',
+                url: new URL(
+                  'https://metawal.wallonie.be/geonetwork/api/collections/napits'
+                ),
+              },
+            ],
+            uniqueIdentifier: 'fe1c1a3d-c75b-435c-a1d1-48426818f54d',
+            landingPage: new URL(
+              'http://my.catalog.org/metadata/fe1c1a3d-c75b-435c-a1d1-48426818f54d'
+            ),
+            recordCreated: new Date('2023-12-18T12:25:26.464Z'),
+          })
+        })
+      })
+
+      describe('full record service metadata geo2france', () => {
+        it('builds a complete record object', async () => {
+          const record = await service.readRecord(
+            elasticServiceMetadataHistsFixture().hits.hits[1] as Gn4Record
+          )
+
+          expect(record).toEqual({
+            kind: 'service',
+            status: null,
+            lineage:
+              "Localisation par un ponctuel de l'ouvrage de dépollution a partir d'un fichier csv collecté sur le site du ministère : http://assainissement.developpement-durable.gouv.fr/. \nLa table des ponctuels comprend désormais tous les points de localisation des stations d'épuration calculés à partir des centroïdes de leur emprise. \nFréquence de mise à jour : annuel. \nQualité des données : Variable selon le type de saisie.",
+            recordUpdated: new Date('2024-05-29T11:58:54.326Z'),
+            recordPublished: null,
+            ownerOrganization: {
+              name: 'My Organization',
+              website: new URL('http://my.org/'),
+            },
+            licenses: [
+              {
+                text: 'No limitations on public access',
+                url: new URL(
+                  'http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations'
+                ),
+              },
+              {
+                text: 'No conditions apply to access and use',
+                url: new URL(
+                  'http://inspire.ec.europa.eu/metadata-codelist/ConditionsApplyingToAccessAndUse/noConditionsApply'
+                ),
+              },
+            ],
+            legalConstraints: [
+              {
+                text: 'No limitations on public access',
+                url: new URL(
+                  'http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations'
+                ),
+              },
+              {
+                text: 'No conditions apply to access and use',
+                url: new URL(
+                  'http://inspire.ec.europa.eu/metadata-codelist/ConditionsApplyingToAccessAndUse/noConditionsApply'
+                ),
+              },
+            ],
+            securityConstraints: [],
+            otherConstraints: [],
+            contacts: [
+              {
+                lastName: '',
+                organization: {
+                  name: 'Sandre',
+                },
+                email: 'sandre@sandre.eaufrance.fr',
+                role: 'point_of_contact',
+                address: 'OIEau, 15 rue Edouard Chamberland, 87000, France',
+              },
+            ],
+            contactsForResource: [
+              {
+                lastName: '',
+                organization: {
+                  name: 'Sandre',
+                },
+                email: 'sandre@sandre.eaufrance.fr',
+                role: 'custodian',
+                address: 'OIEau, 15 Rue Edouad Chamberland, 87000, France',
+              },
+            ],
+            keywords: [
+              {
+                label: 'National',
+                type: 'other',
+                key: 'http://inspire.ec.europa.eu/metadata-codelist/SpatialScope/national',
+              },
+              {
+                label: 'WFS',
+                type: 'theme',
+              },
+              {
+                label: 'Ouvrage de dépollution',
+                type: 'theme',
+              },
+              {
+                label: 'Rapportage',
+                type: 'theme',
+              },
+              {
+                label: 'ODP',
+                type: 'theme',
+              },
+              {
+                label: 'SysTraitementEauxUsees',
+                type: 'theme',
+              },
+              {
+                label: 'Données ouvertes',
+                type: 'theme',
+              },
+              {
+                label: "Services d'utilité publique et services publics",
+                type: 'theme',
+              },
+              {
+                label: 'France métropolitaine',
+                type: 'theme',
+              },
+              {
+                label: 'hvd',
+                type: 'theme',
+              },
+              {
+                label: "Services d'utilité publique et services publics",
+                type: 'theme',
+                key: 'http://inspire.ec.europa.eu/theme/pf',
+                thesaurus: {
+                  id: 'Registre de thème INSPIRE',
+                  name: 'GEMET - INSPIRE themes, version 1.0',
+                  url: new URL('http://inspire.ec.europa.eu/theme'),
+                },
+              },
+              {
+                label: 'Observation de la terre et environnement',
+                type: 'theme',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.high-value-dataset-category-skos-ap-eu',
+                  name: 'High-value dataset categories',
+                  url: new URL(
+                    'https://www.sandre.eaufrance.fr/atlas/srv/api/registries/vocabularies/external.theme.high-value-dataset-category-skos-ap-eu'
+                  ),
+                },
+              },
+              {
+                label: 'Directive 2012/18/EU',
+                type: 'other',
+                key: 'http://inspire.ec.europa.eu/metadata-codelist/PriorityDataset/dir-2012-18',
+              },
+              {
+                label:
+                  'Urban waste-water treatment plants (Urban Waste Water Treatment Directive)',
+                type: 'other',
+                key: 'http://inspire.ec.europa.eu/metadata-codelist/PriorityDataset/EstablishmentsInvolvingDangerousSubstances-dir-2012-18',
+              },
+              {
+                label: 'Service d’accès aux éléments',
+                type: 'other',
+                key: 'http://inspire.ec.europa.eu/metadata-codelist/SpatialDataServiceCategory/infoFeatureAccessService',
+              },
+            ],
+            topics: ["Services d'utilité publique et services publics"],
+            spatialExtents: [
+              {
+                geometry: {
+                  coordinates: [
+                    [
+                      [-61.798, -21.371],
+                      [55.855, -21.371],
+                      [55.855, 51.088],
+                      [-61.798, 51.088],
+                      [-61.798, -21.371],
+                    ],
+                  ],
+                  type: 'Polygon',
+                },
+              },
+            ],
+            temporalExtents: [],
+            overviews: [],
+            defaultLanguage: 'fr',
+            otherLanguages: [],
+            extras: {
+              isPublishedToAll: true,
+              id: '15415',
+              qualityScore: 62,
+              isOpenData: false,
+              catalogUuid: 'c3f93209-4363-4e30-bec2-3cc43bd7a8a7',
+              ownerInfo: 'vfabry|Fabry|Vincent|Administrator',
+              favoriteCount: 0,
+            },
+            recordCreated: new Date('2021-12-14T15:02:50.000Z'),
+            resourceCreated: new Date('2019-12-02T00:00:00.000Z'),
+            uniqueIdentifier: 'be052079-f1f6-4f6f-a722-cbf11deb40eb',
+            landingPage: new URL(
+              'http://my.catalog.org/metadata/be052079-f1f6-4f6f-a722-cbf11deb40eb'
+            ),
+            abstract:
+              "Le service web (WFS) du référentiel des Stations de traitement des eaux permet de télécharger les ouvrages impliqués dans la dépollution des eaux usées. Les différents concepts définis dans le scénario d'échange du référentiel Stations de traitement des eaux usées du Sandre sont diffusés par ce service.",
+            onlineResources: [
+              {
+                name: 'sa:SysTraitementEauxUsees',
+                description:
+                  'Ouvrages de dépollution - Système de traitement des eaux usées - France entière',
+                type: 'service',
+                url: new URL(
+                  'https://services.sandre.eaufrance.fr/geo/odp?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities'
+                ),
+                accessServiceProtocol: 'wfs',
+              },
+            ],
+            title:
+              'Service web géographique OGC (WFS) du référentiel des Stations de traitement des eaux usées - Ouvrages de dépollution',
+          })
+        })
+      })
+
+      describe('full record reuse(application) metadata metawal', () => {
+        it('builds a complete record object', async () => {
+          const record = await service.readRecord(
+            elasticReuseMetadataHitsFixture().hits.hits[0] as Gn4Record
+          )
+
+          expect(record).toEqual({
+            abstract:
+              "Application cartographique présentant des données du SPW territoire (Aménagement du territoire, Logement, Patrimoine et Energie).\n\nCette application propose une trentaine de couches de données thématiques regroupées dans cinq grands thèmes : 1) Aménagement du territoire et urbanisme, 2) Application particulière du CoDT, 3) Logement, 4) Patrimoine et 5) Applications spécifiques. Par thème, il est possible de consulter les couches de données individuellement à partir d'une liste prédéfinie, de consulter leurs métadonnées et leur légende.\n\n\nUne identification des données présentes sur le territoire est possible de trois manières différentes : fine, étendue ou par parcelle. Des liens sont prévus pour visualiser aisément les dossiers, et donc toute la partie documentaire. Le résultat peut être sauvé et exporté en pdf ou en xml.\n\nDes recherches (commune, rue, parcelle, coordonnées) sont également possibles, tout comme une impression.\n\nUne aide en ligne est mise à disposition.",
+            contacts: [
+              {
+                email: 'jeanchristophe.sainte@spw.wallonie.be',
+                lastName: '',
+                organization: {
+                  name: "Direction de la gestion des informations territoriales (SPW - Territoire, Logement, Patrimoine, Énergie - Département de l'Aménagement du territoire et de l'Urbanisme - Direction de la gestion des informations territoriales)",
+                },
+                role: 'point_of_contact',
+              },
+            ],
+            contactsForResource: [
+              {
+                email: 'donnees.territoire@spw.wallonie.be',
+                lastName: '',
+                organization: {
+                  name: "Direction de la gestion des informations territoriales (SPW - Territoire, Logement, Patrimoine, Énergie - Département de l'Aménagement du territoire et de l'Urbanisme - Direction de la gestion des informations territoriales)",
+                },
+                role: 'point_of_contact',
+              },
+              {
+                email: 'jeanchristophe.sainte@spw.wallonie.be',
+                lastName: '',
+                organization: {
+                  name: "Direction de la gestion des informations territoriales (SPW - Territoire, Logement, Patrimoine, Énergie - Département de l'Aménagement du territoire et de l'Urbanisme - Direction de la gestion des informations territoriales)",
+                },
+                role: 'custodian',
+              },
+              {
+                email: '',
+                lastName: '',
+                organization: {
+                  name: 'Service public de Wallonie (SPW)',
+                  website: new URL('https://geoportail.wallonie.be/'),
+                },
+                role: 'owner',
+              },
+            ],
+            defaultLanguage: 'fr',
+            extras: {
+              catalogUuid: 'metawal.wallonie.be',
+              favoriteCount: 0,
+              id: '1215',
+              isOpenData: false,
+              isPublishedToAll: true,
+              ownerInfo:
+                'Admin_Metawal|Administrator_user de Stephane Ritz|Metawal|Administrator',
+            },
+            keywords: [
+              {
+                label: 'Aménagement du Territoire et Urbanisme',
+                type: 'theme',
+              },
+              {
+                label: 'Cahiers de Charges Urbanistiques et Environnementaux',
+                type: 'theme',
+              },
+              {
+                label: 'Campings',
+                type: 'theme',
+              },
+              {
+                label:
+                  "Commissions Consultatives d'Aménagement du Territoire et de Mobilité",
+                type: 'theme',
+              },
+              {
+                label: 'Communes en décentralisation',
+                type: 'theme',
+              },
+              {
+                label: 'Lotissements',
+                type: 'theme',
+              },
+              {
+                label: 'Parcs Résidentiels de Week-End',
+                type: 'theme',
+              },
+              {
+                label: 'Périmètres de Reconnaissance Economique',
+                type: 'theme',
+              },
+              {
+                label: 'Plan de Secteur',
+                type: 'theme',
+              },
+              {
+                label: "Plans Communaux d'Aménagement",
+                type: 'theme',
+              },
+              {
+                label: "Plan d'Habitat Permanent",
+                type: 'theme',
+              },
+              {
+                label: 'Rapports Urbanistiques et Environnementaux',
+                type: 'theme',
+              },
+              {
+                label: 'Règlement Général sur les Bâtisses en Site Rural',
+                type: 'theme',
+              },
+              {
+                label: "Règlements Communaux d'Urbanisme",
+                type: 'theme',
+              },
+              {
+                label: 'Remembrement urbain',
+                type: 'theme',
+              },
+              {
+                label: 'Rénovation urbaine',
+                type: 'theme',
+              },
+              {
+                label: 'Revitalisation urbaine',
+                type: 'theme',
+              },
+              {
+                label: 'Schémas de Structure Communaux',
+                type: 'theme',
+              },
+              {
+                label: 'Sites À Réaménager',
+                type: 'theme',
+              },
+              {
+                label:
+                  "Terrils à considérer en matière d'aménagement du territoire",
+                type: 'theme',
+              },
+              {
+                label: 'Zones agro-géographiques',
+                type: 'theme',
+              },
+              {
+                label: 'Zones franches urbaines',
+                type: 'theme',
+              },
+              {
+                label: "Zones Protégées en matière d'Urbanisme",
+                type: 'theme',
+              },
+              {
+                label: 'Logement',
+                type: 'theme',
+              },
+              {
+                label: "Zones d'Initiative Privilégiée",
+                type: 'theme',
+              },
+              {
+                label: 'Patrimoine',
+                type: 'theme',
+              },
+              {
+                label: 'Biens classés et zones de protection',
+                type: 'theme',
+              },
+              {
+                label: 'Biens exceptionnels',
+                type: 'theme',
+              },
+              {
+                label: 'Biens mondiaux',
+                type: 'theme',
+              },
+              {
+                label: 'Liste de sauvegarde',
+                type: 'theme',
+              },
+              {
+                label: 'Inventaire du patrimoine immobilier culturel',
+                type: 'theme',
+              },
+              {
+                label: "Application de l'article 127 du CWATUPE",
+                type: 'theme',
+              },
+              {
+                label: 'Cartes de Vander Maelen 1850',
+                type: 'theme',
+              },
+              {
+                label: 'PCA',
+                type: 'theme',
+              },
+              {
+                label: 'CCUE',
+                type: 'theme',
+              },
+              {
+                label: 'RGBSR',
+                type: 'theme',
+              },
+              {
+                label: 'PDS',
+                type: 'theme',
+              },
+              {
+                label: 'RUE',
+                type: 'theme',
+              },
+              {
+                label: 'RUE',
+                type: 'theme',
+              },
+              {
+                label: 'RCU',
+                type: 'theme',
+              },
+              {
+                label: 'SSC',
+                type: 'theme',
+              },
+              {
+                label: 'SAR',
+                type: 'theme',
+              },
+              {
+                label: 'ZIP',
+                type: 'theme',
+              },
+              {
+                label: 'cartographie en ligne',
+                type: 'theme',
+              },
+              {
+                label: 'application WebGIS',
+                type: 'theme',
+              },
+              {
+                label: 'visualisateur',
+                type: 'theme',
+              },
+              {
+                label: 'Reporting INSPIRENO',
+                type: 'theme',
+                key: 'https://metawal.wallonie.be/thesaurus/infrasig#ReportingINSPIRENO',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.infraSIG',
+                  name: 'Mots-clés InfraSIG',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.infraSIG'
+                  ),
+                },
+              },
+              {
+                label: 'Cartes anciennes',
+                type: 'theme',
+                key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#SubThemesGeoportailWallon/5040',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.Themes_geoportail_wallon_hierarchy',
+                  name: 'Thèmes du géoportail wallon',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.Themes_geoportail_wallon_hierarchy'
+                  ),
+                },
+              },
+              {
+                label: 'Aménagement du territoire',
+                type: 'theme',
+                key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#ThemesGeoportailWallon/20',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.Themes_geoportail_wallon_hierarchy',
+                  name: 'Thèmes du géoportail wallon',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.Themes_geoportail_wallon_hierarchy'
+                  ),
+                },
+              },
+              {
+                label: 'Logement et habitat',
+                type: 'theme',
+                key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#SubThemesGeoportailWallon/6030',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.Themes_geoportail_wallon_hierarchy',
+                  name: 'Thèmes du géoportail wallon',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.Themes_geoportail_wallon_hierarchy'
+                  ),
+                },
+              },
+              {
+                label: 'Risques et contraintes',
+                type: 'theme',
+                key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#SubThemesGeoportailWallon/2020',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.Themes_geoportail_wallon_hierarchy',
+                  name: 'Thèmes du géoportail wallon',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.Themes_geoportail_wallon_hierarchy'
+                  ),
+                },
+              },
+              {
+                label: 'Plans et règlements',
+                type: 'theme',
+                key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#SubThemesGeoportailWallon/2010',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.Themes_geoportail_wallon_hierarchy',
+                  name: 'Thèmes du géoportail wallon',
+                  url: new URL(
+                    'https://metawal.wallonie.be/geonetwork/srv/api/registries/vocabularies/external.theme.Themes_geoportail_wallon_hierarchy'
+                  ),
+                },
+              },
+            ],
+            kind: 'reuse',
+            landingPage: new URL(
+              'http://my.catalog.org/metadata/83809bcd-1763-4d28-b820-2b9828083ba5'
+            ),
+            legalConstraints: [
+              {
+                text: "Aucune contrainte d'accès à l'application.",
+              },
+              {
+                text: "Les mentions légales et contraintes accessibles depuis l'application s'appliquent",
+              },
+            ],
+            licenses: [
+              {
+                text: "Aucune contrainte d'accès à l'application.",
+              },
+              {
+                text: "Les mentions légales et contraintes accessibles depuis l'application s'appliquent",
+              },
+            ],
+            lineage:
+              "L'application a été développée sur base de l'API GeoViewer",
+            onlineResources: [
+              {
+                description:
+                  'Application permettant la visualisation cartographique par thématique des couches de référence de la DGO4 du SPW.',
+                name: 'Application de consultation des couches de données de la DGO4',
+                type: 'link',
+                url: new URL('http://geoapps.wallonie.be/webgisdgo4'),
+              },
+              {
+                description:
+                  'Informations complémentaires sur les couches de données proposées par la DGO4',
+                name: 'Données documentaires de la DGO4',
+                type: 'link',
+                url: new URL(
+                  'http://lampspw.wallonie.be/dgo4/site_thema/index.php/synthese'
+                ),
+              },
+            ],
+            otherConstraints: [
+              {
+                text: "L'utilisation des applications nécessite l'installation de trois plugins gratuits (PDF, DjVu et Flashplayer) pour la visualisation des données cartographiques, les informations documentaires alphanumériques qui y sont directement liées et les pièces scannées associées aux dossiers (dans les données documentaires). Téléchargement possible via l'application.",
+              },
+              {
+                text: "Les mentions légales accessibles depuis l'application s'appliquent.",
+              },
+              {
+                text: "Les limites d'utilisation des données et services s'appliquent.",
+              },
+              {
+                text: "L'information peut être utilisée gratuitement pour un usage personnel ou dans un cadre administratif (par exemple afin de compléter un formulaire destiné à l'administration) et à condition de citer clairement la source.",
+              },
+              {
+                text: 'Toute reproduction et/ou représentation et/ou rediffusion, en tout ou partie, sur tout support électronique ou non, présent ou futur, ayant un caractère commercial, est interdite sauf autorisation expresse et préalable.',
+              },
+              {
+                text: "Les données géographiques disponibles au départ de l'application n'ont aucune valeur légale et sont mises à disposition de l'utilisateur à titre indicatif.",
+              },
+            ],
+            otherLanguages: [],
+            overviews: [
+              {
+                url: new URL(
+                  'https://metawal.wallonie.be/geonetwork/srv/api/records/83809bcd-1763-4d28-b820-2b9828083ba5/attachments/SPWTerritoire.PNG'
+                ),
+              },
+            ],
+            ownerOrganization: {
+              name: 'My Organization',
+              website: new URL('http://my.org/'),
+            },
+            recordCreated: new Date('2013-07-29T11:33:08.000Z'),
+            recordPublished: null,
+            recordUpdated: new Date('2024-07-22T11:52:39.049Z'),
+            resourceCreated: new Date('2017-05-31T22:00:00.000Z'),
+            resourcePublished: new Date('2018-03-31T22:00:00.000Z'),
+            reuseType: 'application',
+            securityConstraints: [],
+            spatialExtents: [
+              {
+                description: 'Région wallonne',
+                geometry: {
+                  coordinates: [
+                    [
+                      [2.75, 49.45],
+                      [6.5, 49.45],
+                      [6.5, 50.85],
+                      [2.75, 50.85],
+                      [2.75, 49.45],
+                    ],
+                  ],
+                  type: 'Polygon',
+                },
+              },
+            ],
+            status: null,
+            temporalExtents: [],
+            title: 'Cartographie des données du SPW territoire',
+            topics: [],
+            uniqueIdentifier: '83809bcd-1763-4d28-b820-2b9828083ba5',
+          })
+        })
+      })
+
+      describe('full record reuse (interactive map) metadata geo2france', () => {
+        it('builds a complete record object', async () => {
+          const record = await service.readRecord(
+            elasticReuseMetadataHitsFixture().hits.hits[1] as Gn4Record
+          )
+
+          expect(record).toEqual({
+            kind: 'reuse',
+            status: null,
+            lineage: null,
+            recordUpdated: new Date('2024-09-26T13:34:25.803Z'),
+            recordPublished: null,
+            ownerOrganization: {
+              name: 'My Organization',
+              website: new URL('http://my.org/'),
+            },
+            licenses: [],
+            legalConstraints: [],
+            securityConstraints: [],
+            otherConstraints: [],
+            contacts: [
+              {
+                lastName: '',
+                organization: {
+                  name: 'Office français de la biodiversité',
+                },
+                email: 'cartotheque@ofb.gouv.fr',
+                role: 'point_of_contact',
+              },
+            ],
+            contactsForResource: [
+              {
+                lastName: '',
+                organization: {
+                  name: 'Réseau Ongulés sauvages OFB-FNC-FDC',
+                },
+                email: 'reseau.ongules-sauvages@ofb.gouv.fr',
+                role: 'author',
+              },
+              {
+                lastName: '',
+                organization: {
+                  name: 'Office France de la Biodiversité',
+                },
+                email: 'reseau.ongules-sauvages@ofb.gouv.fr',
+                role: 'owner',
+              },
+              {
+                lastName: '',
+                organization: {
+                  name: 'Fédération Nationale de la Chasse',
+                },
+                email: '',
+                role: 'owner',
+              },
+              {
+                lastName: '',
+                organization: {
+                  name: 'Fédération Départementale de la Chasse',
+                },
+                email: '',
+                role: 'resource_provider',
+              },
+            ],
+            keywords: [
+              {
+                label: 'espèce animale',
+                type: 'theme',
+                key: 'http://www.eionet.europa.eu/gemet/concept/10073',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.gemet',
+                  name: 'GEMET',
+                  url: new URL(
+                    'https://data.ofb.fr/catalogue/srv/api/registries/vocabularies/external.theme.gemet'
+                  ),
+                },
+              },
+              {
+                label: 'chasse',
+                type: 'theme',
+                key: 'http://www.eionet.europa.eu/gemet/concept/4072',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.gemet',
+                  name: 'GEMET',
+                  url: new URL(
+                    'https://data.ofb.fr/catalogue/srv/api/registries/vocabularies/external.theme.gemet'
+                  ),
+                },
+              },
+              {
+                label: 'Tableaux de chasse',
+                type: 'theme',
+              },
+              {
+                label: 'Ongulés',
+                type: 'theme',
+              },
+              {
+                label: 'Départements',
+                type: 'theme',
+              },
+              {
+                label: 'Répartition des espèces',
+                type: 'theme',
+                key: 'http://inspire.ec.europa.eu/theme/sd',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.httpinspireeceuropaeutheme-theme',
+                  name: 'GEMET - INSPIRE themes, version 1.0',
+                  url: new URL(
+                    'https://data.ofb.fr/catalogue/srv/api/registries/vocabularies/external.theme.httpinspireeceuropaeutheme-theme'
+                  ),
+                },
+              },
+              {
+                label: 'Unités administratives',
+                type: 'theme',
+                key: 'http://inspire.ec.europa.eu/theme/au',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.httpinspireeceuropaeutheme-theme',
+                  name: 'GEMET - INSPIRE themes, version 1.0',
+                  url: new URL(
+                    'https://data.ofb.fr/catalogue/srv/api/registries/vocabularies/external.theme.httpinspireeceuropaeutheme-theme'
+                  ),
+                },
+              },
+              {
+                label: 'France métropolitaine',
+                type: 'theme',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.excel2skos-case-usage-geographie-2023-11-24',
+                  name: 'Thesaurus géographique',
+                  url: new URL(
+                    'https://data.ofb.fr/catalogue/srv/api/registries/vocabularies/external.theme.excel2skos-case-usage-geographie-2023-11-24'
+                  ),
+                },
+              },
+              {
+                label: 'réseaux',
+                type: 'theme',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.excel2skos-case-usage-thematique-2023-06-08',
+                  name: 'Thématique OFB',
+                  url: new URL(
+                    'https://data.ofb.fr/catalogue/srv/api/registries/vocabularies/external.theme.excel2skos-case-usage-thematique-2023-06-08'
+                  ),
+                },
+              },
+              {
+                label: 'espèces',
+                type: 'theme',
+                thesaurus: {
+                  id: 'geonetwork.thesaurus.external.theme.excel2skos-case-usage-thematique-2023-06-08',
+                  name: 'Thématique OFB',
+                  url: new URL(
+                    'https://data.ofb.fr/catalogue/srv/api/registries/vocabularies/external.theme.excel2skos-case-usage-thematique-2023-06-08'
+                  ),
+                },
+              },
+            ],
+            topics: ['Répartition des espèces', 'Unités administratives'],
+            spatialExtents: [
+              {
+                geometry: {
+                  coordinates: [
+                    [
+                      [-7.3131, 40.4671],
+                      [11.9303, 40.4671],
+                      [11.9303, 51.7141],
+                      [-7.3131, 51.7141],
+                      [-7.3131, 40.4671],
+                    ],
+                  ],
+                  type: 'Polygon',
+                },
+              },
+            ],
+            temporalExtents: [],
+            overviews: [
+              {
+                url: new URL(
+                  'https://data.ofb.fr/catalogue/Donnees-geographiques-OFB/api/records/7eb795c2-d612-4b5e-b15e-d985b0f4e697/attachments/OFB.png'
+                ),
+              },
+            ],
+            defaultLanguage: 'fr',
+            otherLanguages: [],
+            extras: {
+              isPublishedToAll: true,
+              id: '19436',
+              qualityScore: 62,
+              isOpenData: false,
+              catalogUuid: 'c3f93209-4363-4e30-bec2-3cc43bd7a8a7',
+              ownerInfo: 'vfabry|Fabry|Vincent|Administrator',
+              favoriteCount: 0,
+            },
+            recordCreated: new Date('2024-09-13T10:12:38.614Z'),
+            resourceCreated: new Date('2024-05-27T00:00:00.000Z'),
+            reuseType: 'map',
+            uniqueIdentifier: '7eb795c2-d612-4b5e-b15e-d985b0f4e697',
+            landingPage: new URL(
+              'http://my.catalog.org/metadata/7eb795c2-d612-4b5e-b15e-d985b0f4e697'
+            ),
+            abstract:
+              "----------------------------\nContexte & objectifs\n----------------------------\n\nDans le cadre de ses missions, l’OFB (anciennement l’ONC puis l’ONCFS) réalise le suivi des populations de grands ongulés sauvages en France métropolitaine. \nPour réaliser cette tâche complexe un réseau de correspondants départementaux, l’actuel réseau « Ongulés sauvages OFB-FNC-FDC » a été créée en 1985, et fonctionne grâce à la collaboration entre l’OFB et les fédérations nationale (FNC) et départementales des chasseurs (FDC). \n\nLes données ont été compilées à partir des données fournies par les Interlocuteurs techniques des FDC du Réseau Ongulés sauvages OFB-FNC-FDC pour toutes les espèces d'ongulés sauvages présentes en France métropolitaine.\n\n----------------------------\nLes espèces concernées\n----------------------------\n\nLes espèces concernées sont les suivantes : \nBouquetin des Alpes (Capra ibex)\nBouquetin ibérique (Capra pyrenaica)\nCerf élaphe (Cervus elaphus)\nCerf sika (Cervus nippon)\nChamois (Rupicapra rupicapra)\nDaim (Dama dama)\nIsard (Rupicapra pyrenaica)\nMouflon de Corse (Ovis gmelinii musimon)\nMouflon méditerranéen (Ovis gmelini musimon x Ovis sp.)\nMuntjac de Chine (Muntiacus reevesi)\net le Mouflon à manchettes (Ammotragus lervia).\n\n----------------------------\nProtocole et limites d'utilisations \n----------------------------\nLa méthode se basant sur des connaissances locales de la présence de populations établies par des professionnels connaissant bien leur territoire, la notion d’échantillonnage qualifiée d’\"exhaustif\" est crédible.\nLe travail est réalisé par unité de population, c’est-à-dire par secteur occupé par au minimum un groupe d’individus adultes susceptibles de se rencontrer et d’établir entre eux des rapports sociaux et génétiques (reproduction). Il peut donc exister des individus isolés présents en dehors des zones délimitées par ce programme.\nPour des raisons administratives l’inventaire est fait par département. Ainsi pour une population à cheval sur plusieurs départements chaque portion départementale constitue une zone. Un département peut abriter plusieurs zones. \nLes données sont vérifiées, harmonisées et validées par l’administrateur(rice) national(e) du réseau tous les 5 ans (avec un rythme différents selon les espèces).\n\n----------------------------\nFréquence de mise à jour\n----------------------------\n\npériodique \n\n----------------------------\nOutils\n----------------------------\n\nLes données de chacune de ces espèces sont consultables sur la carte interactive de l'espèce. créées à partir de l'outil Lizmap.",
+            onlineResources: [
+              {
+                name: 'Carte dynamique de répartition du Cerf élaphe',
+                type: 'link',
+                url: new URL(
+                  'https://lizmap.ofb.fr/ofb/reseau_ongules/index.php/view/map?repository=repartition&project=reseau_cerf_lizmap'
+                ),
+              },
+              {
+                name: 'Carte dynamique de répartition du Mouflon méditerranéen',
+                type: 'link',
+                url: new URL(
+                  'https://lizmap.ofb.fr/ofb/reseau_ongules/index.php/view/map?repository=repartition&project=ongules_2022_MOM'
+                ),
+              },
+              {
+                name: 'Carte dynamique de répartition du Mouflon de Corse',
+                type: 'link',
+                url: new URL(
+                  'https://lizmap.ofb.fr/ofb/reseau_ongules/index.php/view/map?repository=repartition&project=ongules_2022_MOC'
+                ),
+              },
+              {
+                name: "Carte dynamique de répartition de l'ISARD",
+                type: 'link',
+                url: new URL(
+                  'https://lizmap.ofb.fr/ofb/reseau_ongules/index.php/view/map?repository=repartition&project=ongules_2022_ISA'
+                ),
+              },
+              {
+                name: 'Carte dynamique de répartition du Chamois',
+                type: 'link',
+                url: new URL(
+                  'https://lizmap.ofb.fr/ofb/reseau_ongules/index.php/view/map?repository=repartition&project=ongules_2022_CHA'
+                ),
+              },
+              {
+                name: 'Carte dynamique de répartition du Bouquetin des Alpes',
+                type: 'link',
+                url: new URL(
+                  'https://lizmap.ofb.fr/ofb/reseau_ongules/index.php/view/map?repository=repartition&project=ongules_2022_BOQ'
+                ),
+              },
+              {
+                name: 'Carte dynamique de répartition du Bouquetin ibérique',
+                type: 'link',
+                url: new URL(
+                  'https://lizmap.ofb.fr/ofb/reseau_ongules/index.php/view/map?repository=repartition&project=ongules_2022_BOI'
+                ),
+              },
+            ],
+            title:
+              'Carte dynamique sur la répartition des ongulés sauvages en France',
+          })
+        })
+      })
+
+      describe('full record reuse (static map) metadata georhena', () => {
+        it('builds a complete record object', async () => {
+          const record = await service.readRecord(
+            elasticReuseMetadataHitsFixture().hits.hits[2] as Gn4Record
+          )
+
+          expect(record).toEqual({
+            kind: 'reuse',
+            status: 'completed',
+            lineage: null,
+            recordUpdated: new Date('2024-01-25T07:45:05.215Z'),
+            recordPublished: null,
+            recordCreated: new Date('2024-01-25T07:19:13.493Z'),
+            resourcePublished: new Date('2023-12-20T14:23:54.000Z'),
+            ownerOrganization: {
+              name: 'My Organization',
+              website: new URL('http://my.org/'),
+            },
+            licenses: [],
+            legalConstraints: [],
+            securityConstraints: [],
+            otherConstraints: [],
+            contacts: [
+              {
+                lastName: '',
+                organization: {
+                  name: 'TRION-climate / GeoRhena',
+                },
+                email: '',
+                role: 'distributor',
+              },
+            ],
+            contactsForResource: [
+              {
+                lastName: '',
+                organization: {
+                  name: 'GeoRhena',
+                },
+                email: 'contact@georhena.eu',
+                role: 'point_of_contact',
+              },
+            ],
+            keywords: [
+              {
+                label: 'Wasserstoff',
+                type: 'theme',
+              },
+              {
+                label: 'Innovation',
+                type: 'theme',
+              },
+              {
+                label: 'Mviewer',
+                type: 'theme',
+              },
+            ],
+            topics: ['Umwelt'],
+            spatialExtents: [],
+            temporalExtents: [],
+            overviews: [
+              {
+                url: new URL(
+                  'https://geoportal.georhena.eu/geonetwork/srv/api/records/be209d24-586f-48f5-b944-e284079b7823/attachments/hydrogene_mviewer.jpg'
+                ),
+              },
+            ],
+            defaultLanguage: 'fr',
+            otherLanguages: ['de'],
+            reuseType: 'map',
+            title:
+              'Herstellung, Verwendung, Forschung und Verteilung von Wasserstoff am Oberrhein',
+            abstract:
+              'Im Rahmen des Interreg-Projekts CO2-InnO hat TRION-climate rund 50 Wasserstoffprojekte am Oberrhein erfasst und beschrieben. Auf diese Weise findet man die verschiedenen Standorte der Wasserstoffproduktion, die wichtigsten Forschungsprojekte, die Transport- und Verteilungsnetze sowie die großen Abnehmer von grünem Wasserstoff in der Region. GeoRhena, das Geoinformationssystem des Oberrheins, präsentierte diese Anlagen auf einer interaktiven Karte der Wasserstoffanlagen und -projekte.',
+            extras: {
+              isOpenData: false,
+              ownerInfo: 'sritzenthaler|Ritzenthaler|Stéphane|Administrator',
+              isPublishedToAll: true,
+              id: '8705',
+              favoriteCount: 0,
+              catalogUuid: 'ce008f24-8e0d-45a8-97f8-9f10399f0190',
+            },
+            onlineResources: [
+              {
+                name: 'Carte interactive "Hydrogène" en français',
+                type: 'link',
+                url: new URL(
+                  'https://geoportal.georhena.eu/mviewer/?config=apps/hydrogene.xml'
+                ),
+              },
+              {
+                name: 'Carte interactive "Hydrogène" en allemand',
+                type: 'link',
+                url: new URL(
+                  'https://geoportal.georhena.eu/mviewer/?config=apps/wasserstoff.xml'
+                ),
+              },
+            ],
+            uniqueIdentifier: 'be209d24-586f-48f5-b944-e284079b7823',
+            landingPage: new URL(
+              'http://my.catalog.org/metadata/be209d24-586f-48f5-b944-e284079b7823'
+            ),
+          })
+        })
+      })
+
+      describe('full record type foo (dummy data)', () => {
+        it('sets the kind as a dataset and does not add reuseType property', async () => {
+          const record = await service.readRecord(
+            elasticReuseMetadataHitsFixture().hits.hits[3] as Gn4Record
+          )
+
+          expect(record.kind).toEqual('dataset')
+          expect(record).not.toHaveProperty('reuseType')
         })
       })
     })

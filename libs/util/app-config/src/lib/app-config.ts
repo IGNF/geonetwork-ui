@@ -149,6 +149,7 @@ export function loadAppConfig() {
           'max_zoom',
           'do_not_tile_wms',
           'max_extent',
+          'max_feature_count',
           'baselayer',
           'do_not_use_default_basemap',
           'external_viewer_url_template',
@@ -164,6 +165,7 @@ export function loadAppConfig() {
               MAX_ZOOM: parsedMapSection.max_zoom,
               DO_NOT_TILE_WMS: parsedMapSection.do_not_tile_wms,
               MAX_EXTENT: parsedMapSection.max_extent,
+              MAX_FEATURE_COUNT: parsedMapSection.max_feature_count,
               EXTERNAL_VIEWER_URL_TEMPLATE:
                 parsedMapSection.external_viewer_url_template,
               EXTERNAL_VIEWER_OPEN_NEW_TAB:
@@ -179,7 +181,7 @@ export function loadAppConfig() {
                     DATA: map_layer.data,
                     STYLE_URL: map_layer.styleUrl,
                     ACCESS_TOKEN: map_layer.accessToken,
-                  } as LayerConfig)
+                  }) as LayerConfig
               ),
             } as MapConfig)
 

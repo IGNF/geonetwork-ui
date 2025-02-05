@@ -53,8 +53,11 @@ gn-ui-button > button:hover.bg-secondary {
   background-color: rgba(0, 0, 145, 0.5) !important;
 }
 
-[target='_blank']:not(.fr-footer__bottom-link, .fr-footer__content-link, edu-item-link
-    > .fr-btn)::after {
+[target='_blank']:not(
+    .fr-footer__bottom-link,
+    .fr-footer__content-link,
+    edu-item-link > .fr-btn
+  )::after {
   content: none;
 }
 

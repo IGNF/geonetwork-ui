@@ -17,7 +17,8 @@ interface CodeListEntry extends MultilingualField {
 type MaybeArray<T> = T | T[]
 
 interface Contact {
-  organisation: string
+  organisation?: string
+  organisationObject?: MultilingualField
   role: string
   email: string
   website: string
@@ -108,17 +109,17 @@ export type MetadataObject = Partial<{
   extra: string
   featureOfRecord: string
   feedbackCount: string
-  geom: Geometry
+  geom: Geometry | Geometry[]
   groupOwner: string
-  groupPublished: string[]
-  groupPublishedId: string
+  groupPublished: string | string[]
+  groupPublishedId: string | string[]
   harvesterUuid: string
   hasInspireTheme: BooleanString
   hasOverview: BooleanString
   hasxlinks: BooleanString
   id: string
-  indexingDate: string
-  indexingError: string[]
+  indexingDate: string | number
+  indexingError: string | string[]
   indexingErrorMsg: string[]
   inspireAnnex: string[]
   inspireAnnexForFirstTheme: string
@@ -137,8 +138,8 @@ export type MetadataObject = Partial<{
   lineageObject: MultilingualField
   link: Link[]
   linkProtocol: string[]
-  linkUrl: string[]
-  linkUrlProtocolOGCWFS: string[]
+  linkUrl: string | string[]
+  linkUrlProtocolOGCWFS: string | string[]
   linkUrlProtocolOGCWMS: string[]
   linkUrlProtocolWWWLINK10httplink: MaybeArray<string>
   linkUrlProtocolWWWLINK10httprelated: string
@@ -151,7 +152,7 @@ export type MetadataObject = Partial<{
   pointOfContactOrg: string
   pointOfContactOrgForResource: string
   popularity: number
-  publicationDateForResource: string
+  publicationDateForResource: string | string[]
   rating: string
   record: string
   recordGroup: string
@@ -186,7 +187,7 @@ export type MetadataObject = Partial<{
 
 export interface Gn4Record {
   _index: string
-  _type: string
+  _type?: string
   _id: string
   _score: number
   _source: MetadataObject

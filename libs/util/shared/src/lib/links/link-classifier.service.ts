@@ -30,7 +30,7 @@ export class LinkClassifierService {
           case 'ogcFeatures':
             return [LinkUsage.API, LinkUsage.DOWNLOAD, LinkUsage.GEODATA]
           case 'GPFDL':
-            return [LinkUsage.API, LinkUsage.DOWNLOAD]
+            return [LinkUsage.API]
           default:
             return [LinkUsage.UNKNOWN]
         }
