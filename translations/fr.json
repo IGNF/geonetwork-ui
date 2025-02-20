@@ -415,6 +415,7 @@
   "record.metadata.api.form.formatTooltip": "Menu déroulant pour sélectionner un format de données",
   "record.metadata.api.form.crsTitle": "Système de coordonnées",
   "record.metadata.api.form.crsTooltip": "Menu déroulant pour sélectionner un système de coordonnées (CRS)",
+  "record.metadata.api.form.downloadAll": "Télécharger tout",
   "record.metadata.api.form.items": "Eléments disponibles",
   "record.metadata.api.form.itemsDescription": "Liste des éléments",
   "record.metadata.api.form.itemsTooltip": "Faites défiler pour voir tous les éléments disponibles ou filtrés",
