@@ -111,7 +111,6 @@ import { MatIconModule } from '@angular/material/icon'
 import { DsfrHeaderModule } from '@edugouvfr/ngx-dsfr'
 import { DsfrFooterModule } from '@edugouvfr/ngx-dsfr'
 
-
 export const metaReducers: MetaReducer[] = !environment.production ? [] : []
 
 // https://github.com/nrwl/nx/issues/191

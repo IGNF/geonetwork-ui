@@ -105,7 +105,6 @@ export class GpfApiDlComponent implements OnInit {
     this.page$,
   ]).pipe(
     map(([zone, format, editionDateFrom, editionDateTo, crs, page]) => {
-
       let outputUrl
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
@@ -205,7 +204,6 @@ export class GpfApiDlComponent implements OnInit {
 
     this.editionDateTo$.next('null')
     this.editionDateFrom$.next('null')
-
   }
   moreResult(): void {
     this.page$.next(this.page$.value + 1)
