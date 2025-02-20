@@ -24,10 +24,10 @@ export class NavigationMenuComponent {
   foregroundColor = getThemeConfig().HEADER_FOREGROUND_COLOR || '#ffffff'
   displayMobileMenu = false
   tabLinks = [
-    {
-      link: `${ROUTER_ROUTE_NEWS}`,
-      label: 'datahub.header.news',
-    },
+    /*{
+        link: `${ROUTER_ROUTE_NEWS}`,
+        label: 'datahub.header.news',
+      },*/
     {
       link: `${ROUTER_ROUTE_SEARCH}`,
       label: 'datahub.header.datasets',

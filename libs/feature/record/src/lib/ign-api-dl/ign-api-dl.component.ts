@@ -7,11 +7,8 @@ import {
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
 import { BehaviorSubject, Observable, combineLatest, map, mergeMap } from 'rxjs'
 import { HttpClient } from '@angular/common/http'
-import { Choice, DropdownSelectorComponent } from '@geonetwork-ui/ui/inputs'
+import { Choice } from '@geonetwork-ui/ui/inputs'
 import axios from 'axios'
-import { CommonModule } from '@angular/common'
-import { TranslateModule } from '@ngx-translate/core'
-import { GpfApiDlListItemComponent } from '../gpf-api-dl-list-item/gpf-api-dl-list-item.component'
 
 export interface Label {
   label: string
@@ -32,7 +29,7 @@ export interface ListUrl {
   url: string
 }
 
-export interface ListChoice {
+export interface listChoice {
   zone: Choice[]
   format: Choice[]
   editionDate: Choice[]
@@ -50,19 +47,12 @@ export interface Field {
 }
 
 @Component({
-  selector: 'gn-ui-gpf-api-dl',
-  templateUrl: './gpf-api-dl.component.html',
-  styleUrls: ['./gpf-api-dl.component.css'],
+  selector: 'gn-ui-ign-api-dl',
+  templateUrl: './ign-api-dl.component.html',
+  styleUrls: ['./ign-api-dl.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
-  imports: [
-    CommonModule,
-    TranslateModule,
-    DropdownSelectorComponent,
-    GpfApiDlListItemComponent,
-  ],
 })
-export class GpfApiDlComponent implements OnInit {
+export class IgnApiDlComponent implements OnInit {
   isOpen = false
   collapsed = false
   initialLimit = 50
@@ -72,10 +62,7 @@ export class GpfApiDlComponent implements OnInit {
   format$ = new BehaviorSubject('')
   crs$ = new BehaviorSubject('')
   page$ = new BehaviorSubject(1)
-
-  editionDateFrom$ = new BehaviorSubject<string | null>(null)
-  editionDateTo$ = new BehaviorSubject<string | null>(null)
-
+  // a passer en config
   url =
     'https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
   choices: any
@@ -99,22 +86,18 @@ export class GpfApiDlComponent implements OnInit {
   apiQueryUrl$ = combineLatest([
     this.zone$,
     this.format$,
-    this.editionDateFrom$,
-    this.editionDateTo$,
+    this.editionDate$,
     this.crs$,
     this.page$,
   ]).pipe(
-    map(([zone, format, editionDateFrom, editionDateTo, crs, page]) => {
-
+    map(([zone, format, editionDate, crs, page]) => {
       let outputUrl
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
         const params = {
           zone: zone,
           format: format,
-          editionDateFrom: editionDateFrom,
-          editionDateTo: editionDateTo,
-
+          editionDate: editionDate,
           crs: crs,
           page: page,
         } // initialisation des paramètres de filtres
@@ -131,12 +114,16 @@ export class GpfApiDlComponent implements OnInit {
       }
       return outputUrl
     })
+    // startWith(() => this.apiBaseUrl)
   )
 
   listFilteredProduct$ = this.apiQueryUrl$.pipe(
     mergeMap((url) => {
+      console.log(url)
+
       return this.getFilteredProduct$(url).pipe(
         map((response) => response['entry'])
+        // startWith([])
       )
     })
   )
@@ -159,17 +146,9 @@ export class GpfApiDlComponent implements OnInit {
     return produit['format'][0]['label']
   }
 
-  setEditionDateFrom(value: string) {
-    if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      this.editionDateFrom$.next(value)
-      this.resetPage()
-    }
-  }
-
-  setEditionDateTo(value: string) {
-    if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      this.editionDateTo$.next(value)
-
+  setEditionDate(value: string) {
+    if (value.match(/[0-9]{4}-[0-1][0-9]-[0-3][0-9]/)) {
+      this.editionDate$.next(value)
       this.resetPage()
     }
   }
@@ -198,14 +177,11 @@ export class GpfApiDlComponent implements OnInit {
   }
 
   resetUrl() {
+    // this.offset$.next(DEFAULT_PARAMS.OFFSET)
     this.zone$.next('null')
     this.format$.next('null')
     this.crs$.next('null')
     this.page$.next(1)
-
-    this.editionDateTo$.next('null')
-    this.editionDateFrom$.next('null')
-
   }
   moreResult(): void {
     this.page$.next(this.page$.value + 1)
@@ -242,8 +218,8 @@ export class GpfApiDlComponent implements OnInit {
     this.choices = await this.getCapabilities()
 
     const tempZone = this.choices.zone.map((bucket) => ({
-      value: bucket.term,
-      label: bucket.label,
+      value: bucket.label,
+      label: bucket.term,
     }))
     tempZone.sort((a, b) => (a.label > b.label ? 1 : -1))
     tempZone.unshift({ value: 'null', label: 'ZONE' })
@@ -251,8 +227,8 @@ export class GpfApiDlComponent implements OnInit {
     this.bucketPromisesZone = tempZone
 
     const tempFormat = this.choices.format.map((bucket) => ({
-      value: bucket.term,
-      label: bucket.label,
+      value: bucket.label,
+      label: bucket.term,
     }))
     tempFormat.sort((a, b) => (a.label > b.label ? 1 : -1))
     tempFormat.unshift({ value: 'null', label: 'FORMAT' })
@@ -260,7 +236,7 @@ export class GpfApiDlComponent implements OnInit {
     this.bucketPromisesFormat = tempFormat
 
     const tempCrs = this.choices.category.map((bucket) => ({
-      value: bucket.term,
+      value: bucket.label,
       label: bucket.label,
     }))
     tempCrs.sort((a, b) => (a.label > b.label ? 1 : -1))

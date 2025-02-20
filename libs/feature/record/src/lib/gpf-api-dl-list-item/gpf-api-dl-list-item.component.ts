@@ -3,15 +3,19 @@ import { HttpClient } from '@angular/common/http'
 import { Component, Input, OnInit } from '@angular/core'
 import { NgIconsModule } from '@ng-icons/core'
 import { TranslateModule } from '@ngx-translate/core'
+L
 import { Observable, map, mergeMap, take } from 'rxjs'
 import { CdkAccordionModule } from '@angular/cdk/accordion'
+
 
 @Component({
   selector: 'gn-ui-gpf-api-dl-list-item',
   templateUrl: './gpf-api-dl-list-item.component.html',
   styleUrls: ['./gpf-api-dl-list-item.component.css'],
   standalone: true,
+
   imports: [CommonModule, TranslateModule, NgIconsModule, CdkAccordionModule],
+
 })
 export class GpfApiDlListItemComponent implements OnInit {
   @Input() link

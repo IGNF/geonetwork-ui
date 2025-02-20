@@ -43,16 +43,16 @@ export class DatahubRouterService {
         children: [
           {
             path: '',
-            redirectTo: ROUTER_ROUTE_NEWS,
+            redirectTo: ROUTER_ROUTE_SEARCH,
             pathMatch: 'prefix',
           },
-          {
+          /*{
             path: ROUTER_ROUTE_NEWS,
             component: NewsPageComponent,
             data: {
               shouldDetach: true,
             },
-          },
+          },*/
           {
             path: ROUTER_ROUTE_SEARCH,
             component: SearchPageComponent,

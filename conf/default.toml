@@ -5,8 +5,8 @@
 
 [global]
 # This URL (relative or absolute) must point to the API endpoint of a GeoNetwork4 instance
-geonetwork4_api_url = "/geonetwork/srv/api"
-datahub_url = "/datahub"
+geonetwork4_api_url = "https://data.geopf.fr/catalog"
+datahub_url = "/catalogue"
 # This should point to a proxy to avoid CORS errors on some requests (data preview, OGC capabilities etc.)
 # The actual URL will be appended after this path, e.g. : https://my.proxy/?url=http%3A%2F%2Fencoded.url%2Fows`
 # This is an optional parameter: leave empty to disable proxy usage
@@ -15,7 +15,7 @@ proxy_path = ""
 # Use ISO 639-2/B (https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) format to indicate the language of the metadata.
 # Setting to "current" will use the current language of the User Interface.
 # If not indicated, a wildcard is used and no language preference is applied for the search.
-# metadata_language = "current"
+# metadata_language = "fre"
 # This optional URL should point to the login page that allows authentication to the datahub.
 # If not indicated, the default geonetwork login page is used.
 # The following three placeholders can be part of this URL:
@@ -46,16 +46,16 @@ proxy_path = ""
 #  - for font families: https://developer.mozilla.org/en-US/docs/Web/CSS/font-family
 #  - for background: https://developer.mozilla.org/en-US/docs/Web/CSS/background
 [theme]
-primary_color = "#c82850"
-secondary_color = "#001638"
-main_color = "#555" # All-purpose text color
+primary_color = "#000091"
+secondary_color = "#6a6af4"
+main_color = "#212029" # All-purpose text color
 background_color = "#fdfbff"
 
 # These optional parameters indicate which background should be used for the main header and the text color used
 # on top of the background. The color should be chosen to contrast well with the background (defaults to white).
 # Note: The search header does not use the header_foreground_color as it allows futher customisation via HTML.
-# header_background = "center /cover url('assets/img/header_bg.webp')" or "var(--color-gray-500)"
-# header_foreground_color = 'white'
+header_background = "var(--color-white)"
+header_foreground_color = '#212029'
 
 # This optional parameter allows to override the fallback image that should be used for thumbnails,
 # if the metadata record has no thumbnail image url or it is broken.
@@ -67,7 +67,7 @@ background_color = "#fdfbff"
 # fonts_stylesheet_url = "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Permanent+Marker&display=swap"
 
 # Use it to set custom location for the favicon; by default, the path `/favicon.ico` will be used
-# favicon = "assets/favicon.ico"
+favicon = "/catalogue/assets/img/favicon.ico"
 
 ### SEARCH SETTINGS
 
@@ -84,7 +84,7 @@ background_color = "#fdfbff"
 # The following fields can be used for filtering: 'organization', 'format', 'publicationYear', 'standard', 'inspireKeyword', 'keyword', 'topic', 'isSpatial', 'license', 'resourceType', 'representationType', 'producerOrg', 'publisherOrg'
 # If not configured, the default values are 'organization', 'format', 'publicationYear', 'topic', 'isSpatial', 'license'
 # Note that some links in the datahub app set an 'organization' filter. So this field is needed to allow unsetting such filters.
-# advanced_filters = ['organization', 'format', 'publicationYear', 'topic', 'isSpatial', 'license']
+advanced_filters = ['topic', 'resourceType', 'publicationYear', 'format', 'inspireKeyword', 'isSpatial', 'license', 'organization']
 
 # One or several search presets can be defined here; every search preset is composed of:
 # - a name (which can be a translation key)
@@ -115,7 +115,7 @@ background_color = "#fdfbff"
 # This section contains settings used for fine-tuning the metadata quality experience
 [metadata-quality]
 # By default the widget is not activated to enable it, just add this parameter.
-# enabled = true
+enabled = true
 # If u want to use metadata quality widget this configuration is required
 
 ### MAP SETTINGS
@@ -153,7 +153,7 @@ background_color = "#fdfbff"
 
 # Optional; if true, the default basemap will not be added to the map.
 # Use [[map_layer]] sections to define your own custom layers (see below)
-# do_not_use_default_basemap = false
+do_not_use_default_basemap = true
 
 # One or several layers (as background or overlay) can be added to the map with the following properties:
 # - type (mandatory): Indicates the layer type. Possible values are 'xyz', 'wms', 'wfs', 'geojson'.
@@ -181,6 +181,10 @@ background_color = "#fdfbff"
 #   "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [125.6, 10.1]}}]
 # }
 # """
+[[map_layer]]
+type = 'wms'
+url = 'https://data.geopf.fr/wms-r'
+name = 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2'
 
 ### TRANSLATIONS
 
@@ -199,3 +203,10 @@ background_color = "#fdfbff"
 #     Welcome to <span class="text-primary">Organization</span>'s<br>
 #     wonderful <span style="font-size: 1.2em;">data catalogue</span>
 #     """
+[translations.fr]
+search.filters.title= "Affiner votre recherche"
+datahub.header.title.html="<div>Catalogue de données et de services</div>"
+datahub.header.datasets="Données et services"
+ogc.unreachable.unknown="Le flux n'est pas accessible ou est à accès restreint"
+wfs.unreachable.unknown="Le service n'est pas accessible ou est à accès restreint"
+record.metadata.api="API et téléchargements"

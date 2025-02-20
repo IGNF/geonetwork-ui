@@ -441,11 +441,11 @@ export class Gn4FieldMapper {
     const mimeTypeMatches =
       protocol && protocol.match(/^WWW:DOWNLOAD:(.+\/.+)$/)
     const mimeType = mimeTypeMatches && mimeTypeMatches[1]
-
     const distribution = {
       ...(name && { name }),
       ...(description && { description }),
     }
+
     switch (type) {
       case 'service':
         return {

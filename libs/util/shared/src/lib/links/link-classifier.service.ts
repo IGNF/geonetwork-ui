@@ -26,6 +26,7 @@ export class LinkClassifierService {
           case 'wms':
           case 'wmts':
             return [LinkUsage.API, LinkUsage.MAP_API]
+
           case 'ogcFeatures':
             return [LinkUsage.API, LinkUsage.DOWNLOAD, LinkUsage.GEODATA]
           case 'GPFDL':
