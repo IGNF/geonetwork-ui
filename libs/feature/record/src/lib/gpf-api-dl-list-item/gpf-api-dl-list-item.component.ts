@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http'
 import { Component, Input, OnInit } from '@angular/core'
 import { NgIconsModule } from '@ng-icons/core'
 import { TranslateModule } from '@ngx-translate/core'
-import { Observable, map, mergeMap, take } from 'rxjs'
+import { Observable, map, take } from 'rxjs'
 import { CdkAccordionModule } from '@angular/cdk/accordion'
 
 @Component({
