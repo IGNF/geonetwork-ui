@@ -72,6 +72,9 @@ export class GpfApiDlComponent implements OnInit {
   format$ = new BehaviorSubject('')
   crs$ = new BehaviorSubject('')
   page$ = new BehaviorSubject(1)
+  editionDateFrom$ = new BehaviorSubject<string | null>(null)
+  editionDateTo$ = new BehaviorSubject<string | null>(null)
+
   url =
     'https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
   choices: any
@@ -95,18 +98,20 @@ export class GpfApiDlComponent implements OnInit {
   apiQueryUrl$ = combineLatest([
     this.zone$,
     this.format$,
-    this.editionDate$,
+    this.editionDateFrom$,
+    this.editionDateTo$,
     this.crs$,
     this.page$,
   ]).pipe(
-    map(([zone, format, editionDate, crs, page]) => {
+    map(([zone, format, editionDateFrom, editionDateTo, crs, page]) => {
       let outputUrl
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
         const params = {
           zone: zone,
           format: format,
-          editionDate: editionDate,
+          editionDateFrom: editionDateFrom,
+          editionDateTo: editionDateTo,
           crs: crs,
           page: page,
         } // initialisation des paramètres de filtres
@@ -151,9 +156,16 @@ export class GpfApiDlComponent implements OnInit {
     return produit['format'][0]['label']
   }
 
-  setEditionDate(value: string) {
-    if (value.match(/[0-9]{4}-[0-1][0-9]-[0-3][0-9]/)) {
-      this.editionDate$.next(value)
+  setEditionDateFrom(value: string) {
+    if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      this.editionDateFrom$.next(value)
+      this.resetPage()
+    }
+  }
+
+  setEditionDateTo(value: string) {
+    if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      this.editionDateTo$.next(value)
       this.resetPage()
     }
   }
@@ -186,6 +198,8 @@ export class GpfApiDlComponent implements OnInit {
     this.format$.next('null')
     this.crs$.next('null')
     this.page$.next(1)
+    this.editionDateTo$.next('null')
+    this.editionDateFrom$.next('null')
   }
   moreResult(): void {
     this.page$.next(this.page$.value + 1)

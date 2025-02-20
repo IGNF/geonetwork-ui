@@ -409,6 +409,7 @@
   "record.metadata.api.form.closeForm": "Close the form",
   "record.metadata.api.form.create": "Create your request",
   "record.metadata.api.form.customUrl": "Custom URL",
+  "record.metadata.api.form.downloadAll": "Download all",
   "record.metadata.api.form.filter": "Filters",
   "record.metadata.api.form.filterDescription": "Section for refining displayed elements",
   "record.metadata.api.form.formatTitle": "Format",
