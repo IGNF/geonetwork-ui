@@ -231,7 +231,7 @@ export class GpfApiDlComponent implements OnInit {
         (element) => element['id'] == this.apiBaseUrl
       )[0]
       page += 1
-      pageCount = response.data.pagecount
+      pageCount = response.data.pagecount + 1
     }
 
     return choicesTest
