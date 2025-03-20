@@ -227,9 +227,15 @@ export class GpfApiDlComponent implements OnInit {
         this.url.concat(`&limit=200&page=${page}`)
       )
 
-      choicesTest = response.data.entry.filter(
-        (element) => element['id'] == this.apiBaseUrl
-      )[0]
+      choicesTest = response.data.entry.filter((element) => {
+        console.log(
+          'element[id]',
+          element['id'],
+          'apiBaseURl',
+          this.apiBaseUrl
+        ),
+          element['id'] == this.apiBaseUrl
+      })[0]
       page += 1
       pageCount = response.data.pagecount + 1
     }
