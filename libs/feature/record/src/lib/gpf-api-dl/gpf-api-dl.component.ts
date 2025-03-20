@@ -201,9 +201,8 @@ export class GpfApiDlComponent implements OnInit {
     this.format$.next('null')
     this.crs$.next('null')
     this.page$.next(1)
-
-    this.editionDateTo$.next('null')
-    this.editionDateFrom$.next('null')
+    this.editionDateTo$.next('')
+    this.editionDateFrom$.next('')
   }
   moreResult(): void {
     this.page$.next(this.page$.value + 1)

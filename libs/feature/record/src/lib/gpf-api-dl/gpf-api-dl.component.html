@@ -63,6 +63,7 @@
         <input
           id="editionDateFrom"
           type="date"
+          [value]="editionDateFrom$ | async"
           (change)="setEditionDateFrom($event.target.value)"
           class="w-full px-2 py-2 border rounded"
           placeholder="Sélectionnez une date"
@@ -73,6 +74,7 @@
         <input
           id="editionDateTo"
           type="date"
+          [value]="editionDateTo$ | async"
           (change)="setEditionDateTo($event.target.value)"
           class="w-full px-2 py-2 border rounded"
           placeholder="Sélectionnez une date"
