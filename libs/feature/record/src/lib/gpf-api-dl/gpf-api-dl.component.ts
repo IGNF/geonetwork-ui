@@ -82,6 +82,7 @@ export class GpfApiDlComponent implements OnInit {
   bucketPromisesZone: Choice[]
   bucketPromisesFormat: Choice[]
   bucketPromisesCrs: Choice[]
+  defaultEditionDate: [any, any]
 
   constructor(protected http: HttpClient) {}
 
@@ -93,6 +94,7 @@ export class GpfApiDlComponent implements OnInit {
     this.bucketPromisesZone = [{ value: '', label: 'ZONE' }]
     this.bucketPromisesFormat = [{ value: '', label: 'FORMAT' }]
     this.bucketPromisesCrs = [{ value: '', label: 'CRS' }]
+    this.defaultEditionDate = ['', '']
     this.getFields()
   }
 
@@ -201,8 +203,8 @@ export class GpfApiDlComponent implements OnInit {
     this.format$.next('null')
     this.crs$.next('null')
     this.page$.next(1)
-    this.editionDateTo$.next('')
-    this.editionDateFrom$.next('')
+    this.editionDateFrom$.next(this.defaultEditionDate[0])
+    this.editionDateTo$.next(this.defaultEditionDate[1])
   }
   moreResult(): void {
     this.page$.next(this.page$.value + 1)
@@ -226,15 +228,9 @@ export class GpfApiDlComponent implements OnInit {
         this.url.concat(`&limit=200&page=${page}`)
       )
 
-      choicesTest = response.data.entry.filter((element) => {
-        console.log(
-          'element[id]',
-          element['id'],
-          'apiBaseURl',
-          this.apiBaseUrl
-        ),
-          element['id'] == this.apiBaseUrl
-      })[0]
+      choicesTest = response.data.entry.filter(
+        (element) => element['id'] == this.apiBaseUrl
+      )[0]
       page += 1
       pageCount = response.data.pagecount + 1
     }
@@ -271,6 +267,15 @@ export class GpfApiDlComponent implements OnInit {
 
     this.bucketPromisesCrs = tempCrs
 
+    console.log('choices', this.choices.editionDateStart)
+
+    this.defaultEditionDate = [
+      this.choices.editionDateStart,
+      this.choices.editionDateEnd,
+    ]
+
+    this.editionDateFrom$.next(this.defaultEditionDate[0])
+    this.editionDateTo$.next(this.defaultEditionDate[1])
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   }
 }
