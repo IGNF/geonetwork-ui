@@ -115,7 +115,6 @@ export class GpfApiDlComponent implements OnInit {
           format: format,
           editionDateFrom: editionDateFrom,
           editionDateTo: editionDateTo,
-
           crs: crs,
           page: page,
         } // initialisation des paramètres de filtres
@@ -145,9 +144,7 @@ export class GpfApiDlComponent implements OnInit {
   pageMax$ = this.apiQueryUrl$.pipe(
     mergeMap((url) => {
       return this.getFilteredProduct$(url).pipe(
-        map((response) =>
-          Math.ceil(response['totalentries'] / Number(this.initialLimit))
-        )
+        map((response) => response['pagecount'])
       )
     })
   )
