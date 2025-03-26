@@ -122,7 +122,6 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     HomeHeaderComponent,
     HeaderBadgeButtonComponent,
     SearchFiltersComponent,
-    NavigationBarComponent,
     NewsPageComponent,
     OrganisationsPageComponent,
     SearchPageComponent,
@@ -185,6 +184,7 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     }),
     OrganisationsComponent,
     LanguageSwitcherComponent,
+    NavigationBarComponent,
     MatButtonToggleModule,
 
     MatIconModule,
