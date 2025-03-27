@@ -33,19 +33,24 @@ export class GpfApiDlListItemComponent implements OnInit {
 
   downloadMultipleFiles() {
     this.liste$.pipe(take(1)).subscribe((fileUrls: any[]) => {
+      console.log('fileUrl', fileUrls)
       if (!fileUrls || fileUrls.length === 0) {
         console.warn('Aucun fichier à télécharger.')
         return
       }
 
-      fileUrls.forEach((fileUrl) => {
+      console.log('fileUrl', fileUrls)
+
+      fileUrls.forEach((fileUrl, index) => {
         if (fileUrl?.id) {
-          const link = document.createElement('a')
-          link.href = fileUrl.id
-          link.setAttribute('download', '')
-          document.body.appendChild(link)
-          link.click()
-          document.body.removeChild(link)
+          setTimeout(() => {
+            const link = document.createElement('a')
+            link.href = fileUrl.id
+            link.setAttribute('download', '')
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+          }, index * 500)
         } else {
           console.warn('Fichier invalide :', fileUrl)
         }
