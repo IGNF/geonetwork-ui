@@ -31,30 +31,36 @@ export class GpfApiDlListItemComponent implements OnInit {
       .pipe(map((response) => response['entry']))
   }
 
-  downloadMultipleFiles() {
-    this.liste$.pipe(take(1)).subscribe((fileUrls: any[]) => {
-      console.log('fileUrl', fileUrls)
+  async downloadMultipleFiles() {
+    this.liste$.pipe(take(1)).subscribe(async (fileUrls: { id: string }[]) => {
       if (!fileUrls || fileUrls.length === 0) {
         console.warn('Aucun fichier à télécharger.')
         return
       }
 
-      console.log('fileUrl', fileUrls)
+      console.log('fileUrls:', fileUrls)
 
-      fileUrls.forEach((fileUrl, index) => {
+      for (const fileUrl of fileUrls) {
         if (fileUrl?.id) {
-          setTimeout(() => {
-            const link = document.createElement('a')
-            link.href = fileUrl.id
-            link.setAttribute('download', '')
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-          }, index * 500)
+          await this.downloadFile(fileUrl.id)
         } else {
           console.warn('Fichier invalide :', fileUrl)
         }
-      })
+      }
+    })
+  }
+
+  private downloadFile(url: string): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', '')
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        resolve()
+      }, 1000) // Attendre 1s entre chaque téléchargement
     })
   }
 }
