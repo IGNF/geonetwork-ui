@@ -12,3 +12,8 @@
 .fade-leave-active {
   opacity: 0;
 }
+
+#accordion {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
