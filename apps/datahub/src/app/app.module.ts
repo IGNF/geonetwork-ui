@@ -184,7 +184,6 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     }),
     OrganisationsComponent,
     LanguageSwitcherComponent,
-    NavigationBarComponent,
     MatButtonToggleModule,
 
     MatIconModule,
