@@ -1,16 +1,13 @@
 <div
-  style="height: 612px"
+  style="height: 652px"
   *ngIf="(displayMap$ | async) || (displayData$ | async)"
   id="preview"
 >
-  <div
-    class="bg-primary-opacity-10 pt-8 overflow-visible sm:pt-5"
-    style="height: 512px"
-  >
+  <div class="bg-primary-opacity-10 overflow-visible" style="height: 512px">
     <div class="container-lg px-4 lg:mx-auto">
       <div>
         <div
-          class="text-[28px] text-title font-title transform sm:translate-y-10"
+          class="gn-ui-section-title transform translate-y-10 pt-0"
           translate
         >
           record.metadata.preview
@@ -32,7 +29,7 @@
               *ngIf="displayMap$ | async"
             >
               <gn-ui-map-view
-                [excludeWfs]="exceedsMaxFeatureCount$ | async"
+                [exceedsLimit]="exceedsMaxFeatureCount$ | async"
               ></gn-ui-map-view>
             </div>
           </mat-tab>
@@ -41,22 +38,10 @@
               <span class="tab-header-label" translate>record.tab.data</span>
             </ng-template>
             <div class="block" *ngIf="displayData$ | async">
-              <ng-container
-                *ngIf="exceedsMaxFeatureCount$ | async; else tableView"
-              >
-                <gn-ui-popup-alert
-                  type="warning"
-                  icon="matErrorOutlineOutline"
-                  class="block h-12 p-1"
-                >
-                  <span translate [translateParams]="{ count: maxFeatureCount }"
-                    >record.feature.limit</span
-                  >
-                </gn-ui-popup-alert>
-              </ng-container>
-              <ng-template #tableView>
-                <gn-ui-data-view mode="table"></gn-ui-data-view>
-              </ng-template>
+              <gn-ui-data-view
+                [exceedsLimit]="exceedsMaxFeatureCount$ | async"
+                mode="table"
+              ></gn-ui-data-view>
             </div>
           </mat-tab>
           <mat-tab [disabled]="(displayData$ | async) === false">
@@ -64,22 +49,10 @@
               <span class="tab-header-label" translate>record.tab.chart</span>
             </ng-template>
             <div class="block" *ngIf="displayData$ | async">
-              <ng-container
-                *ngIf="exceedsMaxFeatureCount$ | async; else chartView"
-              >
-                <gn-ui-popup-alert
-                  type="warning"
-                  icon="matErrorOutlineOutline"
-                  class="block h-12 p-1"
-                >
-                  <span translate [translateParams]="{ count: maxFeatureCount }"
-                    >record.feature.limit</span
-                  >
-                </gn-ui-popup-alert>
-              </ng-container>
-              <ng-template #chartView>
-                <gn-ui-data-view mode="chart"></gn-ui-data-view>
-              </ng-template>
+              <gn-ui-data-view
+                [exceedsLimit]="exceedsMaxFeatureCount$ | async"
+                mode="chart"
+              ></gn-ui-data-view>
             </div>
           </mat-tab>
         </mat-tab-group>
@@ -87,7 +60,8 @@
     </div>
   </div>
 </div>
-<gn-ui-data-view-share
-  *ngIf="displayViewShare$ | async"
-  [viewType]="selectedView$ | async"
-></gn-ui-data-view-share>
+<div class="container-lg lg:mx-auto mb-10" *ngIf="displayViewShare$ | async">
+  <gn-ui-data-view-share
+    [viewType]="selectedView$ | async"
+  ></gn-ui-data-view-share>
+</div>

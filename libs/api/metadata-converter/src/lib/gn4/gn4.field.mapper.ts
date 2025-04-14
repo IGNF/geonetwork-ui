@@ -277,10 +277,42 @@ export class Gn4FieldMapper {
         },
         output
       ),
+    featureTypes: (output, source) =>
+      this.addExtra(
+        {
+          featureTypes: selectField(source, 'featureTypes'),
+        },
+        output
+      ),
+    related: (output, source) => {
+      const fcatSource = selectField(
+        getFirstValue(
+          selectField(
+            <SourceWithUnknownProps>selectField(source, 'related'),
+            'fcats'
+          )
+        ) ?? {},
+        '_source'
+      )
+      const featureCatalogIdentifier = selectField(
+        <SourceWithUnknownProps>fcatSource,
+        'uuid'
+      )
+      return featureCatalogIdentifier
+        ? this.addExtra({ featureCatalogIdentifier }, output)
+        : output
+    },
     isPublishedToAll: (output, source) =>
       this.addExtra(
         {
-          isPublishedToAll: selectField(source, 'isPublishedToAll') !== 'false',
+          isPublishedToAll: selectField(source, 'isPublishedToAll'),
+        },
+        output
+      ),
+    edit: (output, source) =>
+      this.addExtra(
+        {
+          edit: selectField(source, 'edit'),
         },
         output
       ),
@@ -429,6 +461,11 @@ export class Gn4FieldMapper {
       ),
       selectField<string>(sourceLink, 'description')
     )
+    const descriptionLink = selectField<object>(sourceLink, 'descriptionObject')
+    const accessRestricted =
+      descriptionLink &&
+      'link' in descriptionLink &&
+      descriptionLink.link.toString().includes('#MD_RestrictionCode_restricted')
     // no url: fail early
     if (url === null) {
       // TODO: collect errors at the record level?
@@ -454,6 +491,7 @@ export class Gn4FieldMapper {
           type,
           url: url,
           accessServiceProtocol,
+          accessRestricted: accessRestricted,
         }
       case 'link':
         return {
@@ -472,8 +510,8 @@ export class Gn4FieldMapper {
         return {
           ...distribution,
           type,
-          endpointUrl: url,
-          protocol: accessServiceProtocol,
+          url: url,
+          accessServiceProtocol: accessServiceProtocol,
         }
     }
   }

@@ -46,7 +46,7 @@ describe('Gn4FieldMapper', () => {
           (key) => elasticLinkFixture()[key]
         )
         const linkTypes = allLinks.map((fixture) =>
-          service.getLinkType(fixture.url, fixture.protocol)
+          service.getLinkType(fixture.url, fixture.accessServiceProtocol)
         )
         expect(linkTypes).toStrictEqual([
           'link',
@@ -190,6 +190,16 @@ describe('Gn4FieldMapper', () => {
           }
           const result = mappingFn(output, source)
           expect(result).toEqual({ status: 'completed' })
+        })
+        it('edit - should return a function that correctly maps the field', () => {
+          const fieldName = 'edit'
+          const mappingFn = service.getMappingFn(fieldName)
+          const output = {}
+          const source = {
+            edit: 'true',
+          }
+          const result = mappingFn(output, source)
+          expect(result).toEqual({ extras: { edit: 'true' } })
         })
       })
     })

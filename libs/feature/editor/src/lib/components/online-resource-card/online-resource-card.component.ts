@@ -54,8 +54,8 @@ export class OnlineResourceCardComponent {
       case 'service':
       case 'download':
         return (
-          this.onlineResource.name ??
-          this.onlineResource.description ??
+          this.onlineResource.description ||
+          this.onlineResource.name ||
           '(unknown)'
         )
       case 'endpoint':
@@ -66,9 +66,8 @@ export class OnlineResourceCardComponent {
   get subtitle(): string {
     switch (this.onlineResource.type) {
       case 'service':
-        return `${this.onlineResource.accessServiceProtocol}`
       case 'endpoint':
-        return `${this.onlineResource.protocol}`
+        return `${this.onlineResource.accessServiceProtocol}`
       case 'link':
       case 'download':
         return this.getFormat(this.onlineResource)

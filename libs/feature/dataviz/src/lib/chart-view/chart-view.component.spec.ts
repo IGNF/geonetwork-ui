@@ -126,7 +126,8 @@ describe('ChartViewComponent', () => {
     it('creates a dataset reader once from the link', () => {
       expect(dataService.getDataset).toHaveBeenCalledTimes(1)
       expect(dataService.getDataset).toHaveBeenCalledWith(
-        aSetOfLinksFixture().dataCsv()
+        aSetOfLinksFixture().dataCsv(),
+        true
       )
     })
     it('choses the first string property for X', () => {
@@ -302,6 +303,10 @@ describe('ChartViewComponent', () => {
     it('shows error', () => {
       expect(component.error).toBe('could not open dataset')
     })
+    it('does not display chart', () => {
+      const chart = fixture.debugElement.query(By.directive(ChartComponent))
+      expect(chart).toBeFalsy()
+    })
   })
 
   describe('dataset fails on properties info', () => {
@@ -318,6 +323,11 @@ describe('ChartViewComponent', () => {
     })
     it('shows error', () => {
       expect(component.error).toBe('dataset.error.unknown')
+    })
+
+    it('does not display chart', () => {
+      const chart = fixture.debugElement.query(By.directive(ChartComponent))
+      expect(chart).toBeFalsy()
     })
   })
 
@@ -377,6 +387,33 @@ describe('ChartViewComponent', () => {
           id: 2,
         },
       ])
+    })
+  })
+  describe('when cache is deactivated', () => {
+    beforeEach(fakeAsync(() => {
+      jest.clearAllMocks()
+      component.cacheActive = false
+      component.link = aSetOfLinksFixture().dataCsv()
+      fixture.detectChanges()
+      tick(500)
+      flushMicrotasks()
+    }))
+
+    it('loads the data without the cache', () => {
+      expect(dataService.getDataset).toHaveBeenCalledWith(
+        aSetOfLinksFixture().dataCsv(),
+        false
+      )
+    })
+  })
+  describe('When link is restricted', () => {
+    it('shows an error message', () => {
+      component.link = {
+        ...aSetOfLinksFixture().dataCsv(),
+        accessRestricted: true,
+      }
+      fixture.detectChanges()
+      expect(component.error).toEqual('dataset.error.restrictedAccess')
     })
   })
 })

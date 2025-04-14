@@ -12,7 +12,11 @@ import {
   Iso19139Converter,
 } from '@geonetwork-ui/api/metadata-converter'
 import { PublicationVersionError } from '@geonetwork-ui/common/domain/model/error'
-import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
+import {
+  CatalogRecord,
+  DatasetFeatureType,
+  DatasetFeatureCatalog,
+} from '@geonetwork-ui/common/domain/model/record'
 import {
   Aggregations,
   AggregationsParams,
@@ -27,6 +31,7 @@ import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/reposit
 import {
   RecordsApiService,
   SearchApiService,
+  FeatureResponseApiModel,
 } from '@geonetwork-ui/data-access/gn4'
 import {
   combineLatest,
@@ -124,7 +129,7 @@ export class Gn4Repository implements RecordsRepositoryInterface {
     return this.gn4SearchApi
       .search(
         'bucket',
-        null,
+        ['fcats'],
         JSON.stringify(
           this.gn4SearchHelper.getMetadataByIdPayload(uniqueIdentifier)
         )
@@ -137,17 +142,55 @@ export class Gn4Repository implements RecordsRepositoryInterface {
       )
   }
 
+  private mapEmbeddedFeatureCatalog(
+    featureTypes: Array<DatasetFeatureType>
+  ): DatasetFeatureCatalog {
+    return {
+      featureTypes: featureTypes.map((featureType) => ({
+        name: featureType.typeName || '',
+        definition: featureType.definition || '',
+        attributes: Array.isArray(featureType.attributeTable)
+          ? featureType.attributeTable.map((attr) => ({
+              name: attr.name,
+              title: attr.definition,
+            }))
+          : [],
+      })),
+    }
+  }
+  getFeatureCatalog(
+    record: CatalogRecord,
+    visited: Set<string> = new Set() // prevent looping
+  ): Observable<DatasetFeatureCatalog | null> {
+    if (
+      record.extras?.['featureTypes'] &&
+      Array.isArray(record.extras['featureTypes'])
+    ) {
+      return of(this.mapEmbeddedFeatureCatalog(record.extras['featureTypes']))
+    }
+
+    const featureCatalogIdentifier = record.extras[
+      'featureCatalogIdentifier'
+    ] as string
+    if (featureCatalogIdentifier && !visited.has(featureCatalogIdentifier)) {
+      visited.add(featureCatalogIdentifier)
+      return this.getRecord(featureCatalogIdentifier).pipe(
+        switchMap((record) =>
+          record ? this.getFeatureCatalog(record, visited) : of(null)
+        )
+      )
+    }
+
+    return of(null)
+  }
+
   getSimilarRecords(similarTo: CatalogRecord): Observable<CatalogRecord[]> {
     return this.gn4SearchApi
       .search(
         'bucket',
         null,
         JSON.stringify(
-          this.gn4SearchHelper.getRelatedRecordPayload(
-            similarTo.title,
-            similarTo.uniqueIdentifier,
-            3
-          )
+          this.gn4SearchHelper.getRelatedRecordPayload(similarTo, 3)
         )
       )
       .pipe(
@@ -201,6 +244,22 @@ export class Gn4Repository implements RecordsRepositoryInterface {
       )
   }
 
+  getRecordPublicationStatus(uniqueIdentifier: string): Observable<boolean> {
+    return uniqueIdentifier
+      ? this.getRecord(uniqueIdentifier).pipe(
+          map((record) => record.extras['isPublishedToAll'] as boolean)
+        )
+      : of(true)
+  }
+
+  canEditRecord(uniqueIdentifier: string): Observable<boolean> {
+    return this.getRecord(uniqueIdentifier).pipe(
+      map((record) => {
+        return record.extras['edit'] as boolean
+      })
+    )
+  }
+
   openRecordForEdition(
     uniqueIdentifier: string
   ): Observable<[CatalogRecord, string, boolean] | null> {
@@ -223,31 +282,45 @@ export class Gn4Repository implements RecordsRepositoryInterface {
 
   openRecordForDuplication(
     uniqueIdentifier: string
-  ): Observable<[CatalogRecord, string, false] | null> {
-    return this.getRecordAsXml(uniqueIdentifier).pipe(
-      switchMap(async (fetchedRecordAsXml) => {
-        const converter = findConverterForDocument(fetchedRecordAsXml)
-        const record = await converter.readRecord(fetchedRecordAsXml)
-
-        record.uniqueIdentifier = `${TEMPORARY_ID_PREFIX}${Date.now()}`
-        record.title = `${record.title} (Copy)`
-
-        const recordAsXml = await converter.writeRecord(
-          record,
-          fetchedRecordAsXml
-        )
-
-        this.saveRecordToLocalStorage(recordAsXml, record.uniqueIdentifier)
-        this._draftsChanged.next()
-
-        return [record, recordAsXml, false] as [CatalogRecord, string, false]
-      })
-    )
+  ): Observable<[CatalogRecord, string, true] | null> {
+    return this.gn4RecordsApi
+      .create(
+        uniqueIdentifier,
+        '2',
+        'METADATA',
+        '',
+        false,
+        undefined,
+        true,
+        false,
+        undefined,
+        'body',
+        false,
+        {
+          httpHeaderAccept: 'application/json',
+          httpContentTypeSelected: 'application/json;charset=UTF-8',
+        }
+      )
+      .pipe(
+        switchMap((uniqueIdentifier) => {
+          return this.getRecordAsXml(uniqueIdentifier)
+        }),
+        switchMap((xml) => {
+          return from(
+            findConverterForDocument(xml)
+              .readRecord(xml)
+              .then((record) => {
+                return [record, xml, true] as [CatalogRecord, string, true]
+              })
+          )
+        })
+      )
   }
 
   saveRecord(
     record: CatalogRecord,
-    referenceRecordSource?: string
+    referenceRecordSource?: string,
+    publishToAll = true
   ): Observable<string> {
     return this.platformService.getApiVersion().pipe(
       map((version) => {
@@ -262,7 +335,7 @@ export class Gn4Repository implements RecordsRepositoryInterface {
           undefined,
           undefined,
           undefined,
-          true,
+          publishToAll,
           undefined,
           'OVERWRITE',
           undefined,
@@ -287,21 +360,13 @@ export class Gn4Repository implements RecordsRepositoryInterface {
       exhaustMap(async (fetchedRecordAsXml: string) => {
         const converter = findConverterForDocument(fetchedRecordAsXml)
         const record = await converter.readRecord(fetchedRecordAsXml)
-        const tempId = this.generateTemporaryId()
 
         record.title = `${record.title} (Copy)`
-        record.uniqueIdentifier = tempId
+        await converter.writeRecord(record, fetchedRecordAsXml)
 
-        const recordAsXml = await converter.writeRecord(
-          record,
-          fetchedRecordAsXml
-        )
-
-        this.saveRecordToLocalStorage(recordAsXml, record.uniqueIdentifier)
-        this._draftsChanged.next()
-
-        return tempId
+        return this.saveRecord(record, '', false)
       }),
+      exhaustMap((uuidObservable: Observable<string>) => uuidObservable),
       catchError((error: HttpErrorResponse) => {
         return throwError(() => error)
       })
@@ -337,10 +402,6 @@ export class Gn4Repository implements RecordsRepositoryInterface {
     return this.getRecordFromLocalStorage(uniqueIdentifier) !== null
   }
 
-  isRecordNotYetSaved(uniqueIdentifier: string): boolean {
-    return uniqueIdentifier.startsWith(TEMPORARY_ID_PREFIX)
-  }
-
   // generated by copilot
   getAllDrafts(): Observable<CatalogRecord[]> {
     const items = { ...window.localStorage }
@@ -368,7 +429,7 @@ export class Gn4Repository implements RecordsRepositoryInterface {
 
   hasRecordChangedSinceDraft(localRecord: CatalogRecord) {
     return of({
-      isUnsaved: this.isRecordNotYetSaved(localRecord.uniqueIdentifier),
+      isUnsaved: !localRecord.uniqueIdentifier,
       hasDraft: this.recordHasDraft(localRecord.uniqueIdentifier),
     }).pipe(
       switchMap(({ isUnsaved, hasDraft }) => {

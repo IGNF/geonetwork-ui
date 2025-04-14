@@ -21,6 +21,7 @@ import {
 } from '@geonetwork-ui/feature/dataviz'
 
 class MdViewFacadeMock {
+  isHighUpdateFrequency$ = new Subject()
   dataLinks$ = new Subject()
   geoDataLinks$ = new Subject()
   setChartConfig = jest.fn()
@@ -143,6 +144,29 @@ describe('DataViewComponent', () => {
     })
     it('calls setChartConfig', () => {
       expect(facade.setChartConfig).toHaveBeenCalledWith(chartConfigMock)
+    })
+  })
+  describe('When the WFS link has too many features', () => {
+    beforeEach(fakeAsync(() => {
+      component.mode = 'chart'
+      fixture.detectChanges()
+      facade.dataLinks$.next(someDataLinksFixture())
+      facade.geoDataLinks$.next(someGeoDatalinksFixture())
+      flushMicrotasks()
+      fixture.detectChanges()
+
+      dropdownComponent = fixture.debugElement.query(
+        By.directive(DropdownSelectorComponent)
+      ).componentInstance
+      dropdownComponent.selectValue.emit(
+        JSON.stringify(someGeoDatalinksFixture()[1])
+      )
+      component.excludeWfs$.next(true)
+      flushMicrotasks()
+      fixture.detectChanges()
+    }))
+    it('should set hidePreview to true', () => {
+      expect(component.hidePreview).toEqual(true)
     })
   })
 })

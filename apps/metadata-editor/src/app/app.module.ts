@@ -51,6 +51,8 @@ import { FeatureEditorModule } from '@geonetwork-ui/feature/editor'
       searchStateId: 'editor',
       searchRouteComponent: DashboardPageComponent,
       recordRouteComponent: null,
+      serviceRouteComponent: null,
+      reuseRouteComponent: null,
       organizationRouteComponent: null,
     }),
     ...extModules,

@@ -2,7 +2,9 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  Inject,
   Input,
+  Optional,
   Output,
 } from '@angular/core'
 import { marker } from '@biesbjerg/ngx-translate-extract-marker'
@@ -65,6 +67,7 @@ marker('chart.aggregation.count')
   standalone: true,
 })
 export class ChartViewComponent {
+  @Input() cacheActive = true
   @Input() set link(value: DatasetOnlineResource) {
     this.currentLink$.next(value)
   }
@@ -134,7 +137,11 @@ export class ChartViewComponent {
     switchMap((link) => {
       this.error = null
       this.loading = true
-      return this.dataService.getDataset(link).pipe(
+      if (link.accessRestricted) {
+        this.handleError('dataset.error.restrictedAccess')
+        return EMPTY
+      }
+      return this.dataService.getDataset(link, this.cacheActive).pipe(
         catchError((error) => {
           this.handleError(error)
           return EMPTY

@@ -85,6 +85,8 @@ describe('Gn4Converter', () => {
             extras: {
               id: '12456',
               catalogUuid: '6731be1e-6533-44e0-9b8a-580b45e36e80',
+              edit: true,
+              isPublishedToAll: true,
             },
             landingPage: new URL(
               'http://my.catalog.org/metadata/20e9e1a1-83c1-4f13-89ef-c19767d6ee18f'
@@ -132,6 +134,8 @@ describe('Gn4Converter', () => {
               id: '12442',
               catalogUuid: '6731be1e-6533-44e0-9b8a-580b45e36e80',
               favoriteCount: 4,
+              edit: true,
+              isPublishedToAll: true,
             },
             landingPage: new URL(
               'http://my.catalog.org/metadata/5b35f06e-8c6b-4907-b8f4-39541d170360'
@@ -1002,6 +1006,44 @@ describe('Gn4Converter', () => {
         })
       })
 
+      describe('feature catalog (fcats)', () => {
+        it('sets the featureCatalogIdentifier from the fcats', async () => {
+          const record = await service.readRecord({
+            ...hit,
+            _source: {
+              ...hit._source,
+              related: {
+                fcats: [
+                  {
+                    _source: {
+                      uuid: 'related-metadata-with-fcats',
+                    },
+                  },
+                ],
+              },
+            },
+          })
+
+          expect(record.extras['featureCatalogIdentifier']).toEqual(
+            'related-metadata-with-fcats'
+          )
+        })
+
+        it('supports empty fcats array', async () => {
+          const record = await service.readRecord({
+            ...hit,
+            _source: {
+              ...hit._source,
+              related: {
+                fcats: [],
+              },
+            },
+          })
+
+          expect(record.extras['featureCatalogIdentifier']).toBeUndefined()
+        })
+      })
+
       describe('full record', () => {
         it('builds a complete record object', async () => {
           const record = await service.readRecord(
@@ -1113,6 +1155,7 @@ describe('Gn4Converter', () => {
                 description: 'Lieu de surveillance (point)',
                 name: 'surval_parametre_point',
                 type: 'service',
+                accessRestricted: null,
               },
               {
                 accessServiceProtocol: 'wfs',
@@ -1122,6 +1165,7 @@ describe('Gn4Converter', () => {
                 description: 'Lieu de surveillance (point)',
                 name: 'surval_parametre_point',
                 type: 'service',
+                accessRestricted: null,
               },
               {
                 description: "Extraction des données d'observation",
@@ -1137,6 +1181,7 @@ describe('Gn4Converter', () => {
                 description: 'Lieu de surveillance (ligne)',
                 name: 'surval_parametre_ligne',
                 type: 'service',
+                accessRestricted: null,
               },
               {
                 accessServiceProtocol: 'wfs',
@@ -1146,6 +1191,7 @@ describe('Gn4Converter', () => {
                 description: 'Lieu de surveillance (ligne)',
                 name: 'surval_parametre_ligne',
                 type: 'service',
+                accessRestricted: null,
               },
               {
                 description: "Extraction des données d'observation",
@@ -1161,6 +1207,7 @@ describe('Gn4Converter', () => {
                 description: 'Lieu de surveillance (polygone)',
                 name: 'surval_parametre_polygone',
                 type: 'service',
+                accessRestricted: null,
               },
               {
                 accessServiceProtocol: 'wfs',
@@ -1170,6 +1217,7 @@ describe('Gn4Converter', () => {
                 description: 'Lieu de surveillance (polygone)',
                 name: 'surval_parametre_polygone',
                 type: 'service',
+                accessRestricted: null,
               },
               {
                 description: "Extraction des données d'observation",
@@ -1193,6 +1241,7 @@ describe('Gn4Converter', () => {
               isOpenData: true,
               isPublishedToAll: true,
               ownerInfo: 'testadmin|ADMIN|Test|Administrator',
+              edit: true,
             },
             keywords: [
               {
@@ -1657,10 +1706,7 @@ describe('Gn4Converter', () => {
             topics: ['Installations de suivi environnemental', 'Océans'],
             title: 'Surval - Données par paramètre',
             uniqueIdentifier: 'cf5048f6-5bbf-4e44-ba74-e6f429af51ea',
-            updateFrequency: {
-              per: 'day',
-              updatedTimes: 1,
-            },
+            updateFrequency: 'daily',
             spatialExtents: [
               {
                 description: 'Hauts-de-France (Région)',
@@ -1730,6 +1776,7 @@ describe('Gn4Converter', () => {
               isOpenData: true,
               isPublishedToAll: true,
               ownerInfo: 'AREadmin|admin|ARE|UserAdmin',
+              edit: true,
             },
             keywords: [
               {
@@ -1966,6 +2013,7 @@ describe('Gn4Converter', () => {
                 url: new URL(
                   'https://wms.geo.admin.ch/?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities&lang=de'
                 ),
+                accessRestricted: false,
               },
               {
                 accessServiceProtocol: 'wmts',
@@ -1975,6 +2023,7 @@ describe('Gn4Converter', () => {
                 url: new URL(
                   'https://wmts.geo.admin.ch/EPSG/3857/1.0.0/WMTSCapabilities.xml?lang=de'
                 ),
+                accessRestricted: false,
               },
               {
                 description: 'Webseite des ARE über die Alpenkonvention',
@@ -2360,7 +2409,9 @@ describe('Gn4Converter', () => {
               isPublishedToAll: true,
               id: '53583',
               favoriteCount: 0,
+              featureTypes: [],
               catalogUuid: 'metawal.wallonie.be',
+              edit: true,
             },
             onlineResources: [
               {
@@ -2560,6 +2611,7 @@ describe('Gn4Converter', () => {
               catalogUuid: 'c3f93209-4363-4e30-bec2-3cc43bd7a8a7',
               ownerInfo: 'vfabry|Fabry|Vincent|Administrator',
               favoriteCount: 0,
+              edit: true,
             },
             recordCreated: new Date('2021-12-14T15:02:50.000Z'),
             resourceCreated: new Date('2019-12-02T00:00:00.000Z'),
@@ -2579,6 +2631,7 @@ describe('Gn4Converter', () => {
                   'https://services.sandre.eaufrance.fr/geo/odp?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities'
                 ),
                 accessServiceProtocol: 'wfs',
+                accessRestricted: false,
               },
             ],
             title:
@@ -2637,9 +2690,11 @@ describe('Gn4Converter', () => {
             extras: {
               catalogUuid: 'metawal.wallonie.be',
               favoriteCount: 0,
+              featureTypes: [],
               id: '1215',
               isOpenData: false,
               isPublishedToAll: true,
+              edit: true,
               ownerInfo:
                 'Admin_Metawal|Administrator_user de Stephane Ritz|Metawal|Administrator',
             },
@@ -3202,6 +3257,7 @@ describe('Gn4Converter', () => {
               catalogUuid: 'c3f93209-4363-4e30-bec2-3cc43bd7a8a7',
               ownerInfo: 'vfabry|Fabry|Vincent|Administrator',
               favoriteCount: 0,
+              edit: true,
             },
             recordCreated: new Date('2024-09-13T10:12:38.614Z'),
             resourceCreated: new Date('2024-05-27T00:00:00.000Z'),
@@ -3349,6 +3405,7 @@ describe('Gn4Converter', () => {
               id: '8705',
               favoriteCount: 0,
               catalogUuid: 'ce008f24-8e0d-45a8-97f8-9f10399f0190',
+              edit: true,
             },
             onlineResources: [
               {

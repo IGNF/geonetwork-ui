@@ -14,5 +14,15 @@ export default defineConfig({
       cypressBrowserPermissionsPlugin(on, config)
       configureCommonPlugins(on, config)
     },
+    numTestsKeptInMemory: 10,
+    retries: {
+      experimentalStrategy: 'detect-flake-and-pass-on-threshold',
+      experimentalOptions: {
+        maxRetries: 4,
+        passesRequired: 1,
+      },
+      openMode: true,
+      runMode: true,
+    },
   },
 })

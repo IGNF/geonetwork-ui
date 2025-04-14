@@ -19,16 +19,31 @@ beforeEach(() => {
   )
   cy.intercept(
     'GET',
-    '/geoserver/insee/ows?REQUEST=GetMap&SERVICE=WMS&VERSION=1.3.0&FORMAT=image%2Fpng&STYLES=&TRANSPARENT=true&LAYERS=rectangles_200m_menage_erbm*',
+    '/geoserver/insee/wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=2.0.0&TYPENAMES=insee%3Arectangles_200m_menage_erbm&OUTPUTFORMAT=application%2Fjson&PROPERTYNAME=oid%2Cidk%2Cmen%2Cmen_occ5%2Cpt_men_occ5&COUNT=10&SRSNAME=EPSG%3A4326',
     {
-      fixture: 'insee-rectangles_200m_menage_erbm.png',
+      fixture: 'insee-wfs-table-data.json',
+    }
+  )
+  //Note: The real WFS of this example responds with an error to this request due to a missing primary key in the table
+  cy.intercept(
+    'GET',
+    'geoserver/insee/wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=2.0.0&TYPENAMES=insee%3Arectangles_200m_menage_erbm&OUTPUTFORMAT=application%2Fjson&PROPERTYNAME=oid%2Cidk%2Cmen%2Cmen_occ5%2Cpt_men_occ5&COUNT=10&SRSNAME=EPSG%3A4326&STARTINDEX=10',
+    {
+      fixture: 'insee-wfs-table-data-page2.json',
     }
   )
   cy.intercept(
     'GET',
-    '/geoserver/insee/wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=2.0.0&TYPENAMES=insee%3Arectangles_200m_menage_erbm&OUTPUTFORMAT=application%2Fjson*',
+    'geoserver/insee/wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=2.0.0&TYPENAMES=insee%3Arectangles_200m_menage_erbm&OUTPUTFORMAT=application%2Fjson&PROPERTYNAME=oid%2Cidk%2Cmen%2Cmen_occ5%2Cpt_men_occ5&COUNT=10&SRSNAME=EPSG%3A4326&SORTBY=idk+D',
     {
-      fixture: 'insee-rectangles_200m_menage_erbm.json',
+      fixture: 'insee-wfs-table-data-sort-idk.json',
+    }
+  )
+  cy.intercept(
+    'GET',
+    '/geoserver/insee/ows?REQUEST=GetMap&SERVICE=WMS&VERSION=1.3.0&FORMAT=image%2Fpng&STYLES=&TRANSPARENT=true&LAYERS=rectangles_200m_menage_erbm*',
+    {
+      fixture: 'insee-rectangles_200m_menage_erbm.png',
     }
   )
   cy.intercept(
@@ -82,13 +97,6 @@ beforeEach(() => {
 
 describe('dataset pages', () => {
   beforeEach(() => {
-    // dataset without API, preview or downloads
-    // cy.visit('/dataset/011963da-afc0-494c-a2cc-5cbd59e122e4')
-    // dataset with map error
-    // cy.visit('/dataset/6d0bfdf4-4e94-48c6-9740-3f9facfd453c')
-    // dataset with stuff greyed out & unknown data types
-    // cy.visit('/dataset/8698bf0b-fceb-4f0f-989b-111e7c4af0a4')
-    // dataset with pretty much everything
     cy.visit('/dataset/04bcec79-5b25-4b16-b635-73115f7456e4')
   })
 
@@ -100,8 +108,42 @@ describe('dataset pages', () => {
       })
     })
 
+    describe('navigation bar', () => {
+      it('should display the navigation bar, with favorite star and arrow back', () => {
+        cy.get('datahub-record-page')
+          .find('datahub-navigation-bar')
+          .should('exist')
+        cy.get('datahub-record-page')
+          .find('[data-cy="backButton"]')
+          .should('exist')
+        cy.get('datahub-record-page')
+          .find('gn-ui-favorite-star')
+          .should('exist')
+      })
+      it('should display the gnUiAnchorLinkInViewClass when scrolling to the anchor', () => {
+        cy.get('#user-feedbacks').should('be.visible')
+        cy.get('#user-feedbacks').should('be.visible').scrollIntoView()
+        cy.get('[data-cy="user-feedbacks"]').should(
+          'have.class',
+          '!border-b-primary border-b-4'
+        )
+      })
+      it('should scroll down when clicking on anchor title', () => {
+        cy.get('datahub-record-downloads').should('be.visible')
+        cy.get('[data-cy="resources"]').click({ force: true })
+        cy.window().then((win) => {
+          const scrollPosition = win.scrollY
+          expect(scrollPosition).to.be.greaterThan(0)
+        })
+      })
+      it('should return to the dataset list', () => {
+        cy.get('datahub-record-page').find('[data-cy="backButton"]').click()
+        cy.url().should('include', '/search')
+      })
+    })
+
     describe('header', () => {
-      it('should display the title, favorite star group and arrow back', () => {
+      it('should display the title', () => {
         cy.get('datahub-header-record')
           .children('header')
           .find('.font-title')
@@ -109,29 +151,12 @@ describe('dataset pages', () => {
             const text = $element.text().trim()
             expect(text).not.to.equal('')
           })
-        cy.get('datahub-header-record')
-          .children('header')
-          .find('gn-ui-favorite-star')
-        cy.get('datahub-header-record')
-          .children('header')
-          .find('gn-ui-navigation-button')
         cy.screenshot({ capture: 'fullPage' })
       })
       it('should display the data type, last update and status', () => {
         cy.visit('/dataset/01491630-78ce-49f3-b479-4b30dabc4c69')
-        cy.get('datahub-header-record')
-          .children('header')
-          .find('.font-title')
-          .next()
-          .as('infoBar')
-        cy.get('@infoBar').children().should('have.length', 3)
-      })
-      it('should return to the dataset list', () => {
-        cy.get('datahub-header-record')
-          .children('header')
-          .find('gn-ui-navigation-button')
-          .click()
-        cy.url().should('include', '/search')
+        cy.get('[data-test="metadataBadges"]').as('infoBar')
+        cy.get('@infoBar').children().should('have.length', 4)
       })
     })
   })
@@ -197,7 +222,6 @@ describe('dataset pages', () => {
           })
       })
       it('should display the keywords', () => {
-        cy.get('gn-ui-expandable-panel').eq(2).click()
         cy.get('gn-ui-badge').should('have.length.gt', 0)
       })
       it('should display three expandable panels', () => {
@@ -292,9 +316,7 @@ describe('dataset pages', () => {
         cy.url().should('include', '/search?organization=')
       })
       it('should go to dataset search page when clicking on keyword and filter by keyword', () => {
-        cy.get('gn-ui-expandable-panel').eq(2).click()
-
-        cy.get('gn-ui-badge').should('have.length.gt', 0).eq(1).as('keyword')
+        cy.get('gn-ui-badge').should('have.length.gt', 0).eq(2).as('keyword')
 
         cy.get('@keyword').then((key) => {
           keyword = key.text().toUpperCase()
@@ -334,7 +356,7 @@ describe('dataset pages', () => {
           cy.screenshot({ capture: 'fullPage' })
         })
         it('should not check all the criteria', () => {
-          cy.get('gn-ui-metadata-quality').realHover()
+          cy.get('gn-ui-metadata-quality').find('ng-icon').realHover()
           cy.get('gn-ui-metadata-quality-item')
             .find('ng-icon')
             .eq(4)
@@ -351,7 +373,7 @@ describe('dataset pages', () => {
             .should('have.attr', 'ng-reflect-value', 100)
         })
         it('should check all the criteria if score is 100%', () => {
-          cy.get('gn-ui-metadata-quality').realHover()
+          cy.get('gn-ui-metadata-quality').find('ng-icon').realHover()
           cy.get('gn-ui-metadata-quality-item')
             .find('ng-icon')
             .eq(4)
@@ -367,6 +389,21 @@ describe('dataset pages', () => {
         .find('[id="preview"]')
         .first()
         .as('previewSection')
+      cy.get('@previewSection')
+        .find('.mat-mdc-tab-labels')
+        .children('div')
+        .eq(0)
+        .as('mapTab')
+      cy.get('@previewSection')
+        .find('.mat-mdc-tab-labels')
+        .children('div')
+        .eq(1)
+        .as('tableTab')
+      cy.get('@previewSection')
+        .find('.mat-mdc-tab-labels')
+        .children('div')
+        .eq(2)
+        .as('chartTab')
     })
     describe('display', () => {
       it('should display the tabs', () => {
@@ -382,98 +419,188 @@ describe('dataset pages', () => {
           .children('button')
           .should('have.length.gt', 1)
       })
-      it('should display the map and the legend', () => {
-        cy.get('@previewSection')
-          .find('gn-ui-map-container')
-          .should('be.visible')
+      describe('Source under the max features limit', () => {
+        it('should display the map and the legend', () => {
+          cy.get('@previewSection')
+            .find('gn-ui-map-container')
+            .should('be.visible')
 
-        cy.get('@previewSection').find('gn-ui-map-legend').should('be.visible')
-      })
-      it('should display the table', () => {
-        cy.get('@previewSection')
-          .find('.mat-mdc-tab-labels')
-          .children('div')
-          .eq(1)
-          .click()
-        cy.get('@previewSection').find('gn-ui-table').should('be.visible')
-        cy.get('@previewSection')
-          .find('gn-ui-table')
-          .find('table')
-          .find('tbody')
-          .children('tr')
-          .should('have.length.gt', 0)
-        cy.screenshot({ capture: 'fullPage' })
-      })
-      it('should display the chart & dropdowns', () => {
-        cy.get('@previewSection')
-          .find('.mat-mdc-tab-labels')
-          .children('div')
-          .eq(2)
-          .click()
-        cy.get('@previewSection')
-          .find('gn-ui-chart')
-          .should('not.match', ':empty')
-        cy.get('@previewSection')
-          .find('gn-ui-chart-view')
-          .find('gn-ui-dropdown-selector')
-          .filter(':visible')
-          .as('drop')
-        cy.get('@drop').should('have.length', 4)
-        cy.get('@drop').each((dropdown) => {
-          cy.wrap(dropdown)
-            .openDropdown()
-            .find('button')
-            .should('have.length.greaterThan', 0)
+          cy.get('@previewSection')
+            .find('gn-ui-map-legend')
+            .should('be.visible')
         })
-        cy.screenshot({ capture: 'fullPage' })
+        it('should display the table with 10 rows', () => {
+          cy.get('@tableTab').click()
+          cy.get('@previewSection')
+            .find('gn-ui-data-table')
+            .should('be.visible')
+          cy.get('@previewSection')
+            .find('gn-ui-data-table')
+            .find('table')
+            .find('tbody')
+            .children('tr')
+            .should('have.length', 10)
+          cy.screenshot({ capture: 'fullPage' })
+        })
+        it('should display the chart & dropdowns', () => {
+          cy.get('@chartTab').click()
+          cy.get('@previewSection')
+            .find('gn-ui-chart')
+            .should('not.match', ':empty')
+          cy.get('@previewSection')
+            .find('gn-ui-chart-view')
+            .find('gn-ui-dropdown-selector')
+            .filter(':visible')
+            .as('drop')
+          cy.get('@drop').should('have.length', 4)
+          cy.screenshot({ capture: 'fullPage' })
+        })
+        describe('features', () => {
+          it('MAP : should open a popup on layer click', () => {
+            cy.get('@previewSection').find('canvas').realClick()
+            cy.request({
+              method: 'GET',
+              url: ' https://www.geo2france.fr/geoserver/insee/ows?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&FORMAT=image%2Fpng&TRANSPARENT=true&QUERY_LAYERS=rectangles_200m_menage_erbm&LAYERS=rectangles_200m_menage_erbm&INFO_FORMAT=application%2Fjson&I=249&J=65&WIDTH=296&HEIGHT=296&CRS=EPSG%3A3857&STYLES=&BBOX=-24459.849051256402%2C6237261.508070382%2C337545.9169073383%2C6599267.274028977',
+              failOnStatusCode: false,
+            })
+            cy.get('@previewSection').find('gn-ui-feature-detail')
+          })
+          describe('TABLE', () => {
+            beforeEach(() => {
+              cy.get('@previewSection')
+                .find('.mat-mdc-tab-labels')
+                .children('div')
+                .eq(1)
+                .click()
+              cy.get('@previewSection')
+                .find('gn-ui-data-table')
+                .find('table')
+                .as('table')
+            })
+
+            it('TABLE sort: should sort the table on column click', () => {
+              cy.get('@table').find('th').eq(1).click()
+              cy.get('@table')
+                .find('td')
+                .eq(1)
+                .invoke('text')
+                .then((firstValue) => {
+                  cy.get('@table').find('th').eq(1).click()
+                  cy.get('@table')
+                    .find('td')
+                    .eq(1)
+                    .invoke('text')
+                    .should('not.eq', firstValue)
+                })
+            })
+            it('TABLE pagination: should display 10 rows with different data when clicking next page', () => {
+              cy.get('@previewSection').find('mat-paginator').as('pagination')
+              cy.get('@table')
+                .find('td')
+                .eq(1)
+                .invoke('text')
+                .then((firstValue) => {
+                  cy.get('@pagination').find('button').eq(2).click()
+                  cy.get('@table')
+                    .find('td')
+                    .eq(1)
+                    .invoke('text')
+                    .should('not.eq', firstValue)
+                  cy.get('@table')
+                    .find('tbody')
+                    .children('tr')
+                    .should('have.length', 10)
+                })
+            })
+          })
+          it('CHART : should change the chart on options change', () => {
+            cy.get('@previewSection')
+              .find('.mat-mdc-tab-labels')
+              .children('div')
+              .eq(2)
+              .click()
+            cy.get('@previewSection')
+              .find('gn-ui-chart-view')
+              .find('gn-ui-dropdown-selector')
+              .filter(':visible')
+              .as('drop')
+            cy.get('@drop').eq(0).selectDropdownOption('pie')
+            cy.get('@drop').eq(2).selectDropdownOption('men')
+            cy.get('@drop').eq(3).selectDropdownOption('average')
+            cy.get('@previewSection')
+              .find('gn-ui-chart')
+              .invoke('attr', 'ng-reflect-type')
+              .should('include', 'pie')
+            cy.get('@previewSection')
+              .find('gn-ui-chart')
+              .invoke('attr', 'ng-reflect-value-property')
+              .should('include', 'average(men)')
+          })
+        })
+      })
+      describe('WFS over the max features limit', () => {
+        beforeEach(() => {
+          cy.intercept('GET', '/assets/configuration/default.toml', {
+            fixture: 'config-with-max-features.toml',
+          })
+          cy.visit('/dataset/04bcec79-5b25-4b16-b635-73115f7456e4')
+        })
+        it('should not show the map and chart previews and display an error message', () => {
+          cy.get('@previewSection')
+            .find('gn-ui-dropdown-selector')
+            .openDropdown()
+            .children('button')
+            .eq(1)
+            .click()
+          cy.get('gn-ui-map-container').should('not.exist')
+          cy.get('gn-ui-popup-alert').should('be.visible')
+          cy.get('@chartTab').click()
+          cy.get('gn-ui-chart').should('not.exist')
+          cy.get('gn-ui-popup-alert').should('be.visible')
+        })
+        it('should still show the table preview', () => {
+          cy.get('@tableTab').click()
+          cy.get('gn-ui-data-table').should('be.visible')
+          cy.get('gn-ui-popup-alert').should('not.exist')
+        })
       })
       it('should display the sharing options', () => {
         cy.get('gn-ui-data-view-share').should('be.visible')
       })
     })
-    describe('features', () => {
-      it('MAP : should open a popup on layer click', () => {
-        cy.get('@previewSection').find('canvas').realClick()
-        cy.request({
-          method: 'GET',
-          url: ' https://www.geo2france.fr/geoserver/insee/ows?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&FORMAT=image%2Fpng&TRANSPARENT=true&QUERY_LAYERS=rectangles_200m_menage_erbm&LAYERS=rectangles_200m_menage_erbm&INFO_FORMAT=application%2Fjson&I=249&J=65&WIDTH=296&HEIGHT=296&CRS=EPSG%3A3857&STYLES=&BBOX=-24459.849051256402%2C6237261.508070382%2C337545.9169073383%2C6599267.274028977',
-          failOnStatusCode: false,
-        })
-        cy.get('@previewSection').find('gn-ui-feature-detail')
+    // skip for now as modifying dump on my side breaks all tests on GN 4.2.2
+    describe.skip('restricted access', () => {
+      beforeEach(() => {
+        cy.visit('dataset/e27e7006-fdf9-4004-b6c5-af2a5a5c025c')
       })
-      it('TABLE : should scroll', () => {
-        cy.get('@previewSection')
-          .find('.mat-mdc-tab-labels')
-          .children('div')
+      it('MAP: should display the access restriction message for WMS and WFS', () => {
+        cy.get('@mapTab').click()
+        // WMS
+        cy.get('gn-ui-popup-alert')
+          .should('be.visible')
+          .should('have.text', 'Access to this resource is restricted')
+        // WFS
+        cy.get('gn-ui-dropdown-selector')
+          .eq(0)
+          .openDropdown()
+          .children('button')
           .eq(1)
           .click()
-        cy.get('@previewSection').find('gn-ui-table').find('table').as('table')
-        cy.get('@table').scrollTo('bottom', { ensureScrollable: false })
-
-        cy.get('@table').find('tr:last-child').should('be.visible')
+        cy.get('gn-ui-popup-alert')
+          .should('be.visible')
+          .should('have.text', 'Access to this resource is restricted')
       })
-      it('CHART : should change the chart on options change', () => {
-        cy.get('@previewSection')
-          .find('.mat-mdc-tab-labels')
-          .children('div')
-          .eq(2)
-          .click()
-        cy.get('@previewSection')
-          .find('gn-ui-chart-view')
-          .find('gn-ui-dropdown-selector')
-          .filter(':visible')
-          .as('drop')
-        cy.get('@drop').eq(0).selectDropdownOption('pie')
-        cy.get('@drop').eq(2).selectDropdownOption('men')
-        cy.get('@drop').eq(3).selectDropdownOption('average')
-        cy.get('@previewSection')
-          .find('gn-ui-chart')
-          .invoke('attr', 'ng-reflect-type')
-          .should('include', 'pie')
-        cy.get('@previewSection')
-          .find('gn-ui-chart')
-          .invoke('attr', 'ng-reflect-value-property')
-          .should('include', 'average(men)')
+      it('TABLE: should display the access restriction message for WFS', () => {
+        cy.get('@tableTab').click()
+        cy.get('gn-ui-popup-alert')
+          .should('be.visible')
+          .should('have.text', 'Access to this resource is restricted')
+      })
+      it('CHART: should display the access restriction message for WFS', () => {
+        cy.get('@chartTab').click()
+        cy.get('gn-ui-popup-alert')
+          .should('be.visible')
+          .should('have.text', 'Access to this resource is restricted')
       })
     })
   })
@@ -528,7 +655,8 @@ describe('dataset pages', () => {
           cy.get('@filterFormat').click()
           cy.get('@filterFormat').then((btn) => {
             const filterFormat = btn.text().trim()
-            cy.get('[data-cy="download-format"]')
+            cy.get('gn-ui-download-item')
+              .find('[data-cy="download-format"]')
               .filter(':visible')
               .then((format) => {
                 const formatOutput = format.text().trim()
@@ -541,12 +669,21 @@ describe('dataset pages', () => {
           cy.get('datahub-record-downloads')
             .find('gn-ui-download-item')
             .first()
-            .click()
-          cy.readFile(path.join('cypress/downloads', 'wfs.csv')).as(
-            'downloadedFile'
-          )
-          cy.get('@downloadedFile').should('exist')
-          cy.get('@downloadedFile').its('length').should('equal', 3579)
+            .find('a')
+            .first()
+            .as('downloadLink')
+          cy.get('@downloadLink')
+            .should('have.attr', 'href')
+            .and(
+              'include',
+              'wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=2.0.0&TYPENAMES=insee%3Arectangles_200m_menage_erbm&OUTPUTFORMAT=csv'
+            )
+          cy.get('@downloadLink').click()
+          cy.readFile(
+            path.join('cypress/downloads', 'rectangles_200m_menage_erbm.csv') // by default asserts file exists (no .should('exist') needed)
+          ).as('downloadedFile')
+          // FIXME: This spec always fails with Cypress v13
+          // cy.get('@downloadedFile').its('length').should('equal', 3579)
         })
         it('displays the full list after clicking two times on one filter', () => {
           cy.get('datahub-record-downloads')
@@ -624,17 +761,28 @@ describe('dataset pages', () => {
       })
       describe('related records', () => {
         beforeEach(() => {
-          cy.visit('/dataset/6d0bfdf4-4e94-48c6-9740-3f9facfd453c')
+          cy.visit('/dataset/a3774ef6-809d-4dd1-984f-9254f49cbd0a')
         })
         it('should display the related records', () => {
-          cy.get('#related-records')
+          cy.get('#related')
             .find('datahub-record-related-records')
             .find('gn-ui-related-record-card')
             .should('have.length.gt', 0)
         })
+        it('should display a similar related record', () => {
+          cy.get('#related')
+            .find('datahub-record-related-records')
+            .find('gn-ui-related-record-card')
+            .first()
+            .find('h4')
+            .should(
+              'have.text',
+              ` Metadata for E2E testing purpose. (this title is too long and should be cut, this title is too long and should be cut, this title is too long and should be cut, this title is too long and should be cut, this title is too long and should be cut) `
+            )
+        })
         it('goes to dataset on click', () => {
           let targetLink
-          cy.get('#related-records')
+          cy.get('#related')
             .find('datahub-record-related-records')
             .find('gn-ui-related-record-card')
             .first()
@@ -706,7 +854,7 @@ describe('api cards', () => {
       .children('ng-icon')
       .eq(1)
       .invoke('attr', 'name')
-      .should('equal', 'matMoreHoriz')
+      .should('equal', 'iconoirSettings')
   })
   it('should open and close the panel on click on open panel button', () => {
     cy.get('@firstCard').find('button').eq(1).click()

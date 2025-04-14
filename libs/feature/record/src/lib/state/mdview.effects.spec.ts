@@ -18,6 +18,7 @@ import { hot } from 'jasmine-marbles'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
 import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
+import { Router } from '@angular/router'
 
 const full = {
   uniqueIdentifier: '1231321321',
@@ -37,11 +38,16 @@ class PlatformServiceInterfaceMock {
   postUserFeedbacks = jest.fn(() => of(undefined))
 }
 
+const RouterMock = {
+  url: 'dataset/1231321321',
+}
+
 describe('MdViewEffects', () => {
   let actions: Observable<any>
   let effects: MdViewEffects
   let repository: RecordsRepositoryInterface
   let platform: PlatformServiceInterface
+  let router: Router
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -58,9 +64,13 @@ describe('MdViewEffects', () => {
           provide: PlatformServiceInterface,
           useClass: PlatformServiceInterfaceMock,
         },
+        {
+          provide: Router,
+          useValue: RouterMock,
+        },
       ],
     })
-
+    router = TestBed.inject(Router)
     repository = TestBed.inject(RecordsRepositoryInterface)
     effects = TestBed.inject(MdViewEffects)
     platform = TestBed.inject(PlatformServiceInterface)
@@ -259,6 +269,65 @@ describe('MdViewEffects', () => {
         })
 
         expect(effects.addUserFeedback$).toBeObservable(expected)
+      })
+    })
+  })
+
+  describe('loadFeatureCatalog$', () => {
+    const featureCatalog = {
+      attributes: [{ name: 'test', title: 'Test' }],
+    }
+
+    describe('when api success and feature catalog found', () => {
+      beforeEach(() => {
+        repository.getFeatureCatalog = jest.fn(() => of(featureCatalog))
+      })
+      it('should dispatch loadFeatureCatalogSuccess', () => {
+        actions = hot('-a-|', {
+          a: MdViewActions.loadFullMetadataSuccess({ full }),
+        })
+        const expected = hot('-a-|', {
+          a: MdViewActions.loadFeatureCatalogSuccess({
+            datasetCatalog: featureCatalog,
+          }),
+        })
+        expect(effects.loadFeatureCatalog$).toBeObservable(expected)
+      })
+    })
+
+    describe('when api success but no feature catalog found', () => {
+      beforeEach(() => {
+        repository.getFeatureCatalog = jest.fn(() => of(null))
+      })
+      it('should dispatch loadFeatureCatalogSuccess', () => {
+        actions = hot('-a-|', {
+          a: MdViewActions.loadFullMetadataSuccess({ full }),
+        })
+        const expected = hot('-a-|', {
+          a: MdViewActions.loadFeatureCatalogSuccess({
+            datasetCatalog: null,
+          }),
+        })
+        expect(effects.loadFeatureCatalog$).toBeObservable(expected)
+      })
+    })
+
+    describe('when api fails', () => {
+      beforeEach(() => {
+        repository.getFeatureCatalog = jest.fn(() =>
+          throwError(() => new Error('api error'))
+        )
+      })
+      it('should dispatch loadFeatureCatalogFailure with error', () => {
+        actions = hot('-a-|', {
+          a: MdViewActions.loadFullMetadataSuccess({ full }),
+        })
+        const expected = hot('-(a|)', {
+          a: MdViewActions.loadFeatureCatalogFailure({
+            error: 'api error',
+          }),
+        })
+        expect(effects.loadFeatureCatalog$).toBeObservable(expected)
       })
     })
   })

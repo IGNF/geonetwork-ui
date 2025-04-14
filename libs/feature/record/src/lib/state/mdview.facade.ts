@@ -16,6 +16,7 @@ import { DatavizConfigurationModel } from '@geonetwork-ui/common/domain/model/da
 import {
   CatalogRecord,
   DatasetServiceDistribution,
+  ServiceEndpoint,
   UserFeedback,
 } from '@geonetwork-ui/common/domain/model/record'
 import { AvatarServiceInterface } from '@geonetwork-ui/api/repository'
@@ -52,9 +53,24 @@ export class MdViewFacade {
     filter((md) => !!md)
   )
 
+  featureCatalog$ = this.store.pipe(select(MdViewSelectors.getFeatureCatalog))
+
   isIncomplete$ = this.store.pipe(
     select(MdViewSelectors.getMetadataIsIncomplete),
     filter((incomplete) => incomplete !== null)
+  )
+
+  isHighUpdateFrequency$ = this.metadata$.pipe(
+    map((record) => {
+      if (record.updateFrequency instanceof Object) {
+        return (
+          record.updateFrequency.per === 'day' &&
+          record.updateFrequency.updatedTimes > 1
+        )
+      }
+
+      return record.updateFrequency === 'continual'
+    })
   )
 
   error$ = this.store.pipe(select(MdViewSelectors.getMetadataError))
@@ -64,11 +80,7 @@ export class MdViewFacade {
   chartConfig$ = this.store.pipe(select(MdViewSelectors.getChartConfig))
 
   allLinks$ = this.metadata$.pipe(
-    map((record) =>
-      record.kind === 'dataset' && 'onlineResources' in record
-        ? record.onlineResources
-        : []
-    )
+    map((record) => ('onlineResources' in record ? record.onlineResources : []))
   )
 
   apiLinks$ = this.allLinks$.pipe(
@@ -77,8 +89,8 @@ export class MdViewFacade {
         .filter((link) => this.linkClassifier.hasUsage(link, LinkUsage.API))
         // Put links to IGN Géoplateforme first
         .sort((dd1, dd2) => {
-          return (dd2 as DatasetServiceDistribution).accessServiceProtocol ===
-            'GPFDL'
+          return (dd2 as DatasetServiceDistribution | ServiceEndpoint)
+            .accessServiceProtocol === 'GPFDL'
             ? 1
             : undefined // do not change the sorting otherwise
         })
