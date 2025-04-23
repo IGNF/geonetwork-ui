@@ -110,22 +110,44 @@ export class GpfApiDlComponent implements OnInit {
       let outputUrl
       if (this.apiBaseUrl) {
         const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
-        const params = {
-          zone: zone,
-          format: format,
-          editionDateFrom: editionDateFrom,
-          editionDateTo: editionDateTo,
-          crs: crs,
-          page: page,
-        } // initialisation des paramètres de filtres
-        for (const [key, value] of Object.entries(params)) {
-          if (value && value !== 'null') {
-            url.searchParams.set(key, String(value))
-          } else {
-            url.searchParams.delete(key)
+        if (
+          editionDateFrom === this.defaultEditionDate[0] &&
+          editionDateTo === this.defaultEditionDate[1]
+        ) {
+          const params = {
+            zone: zone,
+            format: format,
+            editionDateFrom: '',
+            editionDateTo: '',
+            crs: crs,
+            page: page,
+          } // initialisation des paramètres de filtres
+          for (const [key, value] of Object.entries(params)) {
+            if (value && value !== 'null') {
+              url.searchParams.set(key, String(value))
+            } else {
+              url.searchParams.delete(key)
+            }
           }
+          outputUrl = url.toString()
+        } else {
+          const params = {
+            zone: zone,
+            format: format,
+            editionDateFrom: editionDateFrom,
+            editionDateTo: editionDateTo,
+            crs: crs,
+            page: page,
+          } // initialisation des paramètres de filtres
+          for (const [key, value] of Object.entries(params)) {
+            if (value && value !== 'null') {
+              url.searchParams.set(key, String(value))
+            } else {
+              url.searchParams.delete(key)
+            }
+          }
+          outputUrl = url.toString()
         }
-        outputUrl = url.toString()
       } else {
         console.error('erreur apibaseUrl null')
       }
