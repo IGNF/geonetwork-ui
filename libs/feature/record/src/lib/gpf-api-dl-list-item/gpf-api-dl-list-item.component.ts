@@ -27,7 +27,7 @@ export class GpfApiDlListItemComponent implements OnInit {
 
   ngOnInit(): void {
     this.liste$ = this.http
-      .get(this.link['id'])
+      .get(`${this.link['id']}?limit=50`)
       .pipe(map((response) => response['entry']))
   }
 
