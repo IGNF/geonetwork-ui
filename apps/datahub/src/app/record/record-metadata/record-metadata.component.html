@@ -25,11 +25,11 @@
             <gn-ui-metadata-catalog [sourceLabel]="sourceLabel">
             </gn-ui-metadata-catalog>
           </div>
-          <gn-ui-button type="outline" extraClass="w-full flex flex-row justify-between bg-white"
+          <!--<gn-ui-button type="outline" extraClass="w-full flex flex-row justify-between bg-white"
             [style.--gn-ui-button-rounded]="'10px'" (buttonClick)="scrollToQuestions()">
             <span translate>service.metadata.question</span>
             <ng-icon class="mr-[5px] text-[1em]" name="matChatOutline"></ng-icon>
-          </gn-ui-button>
+          </gn-ui-button>-->
         </div>
       </div>
     </div>
@@ -82,14 +82,14 @@
     </div>
   </section>
 
-  <section id="user-feedbacks" #userFeedbacks *ngIf="(metadataViewFacade.isPresent$ | async) === true" class="pb-10">
+  <!--  <section id="user-feedbacks" #userFeedbacks *ngIf="(metadataViewFacade.isPresent$ | async) === true" class="pb-10">
     <div *ngIf="(metadataViewFacade.isPresent$ | async) === true">
       <div class="container-lg px-4 lg:mx-auto">
         <datahub-record-user-feedbacks [organisationName$]="organisationName$"
           [metadataUuid]="metadataUuid$ | async"></datahub-record-user-feedbacks>
       </div>
     </div>
-  </section>
+  </section> -->
   <section *ngIf="displayRelated$ | async" class="pt-6">
     <div class="py-10 mt-[32px] bg-gray-100">
       <div class="container-lg px-4 lg:mx-auto">
