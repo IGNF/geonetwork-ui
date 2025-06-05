@@ -28,8 +28,12 @@ import { SearchFilters } from '@geonetwork-ui/api/metadata-converter'
 export class FuzzySearchComponent implements OnInit {
   @ViewChild(AutocompleteComponent) autocomplete: AutocompleteComponent
   @Input() autoFocus = false
+  @Input() forceTrackPosition = false
+  @Input() enterButton = false
+  @Input() placeholder?: string
   @Output() itemSelected = new EventEmitter<CatalogRecord>()
   @Output() inputSubmitted = new EventEmitter<string>()
+  @Output() isSearchActive = new EventEmitter<boolean>()
   searchInputValue$: Observable<{ title: string }>
 
   displayWithFn: (record: CatalogRecord) => string = (record) => record.title
@@ -83,5 +87,9 @@ export class FuzzySearchComponent implements OnInit {
     if (currentSearchFilters.any) {
       this.searchService.updateFilters({ any: '' })
     }
+  }
+
+  handleSearchActive(event: boolean) {
+    this.isSearchActive.emit(event)
   }
 }

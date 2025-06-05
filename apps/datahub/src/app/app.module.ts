@@ -12,9 +12,8 @@ import {
   EXTERNAL_VIEWER_OPEN_NEW_TAB,
   EXTERNAL_VIEWER_URL_TEMPLATE,
   FeatureRecordModule,
-  GN_UI_VERSION,
-  WEB_COMPONENT_EMBEDDER_URL,
   RecordMetaComponent,
+  WEB_COMPONENT_EMBEDDER_URL,
 } from '@geonetwork-ui/feature/record'
 import {
   DefaultRouterModule,
@@ -22,12 +21,16 @@ import {
   ROUTER_ROUTE_DATASET,
   ROUTER_ROUTE_ORGANIZATION,
   ROUTER_ROUTE_SEARCH,
+  ROUTER_ROUTE_SERVICE,
+  ROUTER_ROUTE_REUSE,
   RouterService,
 } from '@geonetwork-ui/feature/router'
 import {
   FeatureSearchModule,
   FILTER_GEOMETRY,
-  RECORD_URL_TOKEN,
+  RECORD_DATASET_URL_TOKEN,
+  RECORD_SERVICE_URL_TOKEN,
+  RECORD_REUSE_URL_TOKEN,
 } from '@geonetwork-ui/feature/search'
 import {
   THUMBNAIL_PLACEHOLDER,
@@ -36,7 +39,6 @@ import {
 import { UiInputsModule } from '@geonetwork-ui/ui/inputs'
 import { UiLayoutModule } from '@geonetwork-ui/ui/layout'
 import { UiSearchModule } from '@geonetwork-ui/ui/search'
-import { GpfApiDlComponent } from '@geonetwork-ui/feature/record'
 import {
   getGlobalConfig,
   getMapContextLayerFromConfig,
@@ -68,7 +70,6 @@ import { NewsPageComponent } from './home/news-page/news-page.component'
 import { OrganisationsPageComponent } from './home/organisations-page/organisations-page.component'
 import { SearchPageComponent } from './home/search/search-page/search-page.component'
 import { SearchFiltersComponent } from './home/search/search-filters/search-filters.component'
-import { NavigationBarComponent } from './record/navigation-bar/navigation-bar.component'
 import { RecordPageComponent } from './record/record-page/record-page.component'
 import { DatahubRouterService } from './router/datahub-router.service'
 import { NavigationMenuComponent } from './home/navigation-menu/navigation-menu.component'
@@ -102,6 +103,7 @@ import {
   matMoreHorizOutline,
   matRemoveOutline,
   matStarOutline,
+  matWarningAmberOutline,
 } from '@ng-icons/material-icons/outline'
 import { NgIconsModule, provideNgIconsConfig } from '@ng-icons/core'
 import { MAX_FEATURE_COUNT } from './record/record-data-preview/record-data-preview.component'
@@ -121,7 +123,6 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     HomeHeaderComponent,
     HeaderBadgeButtonComponent,
     SearchFiltersComponent,
-    NavigationBarComponent,
     NewsPageComponent,
     OrganisationsPageComponent,
     SearchPageComponent,
@@ -157,6 +158,8 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
       searchStateId: 'mainSearch',
       searchRouteComponent: SearchPageComponent,
       recordRouteComponent: RecordPageComponent,
+      serviceRouteComponent: RecordPageComponent,
+      reuseRouteComponent: RecordPageComponent,
       organizationRouteComponent: OrganizationPageComponent,
     }),
     FeatureRecordModule,
@@ -180,6 +183,7 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
       matAddOutline,
       matExpandMoreOutline,
       matStarOutline,
+      matWarningAmberOutline,
     }),
     OrganisationsComponent,
     LanguageSwitcherComponent,
@@ -197,7 +201,6 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     provideRepositoryUrl(() => getGlobalConfig().GN4_API_URL),
     provideGn4(),
     { provide: RouterService, useClass: DatahubRouterService },
-    { provide: GN_UI_VERSION, useValue: environment.version },
     {
       provide: PROXY_PATH,
       useFactory: () => getGlobalConfig().PROXY_PATH,
@@ -243,7 +246,18 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
         return null
       },
     },
-    { provide: RECORD_URL_TOKEN, useValue: `${ROUTER_ROUTE_DATASET}/\${uuid}` },
+    {
+      provide: RECORD_DATASET_URL_TOKEN,
+      useValue: `${ROUTER_ROUTE_DATASET}/\${uuid}`,
+    },
+    {
+      provide: RECORD_SERVICE_URL_TOKEN,
+      useValue: `${ROUTER_ROUTE_SERVICE}/\${uuid}`,
+    },
+    {
+      provide: RECORD_REUSE_URL_TOKEN,
+      useValue: `${ROUTER_ROUTE_REUSE}/\${uuid}`,
+    },
     {
       provide: ORGANIZATION_PAGE_URL_TOKEN,
       useValue: `${ROUTER_ROUTE_ORGANIZATION}/\${name}`,

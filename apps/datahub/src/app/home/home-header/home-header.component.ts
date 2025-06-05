@@ -49,6 +49,8 @@ export class HomeHeaderComponent {
   searchConfig: SearchConfig = getOptionalSearchConfig()
   showLanguageSwitcher = getGlobalConfig().LANGUAGES?.length > 0
   foregroundColor = getThemeConfig().HEADER_FOREGROUND_COLOR || '#ffffff'
+  bannerKey = 'application-banner'
+  translatedBannerMessage$ = this.platformService.translateKey(this.bannerKey)
 
   constructor(
     public routerFacade: RouterFacade,

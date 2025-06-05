@@ -1,22 +1,28 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core'
+import { getThemeConfig } from '@geonetwork-ui/util/app-config'
 import {
-  FavoriteStarComponent,
-  SearchService,
-} from '@geonetwork-ui/feature/search'
-import { getGlobalConfig, getThemeConfig } from '@geonetwork-ui/util/app-config'
-import { DatasetRecord } from '@geonetwork-ui/common/domain/model/record'
+  DatasetRecord,
+  ReuseRecord,
+  ServiceRecord,
+} from '@geonetwork-ui/common/domain/model/record'
 import { MdViewFacade } from '@geonetwork-ui/feature/record'
 import { combineLatest, map } from 'rxjs'
-import { TranslateModule, TranslateService } from '@ngx-translate/core'
-import {
-  BadgeComponent,
-  NavigationButtonComponent,
-} from '@geonetwork-ui/ui/inputs'
-import { LanguageSwitcherComponent } from '@geonetwork-ui/ui/catalog'
+import { TranslateModule } from '@ngx-translate/core'
+import { BadgeComponent } from '@geonetwork-ui/ui/inputs'
 import { CommonModule } from '@angular/common'
 import { NgIcon, provideIcons } from '@ng-icons/core'
-import { matLocationSearchingOutline } from '@ng-icons/material-icons/outline'
-import { matArrowBack } from '@ng-icons/material-icons/baseline'
+import { matArrowBack, matCreditCard } from '@ng-icons/material-icons/baseline'
+import { DateService } from '@geonetwork-ui/util/shared'
+import {
+  iconoirAppleShortcuts,
+  iconoirCode,
+  iconoirOpenNewWindow,
+} from '@ng-icons/iconoir'
+import {
+  GeoDataBadgeComponent,
+  ImageOverlayPreviewComponent,
+  KindBadgeComponent,
+} from '@geonetwork-ui/ui/elements'
 
 @Component({
   selector: 'datahub-header-record',
@@ -26,46 +32,52 @@ import { matArrowBack } from '@ng-icons/material-icons/baseline'
   standalone: true,
   imports: [
     CommonModule,
-    NavigationButtonComponent,
-    LanguageSwitcherComponent,
     TranslateModule,
-    FavoriteStarComponent,
     BadgeComponent,
     NgIcon,
+    ImageOverlayPreviewComponent,
+    GeoDataBadgeComponent,
+    KindBadgeComponent,
   ],
-  viewProviders: [provideIcons({ matLocationSearchingOutline, matArrowBack })],
+  viewProviders: [
+    provideIcons({
+      matArrowBack,
+      iconoirCode,
+      matCreditCard,
+      iconoirAppleShortcuts,
+      iconoirOpenNewWindow,
+    }),
+  ],
 })
 export class HeaderRecordComponent {
-  @Input() metadata: DatasetRecord
+  @Input() metadata: DatasetRecord | ServiceRecord | ReuseRecord
   backgroundCss =
     getThemeConfig().HEADER_BACKGROUND ||
     `center /cover url('assets/img/header_bg.webp')`
   foregroundColor = getThemeConfig().HEADER_FOREGROUND_COLOR || '#ffffff'
-  showLanguageSwitcher = getGlobalConfig().LANGUAGES?.length > 0
+
+  showOverlay = true
 
   constructor(
-    private searchService: SearchService,
     public facade: MdViewFacade,
-    private translateService: TranslateService
+    private dateService: DateService
   ) {}
 
-  isGeodata$ = combineLatest([
-    this.facade.mapApiLinks$,
-    this.facade.geoDataLinks$,
-  ]).pipe(
-    map(
-      ([mapLinks, geoDataLinks]) =>
-        mapLinks?.length > 0 || geoDataLinks?.length > 0
-    )
+  get thumbnailUrl() {
+    if (this.metadata?.overviews === undefined) {
+      return undefined
+    } else {
+      return this.metadata?.overviews?.[0]?.url ?? null
+    }
+  }
+
+  reuseLinkUrl$ = this.facade.otherLinks$.pipe(
+    map((links) => {
+      return links.length ? links[0].url : null
+    })
   )
 
   get lastUpdate() {
-    return this.metadata.recordUpdated.toLocaleDateString(
-      this.translateService.currentLang
-    )
-  }
-
-  back() {
-    this.searchService.updateFilters({})
+    return this.dateService.formatDate(this.metadata.recordUpdated)
   }
 }

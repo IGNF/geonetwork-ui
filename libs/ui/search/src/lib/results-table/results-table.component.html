@@ -1,16 +1,25 @@
 <gn-ui-interactive-table
   [items]="records"
+  [canEditItem]="canEdit"
+  [isDraftPage]="isDraftPage"
   (itemClick)="handleRecordClick($event)"
 >
   <!-- SELECTED COLUMN -->
   <gn-ui-interactive-table-column [width]="'3rem'">
-    <ng-template #cell let-item>
-      <gn-ui-checkbox
-        [checked]="isChecked(item)"
-        (changed)="handleRecordSelectedChange($event, item)"
-        class="-m-2"
-        type="default"
-      ></gn-ui-checkbox>
+    <ng-template #cell let-item let-i="index">
+      <ng-icon
+        name="iconoirLock"
+        class="text-purple"
+        *ngIf="(canEdit(item) | async) === false; else selectCheckbox"
+      ></ng-icon>
+      <ng-template #selectCheckbox>
+        <gn-ui-checkbox
+          [checked]="isChecked(item)"
+          (changed)="handleRecordSelectedChange($event, item)"
+          class="-m-2"
+          type="default"
+        ></gn-ui-checkbox>
+      </ng-template>
     </ng-template>
   </gn-ui-interactive-table-column>
 
@@ -78,7 +87,7 @@
 
   <!-- OWNER COLUMN -->
   <gn-ui-interactive-table-column
-    [width]="'9rem'"
+    [width]="'12rem'"
     [sortable]="true"
     [activeSort]="isSortedBy('recordOwner')"
     (sortChange)="setSortBy('recordOwner', $event)"
@@ -102,9 +111,9 @@
     <ng-template #cell let-item>
       <span class="text-xs">
         {{
-          (isUnsavedDraft(item)
-            ? 'record.metadata.status.notPublished'
-            : 'record.metadata.status.published'
+          (item.extras?.['isPublishedToAll']
+            ? 'record.metadata.status.published'
+            : 'record.metadata.status.notPublished'
           ) | translate
         }}</span
       >
@@ -123,7 +132,11 @@
     </ng-template>
     <ng-template #cell let-item>
       <div class="flex text-left w-full text-xs">
-        {{ isUnsavedDraft(item) ? '-' : dateToString(item.recordUpdated) }}
+        {{
+          item.extras?.['isPublishedToAll']
+            ? dateToString(item.recordUpdated)
+            : '-'
+        }}
       </div>
     </ng-template>
   </gn-ui-interactive-table-column>
@@ -132,22 +145,35 @@
   <gn-ui-interactive-table-column>
     <ng-template #header> </ng-template>
     <ng-template #cell let-item>
-      <gn-ui-button
-        cdkOverlayOrigin
-        #actionMenuButton
-        (buttonClick)="openActionMenu(item, template)"
-        type="light"
-        data-test="record-menu-button"
-      >
-        <ng-icon name="matMoreVert"></ng-icon>
-      </gn-ui-button>
+      <div class="flex justify-end items-center gap-4 w-full">
+        <!-- IS MULTILINGUAL -->
+        <ng-icon
+          *ngIf="isMultilingual(item)"
+          data-cy="multilingual-indicator"
+          name="iconoirTranslate"
+          [attr.title]="getTxtHoverMultilingual(item)"
+        ></ng-icon>
+        <!-- MORE ACTIONS MENU BUTTON -->
+        <gn-ui-button
+          cdkOverlayOrigin
+          #actionMenuButton
+          (buttonClick)="openActionMenu(item, template)"
+          type="light"
+          data-test="record-menu-button"
+        >
+          <ng-icon name="matMoreVert"></ng-icon>
+        </gn-ui-button>
+      </div>
       <ng-template #template>
         <gn-ui-action-menu
           [canDuplicate]="canDuplicate(item)"
-          [canDelete]="canDelete(item)"
+          [isDuplicating]="isDuplicating"
+          [canDelete]="canDelete(item) | async"
+          [page]="isDraftPage ? 'draft' : 'main'"
           (duplicate)="handleDuplicate(item)"
           (delete)="handleDelete(item)"
           (closeActionMenu)="closeActionMenu()"
+          (rollback)="handleRollback(item)"
         >
         </gn-ui-action-menu>
       </ng-template>

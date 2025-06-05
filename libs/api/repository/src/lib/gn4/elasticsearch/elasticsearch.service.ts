@@ -28,6 +28,7 @@ import {
 } from '@geonetwork-ui/api/metadata-converter'
 import { LangService } from '@geonetwork-ui/util/i18n'
 import { formatDate, isDateRange } from './date-range.utils'
+import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 
 export type DateRange = { start?: Date; end?: Date }
 
@@ -43,14 +44,14 @@ export class ElasticsearchService {
   constructor(
     private langService: LangService,
     @Optional() @Inject(METADATA_LANGUAGE) private metadataLang: string
-  ) {}
+  ) { }
 
   getSearchRequestBody(
     aggregations: any = {},
     size = 0,
     from = 0,
     sortBy: SortByField = null,
-    requestFields: RequestFields = [],
+    requestFields: RequestFields = null,
     searchFilters: SearchFilters = {},
     configFilters: SearchFilters = {},
     uuids?: string[],
@@ -68,7 +69,7 @@ export class ElasticsearchService {
         geometry
       ),
       ...(size > 0 ? { track_total_hits: true } : {}),
-      _source: requestFields,
+      ...(requestFields && { _source: requestFields }),
     }
     this.processRuntimeFields(payload)
     return payload
@@ -123,21 +124,20 @@ export class ElasticsearchService {
     this.runtimeFields[fieldName] = expression
   }
 
-  getMetadataByIdPayload(uuid: string): EsSearchParams {
+  getMetadataByIdsPayload(uuids: string[]): EsSearchParams {
     return {
       query: {
         ids: {
-          values: [uuid],
+          values: uuids,
         },
       },
     }
   }
 
   getRelatedRecordPayload(
-    title: string,
-    uuid: string,
+    record: CatalogRecord,
     size = 6,
-    _source = [...ES_SOURCE_SUMMARY, 'allKeywords', 'createDate']
+    _source = [...ES_SOURCE_SUMMARY, 'createDate']
   ): EsSearchParams {
     return {
       query: {
@@ -148,9 +148,23 @@ export class ElasticsearchService {
                 fields: [
                   'resourceTitleObject.default',
                   'resourceAbstractObject.default',
-                  'tag.raw',
+                  'allKeywords',
                 ],
-                like: title,
+                like: [
+                  {
+                    doc: {
+                      resourceTitleObject: {
+                        default: record.title,
+                      },
+                      resourceAbstractObject: {
+                        default: record.abstract,
+                      },
+                      allKeywords: record.keywords.map(
+                        (keyword) => keyword.label
+                      ),
+                    },
+                  },
+                ],
                 min_term_freq: 1,
                 max_query_terms: 12,
               },
@@ -166,7 +180,7 @@ export class ElasticsearchService {
               },
             },
           ],
-          must_not: [{ wildcard: { uuid: uuid } }],
+          must_not: [{ wildcard: { uuid: record.uniqueIdentifier } }],
         },
       },
       size,
@@ -192,16 +206,15 @@ export class ElasticsearchService {
         ...query,
         ...(this.isCurrentSearchLang() && isMultilangField
           ? [
-              `${field.replace(multiLangRegExp, queryLang)}^${
-                fieldPriority + 10
-              }`,
-              field.replace(multiLangRegExp, '*') +
-                (fieldPriority > 1 ? `^${fieldPriority}` : ''),
-            ]
+            `${field.replace(multiLangRegExp, queryLang)}^${fieldPriority + 10
+            }`,
+            field.replace(multiLangRegExp, '*') +
+            (fieldPriority > 1 ? `^${fieldPriority}` : ''),
+          ]
           : [
-              field.replace(multiLangRegExp, queryLang) +
-                (fieldPriority > 1 ? `^${fieldPriority}` : ''),
-            ]),
+            field.replace(multiLangRegExp, queryLang) +
+            (fieldPriority > 1 ? `^${fieldPriority}` : ''),
+          ]),
       ]
     }, [])
   }
@@ -220,6 +233,7 @@ export class ElasticsearchService {
   private filtersToQuery(
     filters: FieldFilters | FiltersAggregationParams | string
   ): FilterQuery {
+    const addQuote = (key: string) => (/^\/.+\/$/.test(key) ? key : `"${key}"`)
     const makeQuery = (filter: FieldFilter): string => {
       if (typeof filter === 'string') {
         return filter
@@ -227,9 +241,9 @@ export class ElasticsearchService {
       return Object.keys(filter)
         .map((key) => {
           if (filter[key] === true) {
-            return `"${key}"`
+            return addQuote(key)
           }
-          return `-"${key}"`
+          return `-${addQuote(key)}`
         })
         .join(' OR ')
     }
@@ -237,16 +251,16 @@ export class ElasticsearchService {
       typeof filters === 'string'
         ? filters
         : Object.keys(filters)
-            .filter((fieldname) => !isDateRange(filters[fieldname]))
-            .filter(
-              (fieldname) =>
-                filters[fieldname] &&
-                JSON.stringify(filters[fieldname]) !== '{}'
-            )
-            .map(
-              (fieldname) => `${fieldname}:(${makeQuery(filters[fieldname])})`
-            )
-            .join(' AND ')
+          .filter((fieldname) => !isDateRange(filters[fieldname]))
+          .filter(
+            (fieldname) =>
+              filters[fieldname] &&
+              JSON.stringify(filters[fieldname]) !== '{}'
+          )
+          .map(
+            (fieldname) => `${fieldname}:(${makeQuery(filters[fieldname])})`
+          )
+          .join(' AND ')
     const queryRange = Object.entries(filters)
       .filter(([, value]) => isDateRange(value))
       .map(([searchField, dateRange]) => {
@@ -265,21 +279,32 @@ export class ElasticsearchService {
         },
       },
       queryRange &&
-        queryRange.dateRange && {
-          range: {
-            [queryRange.searchField]: {
-              ...(queryRange.dateRange.start && {
-                gte: formatDate(queryRange.dateRange.start),
-              }),
-              ...(queryRange.dateRange.end && {
-                lte: formatDate(queryRange.dateRange.end),
-              }),
-              format: 'yyyy-MM-dd',
-            },
+      queryRange.dateRange && {
+        range: {
+          [queryRange.searchField]: {
+            ...(queryRange.dateRange.start && {
+              gte: formatDate(queryRange.dateRange.start),
+            }),
+            ...(queryRange.dateRange.end && {
+              lte: formatDate(queryRange.dateRange.end),
+            }),
+            format: 'yyyy-MM-dd',
           },
         },
+      },
     ].filter(Boolean)
     return queryParts.length > 0 ? (queryParts as FilterQuery) : undefined
+  }
+
+  private mustNotFilters(): Record<string, unknown>[] {
+    return [
+      {
+        query_string: {
+          query:
+            'resourceType:featureCatalog AND !resourceType:dataset AND !cl_level.key:dataset',
+        },
+      },
+    ]
   }
 
   private buildPayloadQuery(
@@ -289,14 +314,7 @@ export class ElasticsearchService {
     geometry?: Geometry
   ) {
     const must = [] as Record<string, unknown>[]
-    const must_not = {
-      ...this.queryFilterOnValues('resourceType', [
-        //'service',
-        'map',
-        'map/static',
-        'mapDigital',
-      ]),
-    }
+    const must_not = this.mustNotFilters()
     const should = [] as Record<string, unknown>[]
     const filter = [this.queryFilterOnValues('isTemplate', 'n')] as Record<
       string,
@@ -373,10 +391,10 @@ export class ElasticsearchService {
     return !values || values.length <= 0
       ? {}
       : {
-          terms: {
-            [key]: [...values],
-          },
-        }
+        terms: {
+          [key]: [...values],
+        },
+      }
   }
 
   buildAutocompletePayload(query: string): EsSearchParams {
@@ -398,17 +416,11 @@ export class ElasticsearchService {
               },
             },
           ],
-          must_not: {
-            ...this.queryFilterOnValues('resourceType', [
-              //'service',
-              'map',
-              'map/static',
-              'mapDigital',
-            ]),
-          },
+
+          must_not: this.mustNotFilters(),
         },
       },
-      _source: ['resourceTitleObject', 'uuid'],
+      _source: ['resourceTitleObject', 'uuid', 'resourceType'],
       from: 0,
       size: 20,
     }
@@ -518,13 +530,15 @@ export class ElasticsearchService {
       switch (aggregation.type) {
         case 'filters':
           return {
-            filters: Object.keys(aggregation.filters).reduce((prev, curr) => {
-              const filter = aggregation.filters[curr]
-              return {
-                ...prev,
-                [curr]: this.filtersToQuery(filter)[0],
-              }
-            }, {}),
+            filters: {
+              filters: Object.keys(aggregation.filters).reduce((prev, curr) => {
+                const filter = aggregation.filters[curr]
+                return {
+                  ...prev,
+                  [curr]: this.filtersToQuery(filter)[0],
+                }
+              }, {}),
+            },
           }
         case 'terms':
           return {
@@ -583,8 +597,8 @@ export class ElasticsearchService {
         let buckets = Array.isArray(histogramResult.buckets)
           ? histogramResult.buckets
           : Object.keys(histogramResult.buckets).map(
-              (key) => histogramResult.buckets[key]
-            )
+            (key) => histogramResult.buckets[key]
+          )
         buckets = buckets.map((bucket, index) => ({
           lowValue: bucket.key,
           highValue: buckets[index + 1]?.key, // this will return undefined on the last element (which we remove later)

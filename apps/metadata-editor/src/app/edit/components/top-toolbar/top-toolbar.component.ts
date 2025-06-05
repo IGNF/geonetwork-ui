@@ -1,5 +1,10 @@
 import { CommonModule } from '@angular/common'
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Output,
+} from '@angular/core'
 import { MatDialog, MatDialogModule } from '@angular/material/dialog'
 import { MatTooltipModule } from '@angular/material/tooltip'
 import { EditorFacade } from '@geonetwork-ui/feature/editor'
@@ -21,12 +26,14 @@ import {
   iconoirDownload,
   iconoirLightBulb,
   iconoirSidebarCollapse,
+  iconoirTranslate,
   iconoirUndoAction,
 } from '@ng-icons/iconoir'
 import {
   matHelpOutlineOutline,
   matPendingOutline,
 } from '@ng-icons/material-icons/outline'
+import { matCircle } from '@ng-icons/material-icons/baseline'
 
 @Component({
   selector: 'md-editor-top-toolbar',
@@ -51,6 +58,8 @@ import {
       iconoirUndoAction,
       iconoirBadgeCheck,
       matHelpOutlineOutline,
+      iconoirTranslate,
+      matCircle,
     }),
     provideNgIconsConfig({
       size: '1.5rem',
@@ -61,8 +70,10 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TopToolbarComponent {
+  @Output() openTranslatePanel = new EventEmitter(false)
+  translatePanelOpen = false
   protected SaveStatus = [
-    'draft_only', // => when creating a record
+    'record_not_published', // => when the record is not published yet but saved
     'record_up_to_date', // => when the record was just published (ie saved on the server)
     'draft_changes_pending', // => when the record was modified and not yet published
     // these are not used since the draft is saved locally in a synchronous way
@@ -73,16 +84,19 @@ export class TopToolbarComponent {
 
   protected saveStatus$: Observable<(typeof this.SaveStatus)[number]> =
     combineLatest([
-      this.editorFacade.alreadySavedOnce$,
       this.editorFacade.changedSinceSave$,
+      this.editorFacade.isPublished$,
     ]).pipe(
-      map(([alreadySavedOnce, changedSinceSave]) => {
-        if (!alreadySavedOnce) {
-          return 'draft_only'
+      map(([changedSinceSave, isPublished]) => {
+        if (changedSinceSave) {
+          return 'draft_changes_pending'
         }
-        return changedSinceSave ? 'draft_changes_pending' : 'record_up_to_date'
+        return !isPublished ? 'record_not_published' : 'record_up_to_date'
       })
     )
+  isRecordMultilingual$ = this.editorFacade.record$.pipe(
+    map((record) => record.otherLanguages.length)
+  )
 
   constructor(
     public dialog: MatDialog,
@@ -114,5 +128,10 @@ export class TopToolbarComponent {
         this.editorFacade.undoRecordDraft()
       }
     })
+  }
+
+  toggleTranslatePanel() {
+    this.translatePanelOpen = !this.translatePanelOpen
+    this.openTranslatePanel.emit(this.translatePanelOpen)
   }
 }

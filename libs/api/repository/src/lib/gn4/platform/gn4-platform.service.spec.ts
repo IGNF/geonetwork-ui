@@ -58,6 +58,7 @@ class SiteApiServiceMock {
   getSiteOrPortalDescription = jest.fn(() =>
     of({
       'system/platform/version': geonetworkVersion,
+      'system/harvester/enableEditing': false,
     })
   )
 }
@@ -288,7 +289,7 @@ describe('Gn4PlatformService', () => {
         )
       })
     })
-    describe('when version is euqal or greater than 4.2.2', () => {
+    describe('when version is equal or greater than 4.2.2', () => {
       beforeEach(() => {
         geonetworkVersion = '4.2.2'
       })
@@ -296,6 +297,13 @@ describe('Gn4PlatformService', () => {
         const version = await firstValueFrom(service.getApiVersion())
         expect(version).toEqual('4.2.2')
       })
+    })
+  })
+
+  describe('allow edit harvested MD', () => {
+    it('fetches enableEditing from harvester settings', async () => {
+      const allowEdit = await firstValueFrom(service.getAllowEditHarvestedMd())
+      expect(allowEdit).toEqual(false)
     })
   })
 
@@ -794,17 +802,22 @@ describe('Gn4PlatformService', () => {
     it('should clean record attachments no longer used', (done) => {
       const record = { uniqueIdentifier: '123' } as CatalogRecord
       const associatedResources = {
-        onlines: [{ title: { en: 'doge.jpg' } }],
-        thumbnails: [{ title: { en: 'flower.jpg' } }],
+        onlines: [{ title: { en: 'doge.jpg' }, url: 'http://doge.jpg' }],
+        thumbnails: [
+          {
+            title: { en: 'my-beautiful-flower.jpg' },
+            url: 'http://flower.jpg',
+          },
+        ],
       }
       ;(recordsApiService.getAssociatedResources as jest.Mock).mockReturnValue(
         of(associatedResources)
       )
       ;(recordsApiService.getAllResources as jest.Mock).mockReturnValue(
         of([
-          { filename: 'doge.jpg' },
-          { filename: 'flower.jpg' },
-          { filename: 'remove1.jpg' },
+          { filename: 'doge.jpg', url: 'http://doge.jpg' },
+          { filename: 'flower.jpg', url: 'http://flower.jpg' },
+          { filename: 'remove1.jpg', url: 'http://remove1.jpg' },
         ])
       )
       ;(recordsApiService.delResource as jest.Mock).mockReturnValue(

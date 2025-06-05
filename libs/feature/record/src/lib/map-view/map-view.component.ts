@@ -29,17 +29,21 @@ import {
 } from 'rxjs/operators'
 import { MdViewFacade } from '../state/mdview.facade'
 import { DataService } from '@geonetwork-ui/feature/dataviz'
-import { DatasetOnlineResource } from '@geonetwork-ui/common/domain/model/record'
+import {
+  DatasetOnlineResource,
+  DatasetServiceDistribution,
+} from '@geonetwork-ui/common/domain/model/record'
 import {
   createViewFromLayer,
   MapContext,
   MapContextLayer,
+  SourceLoadErrorEvent,
 } from '@geospatial-sdk/core'
 import {
   FeatureDetailComponent,
   MapContainerComponent,
-  prioritizePageScroll,
   MapLegendComponent,
+  prioritizePageScroll,
 } from '@geonetwork-ui/ui/map'
 import { Feature } from 'geojson'
 import { NgIconComponent, provideIcons } from '@ng-icons/core'
@@ -49,16 +53,19 @@ import {
   ButtonComponent,
   DropdownSelectorComponent,
 } from '@geonetwork-ui/ui/inputs'
-import { TranslateModule } from '@ngx-translate/core'
+import { TranslateModule, TranslateService } from '@ngx-translate/core'
 import { ExternalViewerButtonComponent } from '../external-viewer-button/external-viewer-button.component'
 import {
   LoadingMaskComponent,
   PopupAlertComponent,
 } from '@geonetwork-ui/ui/widgets'
 import { marker } from '@biesbjerg/ngx-translate-extract-marker'
+import { FetchError } from '@geonetwork-ui/data-fetcher'
 
 marker('map.dropdown.placeholder')
 marker('wfs.feature.limit')
+marker('dataset.error.restrictedAccess')
+marker('map.select.style')
 
 @Component({
   selector: 'gn-ui-map-view',
@@ -82,34 +89,44 @@ marker('wfs.feature.limit')
   viewProviders: [provideIcons({ matClose })],
 })
 export class MapViewComponent implements AfterViewInit {
-  @Input() set excludeWfs(value: boolean) {
+  @Input() set exceedsLimit(value: boolean) {
     this.excludeWfs$.next(value)
   }
+  @Input() displaySource = true
   @ViewChild('mapContainer') mapContainer: MapContainerComponent
 
   excludeWfs$ = new BehaviorSubject(false)
+  hidePreview = false
   selection: Feature
   showLegend = true
   legendExists = false
+  loading = false
+  error = null
+
+  selectLinkToDisplay(i: number) {
+    this.selectedLinkIndex$.next(i)
+  }
+
+  selectStyleToDisplay(i: number) {
+    this.selectedStyleIndex$.next(i)
+  }
 
   toggleLegend() {
     this.showLegend = !this.showLegend
   }
-
-  onLegendStatusChange(status: boolean) {
-    this.legendExists = status
-    if (!status) {
-      this.showLegend = false
-    }
+  onLegendStatusChange(v: boolean) {
+    this.legendExists = v
   }
 
   compatibleMapLinks$ = combineLatest([
     this.mdViewFacade.mapApiLinks$,
     this.mdViewFacade.geoDataLinksWithGeometry$,
   ]).pipe(
-    map(([mapApiLinks, geoDataLinksWithGeometry]) => {
-      return [...mapApiLinks, ...geoDataLinksWithGeometry]
-    })
+    map(([mapApiLinks, geoDataLinksWithGeometry]) => [
+      ...mapApiLinks,
+      ...geoDataLinksWithGeometry,
+    ]),
+    shareReplay(1)
   )
 
   dropdownChoices$ = this.compatibleMapLinks$.pipe(
@@ -122,15 +139,73 @@ export class MapViewComponent implements AfterViewInit {
         : [{ label: 'map.dropdown.placeholder', value: 0 }]
     )
   )
-  selectedLinkIndex$ = new BehaviorSubject(0)
 
-  loading = false
-  error = null
+  private selectedLinkIndex$ = new BehaviorSubject(0)
+  private selectedStyleIndex$ = new BehaviorSubject(0)
 
-  selectedLink$ = combineLatest([
+  selectedSourceLink$ = combineLatest([
     this.compatibleMapLinks$,
     this.selectedLinkIndex$.pipe(distinctUntilChanged()),
-  ]).pipe(map(([links, index]) => links[index]))
+  ]).pipe(
+    map(([links, idx]) => links[idx]),
+    shareReplay(1)
+  )
+
+  styleLinks$ = this.selectedSourceLink$.pipe(
+    switchMap((src) => {
+      if (
+        src &&
+        src.type === 'service' &&
+        src.accessServiceProtocol === 'tms'
+      ) {
+        return from(
+          this.dataService.getGeodataLinksFromTms(
+            src as DatasetServiceDistribution,
+            false
+          )
+        ).pipe(
+          // We need to check for maplibre-style links because when a TMS service has no styles,
+          // getGeodataLinksFromTms returns the original TMS link, which isn't a maplibre-style link
+          map(
+            (links) =>
+              links?.filter(
+                (link) =>
+                  link.type === 'service' &&
+                  link.accessServiceProtocol === 'maplibre-style'
+              ) || []
+          )
+        )
+      }
+      return of([])
+    }),
+    tap(() => this.selectedStyleIndex$.next(0)),
+    shareReplay(1)
+  )
+
+  styleDropdownChoices$ = this.styleLinks$.pipe(
+    map((links) =>
+      links.length
+        ? links.map((link, index) => ({
+            label: getLinkLabel(link),
+            value: index,
+          }))
+        : [
+            {
+              label: '\u00A0\u00A0\u00A0\u00A0',
+              value: 0,
+            },
+          ]
+    )
+  )
+
+  selectedLink$ = combineLatest([
+    this.selectedSourceLink$,
+    this.styleLinks$,
+    this.selectedStyleIndex$.pipe(distinctUntilChanged()),
+  ]).pipe(
+    map(([src, styles, styleIdx]) => (styles.length ? styles[styleIdx] : src)),
+    shareReplay(1)
+  )
 
   currentLayers$ = combineLatest([this.selectedLink$, this.excludeWfs$]).pipe(
     switchMap(([link, excludeWfs]) => {
@@ -138,16 +213,20 @@ export class MapViewComponent implements AfterViewInit {
         return of([])
       }
       if (excludeWfs && link.accessServiceProtocol === 'wfs') {
-        this.error = 'wfs.feature.limit'
+        this.hidePreview = true
         return of([])
       }
+      this.hidePreview = false
       this.loading = true
       this.error = null
+      if (link.accessRestricted) {
+        this.handleError('dataset.error.restrictedAccess')
+        return of([])
+      }
       return this.getLayerFromLink(link).pipe(
         map((layer) => [layer]),
         catchError((e) => {
-          this.error = e.message
-          console.warn(e.stack || e.message)
+          this.handleError(e)
           return of([])
         }),
         finalize(() => (this.loading = false))
@@ -189,7 +268,8 @@ export class MapViewComponent implements AfterViewInit {
     private mdViewFacade: MdViewFacade,
     private mapUtils: MapUtilsService,
     private dataService: DataService,
-    private changeRef: ChangeDetectorRef
+    private changeRef: ChangeDetectorRef,
+    private translateService: TranslateService
   ) {}
 
   async ngAfterViewInit() {
@@ -205,6 +285,16 @@ export class MapViewComponent implements AfterViewInit {
       // this.selection.setStyle(this.selectionStyle)
     }
     this.changeRef.detectChanges()
+  }
+
+  onSourceLoadError(error: SourceLoadErrorEvent) {
+    if (error.httpStatus === 403 || error.httpStatus === 401) {
+      this.error = this.translateService.instant(`dataset.error.forbidden`)
+    } else {
+      this.error = this.translateService.instant(`dataset.error.http`, {
+        info: error.httpStatus,
+      })
+    }
   }
 
   resetSelection(): void {
@@ -224,6 +314,26 @@ export class MapViewComponent implements AfterViewInit {
       })
     } else if (
       link.type === 'service' &&
+      link.accessServiceProtocol === 'tms'
+    ) {
+      // FIXME: here we're assuming that the TMS serves vector tiles only; should be checked with ogc-client first
+      return of({
+        url: link.url.toString().replace(/\/?$/, '/{z}/{x}/{y}.pbf'),
+        type: 'xyz',
+        tileFormat: 'application/vnd.mapbox-vector-tile',
+        name: link.name,
+      })
+    } else if (
+      link.type === 'service' &&
+      link.accessServiceProtocol === 'maplibre-style'
+    ) {
+      return of({
+        type: 'maplibre-style',
+        name: link.name,
+        styleUrl: link.url.toString(),
+      })
+    } else if (
+      link.type === 'service' &&
       link.accessServiceProtocol === 'wmts'
     ) {
       return of({
@@ -238,7 +348,8 @@ export class MapViewComponent implements AfterViewInit {
           link.accessServiceProtocol === 'ogcFeatures')) ||
       link.type === 'download'
     ) {
-      return this.dataService.readAsGeoJson(link).pipe(
+      const cacheActive = true // TODO implement whether should be true or false
+      return this.dataService.readAsGeoJson(link, cacheActive).pipe(
         map((data) => ({
           type: 'geojson',
           data,
@@ -247,8 +358,23 @@ export class MapViewComponent implements AfterViewInit {
     }
     return throwError(() => 'protocol not supported')
   }
-
-  selectLinkToDisplay(link: number) {
-    this.selectedLinkIndex$.next(link)
+  handleError(error: FetchError | Error | string) {
+    if (error instanceof FetchError) {
+      this.error = this.translateService.instant(
+        `dataset.error.${error.type}`,
+        {
+          info: error.info,
+        }
+      )
+      console.warn(error.message)
+    } else if (error instanceof Error) {
+      this.error = this.translateService.instant(error.message)
+      console.warn(error.stack || error)
+    } else {
+      this.error = this.translateService.instant(error)
+      console.warn(error)
+    }
+    this.loading = false
+    this.changeRef.detectChanges()
   }
 }

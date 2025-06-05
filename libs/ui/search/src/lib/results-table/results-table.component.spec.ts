@@ -40,7 +40,7 @@ describe('ResultsTableComponent', () => {
             datasetRecordsFixture()[0] as CatalogRecord
           )[0]
         )
-      ).toEqual('#b3cde8') // geojson
+      ).toEqual('#293C6F') // geojson
     })
   })
 
@@ -108,7 +108,7 @@ describe('ResultsTableComponent', () => {
     })
   })
 
-  describe('clicking on a dataset', () => {
+  describe('User can edit - clicking on a dataset', () => {
     let clickedRecord: CatalogRecord
 
     beforeEach(() => {
@@ -140,6 +140,23 @@ describe('ResultsTableComponent', () => {
     it('emits a duplicateRecord event', () => {
       component.handleDuplicate(datasetRecordsFixture()[0])
       expect(JSON.stringify(recordToBeDuplicated)).toEqual(
+        JSON.stringify(datasetRecordsFixture()[0])
+      )
+    })
+  })
+  describe('rollback a dataset', () => {
+    let draftToBeUndone: CatalogRecord
+
+    beforeEach(() => {
+      draftToBeUndone = null
+      component.rollbackDraft.subscribe((r) => {
+        draftToBeUndone = r
+      })
+    })
+
+    it('emits a rollbackDraft event', () => {
+      component.handleRollback(datasetRecordsFixture()[0])
+      expect(JSON.stringify(draftToBeUndone)).toEqual(
         JSON.stringify(datasetRecordsFixture()[0])
       )
     })

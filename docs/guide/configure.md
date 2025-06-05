@@ -43,7 +43,7 @@ Some additional notes:
   languages = ['en', 'fr', 'de']
   ```
 
-  More information about the translation can be found in the [relevant documentation](../reference/i18n.md)
+  More information about the translation can be found in the [relevant documentation](../developers/i18n.md)
 
 - `metadata_language` (optional)
 
@@ -52,6 +52,10 @@ Some additional notes:
   Use [ISO three-letter codes](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) to indicate the language used in the search (e.g. "fre" or "ger"). Alternatively, setting to "current" will use the current language of the User Interface.
 
   If not indicated, the search will be done across all localized values for each record, potentially showing more results that expected or unrelated results.
+
+  ::: tip
+  Indicating a language in `metadata_language` according to the queried catalog will make the search more efficient.
+  :::
 
 - `login_url` (optional)
 
@@ -146,13 +150,17 @@ Note: if the GeoJSON object contains multiple features, only the geometry of the
 - `advanced_filters` (optional)
 
 The advanced search filters available to the user can be customized with this setting.
-For a list of supported search fields, see [this documentation page](../reference/search-fields.md). Any unknown field will be ignored.
+For a list of supported search fields, see [this documentation page](../guide/search-fields.md). Any unknown field will be ignored.
 
 The filters should be provided as an array, for instance:
 
 ```toml
 advanced_filters = ['organization', 'inspireKeyword', 'keyword', 'topic']
 ```
+
+⚠️ **WARNING**: `'resourceType'` filter has been deprecated, please use `'recordKind'` instead. Using both filters is not recommended as it may imply some inconsistencies in the page results. `'resourceType'` filter will fetch records of all type (instead of `featureCatalog`), whereas `'recordKind'` filter will fetch `datasets` (wich are `datasets`, `featureCatalog` that are `datasets`, and `series`), `services` and `reuse` (`application` and all kind of `map`).
+
+⚠️ **Breaking change**: Record of type featureCatalog are not retrieved anymore.
 
 - `[[search_preset]]` (multiple, optional)
 
@@ -162,7 +170,7 @@ advanced_filters = ['organization', 'inspireKeyword', 'keyword', 'topic']
 
   - a name for the preset, which can be a translation key (mandatory)
   - a sort criteria: either `createDate`, `userSavedCount` or `_score` (prepend with `-` for descending sort) (optional)
-  - a set of filters, each of them being a key-value pair where the key is a [known search field](../reference/search-fields.md) and the value is an array of strings (optional)
+  - a set of filters, each of them being a key-value pair where the key is a [known search field](../guide/search-fields.md) and the value is an array of strings (optional)
   - additionally, `filters.q` can be used to specify a full text search query
 
   Multiple search presets can be defined like so:
@@ -216,7 +224,10 @@ The map section lets you customize how maps appear and behave across GeoNetwork-
 
 - `max_feature_count` (optional)
 
-  Will remove WFS from map layers if its features exceed the indicated number. Data preview chart and table will be hidden in this case.
+  Will remove WFS from map layers if its features exceed the indicated number. Data preview chart will also be disabled. A notification will inform the user that features will not be displayed on the map.
+  ::: info
+  However, the table view will always display the features and, if supported by the service (should be WFS 2.0.0), will handle pagination.
+  :::
 
 - `do_not_tile_wms` (optional)
 
@@ -321,3 +332,17 @@ A `default.toml` file authored for a previous release of GeoNetwork-UI _should_ 
 - if some settings of the file become obsolete, a warning will be printed in the browser console when loading the app; this _should not_ break functionalities, but fixing those warnings by the administrator is recommended
 
 As for translation keys, these are subject to change outside of major version bumps, so any overridden translation key in the configuration file might become obsolete between versions. Please refer to the release notes to get a list of obsolete translation keys and their replacements.
+
+## Platform Service
+
+### Introduction
+
+Texts and translations are configured within Geonetwork, enabling users to easily update content through translation keys in the Geonetwork backoffice. GeoNetwork-UI takes advantage of this feature to translate or display specific content.
+
+#### Application banner
+
+If the translation key `application-banner` is available (not empty), the Geonetwork-UI will display a banner for the home page, catalog page, and organisation page.
+
+- `application-banner` (optional)
+
+  To configure your banner content, go to the Geonetwork backoffice > Settings > Languages & translations page, and add a new translation key `application-banner`. To remove/deactivate the banner, you need to remove the translation key in the Geonetwork backoffice.

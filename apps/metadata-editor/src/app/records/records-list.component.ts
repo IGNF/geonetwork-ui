@@ -23,6 +23,10 @@ export const allSearchFields = [
   'isPublishedToAll',
   'link',
   'owner',
+  'resourceType',
+  'mainLanguage',
+  'otherLanguage',
+  'isHarvested',
 ]
 @Component({
   selector: 'md-editor-records-list',
@@ -46,6 +50,8 @@ export class RecordsListComponent implements OnInit, Paginable {
     private searchService: SearchService
   ) {}
 
+  isDuplicating = false
+
   ngOnInit(): void {
     this.searchFacade.setConfigRequestFields(allSearchFields)
     this.searchFacade.setPageSize(15)
@@ -63,6 +69,7 @@ export class RecordsListComponent implements OnInit, Paginable {
   }
 
   duplicateRecord(record: CatalogRecord) {
+    this.isDuplicating = true
     this.router.navigate(['/duplicate', record.uniqueIdentifier])
   }
 

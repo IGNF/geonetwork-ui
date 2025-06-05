@@ -21,24 +21,21 @@ import {
   InteractiveTableComponent,
 } from '@geonetwork-ui/ui/layout'
 import {
+  DateService,
   FileFormat,
   formatUserInfo,
   getBadgeColor,
   getFileFormat,
   getFormatPriority,
 } from '@geonetwork-ui/util/shared'
-import { TranslateModule } from '@ngx-translate/core'
+import { TranslateModule, TranslateService } from '@ngx-translate/core'
 import { ActionMenuComponent } from './action-menu/action-menu.component'
 import { NgIconComponent, provideIcons } from '@ng-icons/core'
-import { iconoirUser } from '@ng-icons/iconoir'
-import {
-  CdkConnectedOverlay,
-  CdkOverlayOrigin,
-  Overlay,
-  OverlayRef,
-} from '@angular/cdk/overlay'
+import { iconoirUser, iconoirLock, iconoirTranslate } from '@ng-icons/iconoir'
+import { CdkOverlayOrigin, Overlay, OverlayRef } from '@angular/cdk/overlay'
 import { TemplatePortal } from '@angular/cdk/portal'
 import { matMoreVert } from '@ng-icons/material-icons/baseline'
+import { Observable, of, take } from 'rxjs'
 
 @Component({
   selector: 'gn-ui-results-table',
@@ -55,9 +52,10 @@ import { matMoreVert } from '@ng-icons/material-icons/baseline'
     ActionMenuComponent,
     NgIconComponent,
     CdkOverlayOrigin,
-    CdkConnectedOverlay,
   ],
-  providers: [provideIcons({ iconoirUser, matMoreVert })],
+  providers: [
+    provideIcons({ iconoirUser, iconoirLock, iconoirTranslate, matMoreVert }),
+  ],
 })
 export class ResultsTableComponent {
   @Input() records: CatalogRecord[] = []
@@ -65,14 +63,19 @@ export class ResultsTableComponent {
   @Input() sortOrder: SortByField = null
   @Input() hasDraft: (record: CatalogRecord) => boolean = () => false
   @Input() canDuplicate: (record: CatalogRecord) => boolean = () => true
-  @Input() isUnsavedDraft: (record: CatalogRecord) => boolean = () => true
-  @Input() canDelete: (record: CatalogRecord) => boolean = () => true
+  @Input() canDelete: (record: CatalogRecord) => Observable<boolean> = () =>
+    of(true)
+  @Input() canEdit: (record: CatalogRecord) => Observable<boolean> = () =>
+    of(true)
+  @Input() isDraftPage = false
+  @Input() isDuplicating = false
 
   // emits the column (field) as well as the order
   @Output() sortByChange = new EventEmitter<[string, 'asc' | 'desc']>()
   @Output() recordClick = new EventEmitter<CatalogRecord>()
   @Output() duplicateRecord = new EventEmitter<CatalogRecord>()
   @Output() deleteRecord = new EventEmitter<CatalogRecord>()
+  @Output() rollbackDraft = new EventEmitter<CatalogRecord>()
   @Output() recordsSelectedChange = new EventEmitter<
     [CatalogRecord[], boolean]
   >()
@@ -86,7 +89,9 @@ export class ResultsTableComponent {
   constructor(
     private overlay: Overlay,
     private viewContainerRef: ViewContainerRef,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private dateService: DateService,
+    private translateService: TranslateService
   ) {}
 
   openActionMenu(item, template) {
@@ -139,7 +144,7 @@ export class ResultsTableComponent {
   }
 
   dateToString(date: Date): string {
-    return date?.toLocaleDateString(undefined, {
+    return this.dateService.formatDate(date, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -171,7 +176,13 @@ export class ResultsTableComponent {
   }
 
   handleRecordClick(item: unknown) {
-    this.recordClick.emit(item as CatalogRecord)
+    this.canEdit(item as CatalogRecord)
+      .pipe(take(1))
+      .subscribe((canEdit) => {
+        if (canEdit) {
+          this.recordClick.emit(item as CatalogRecord)
+        }
+      })
   }
 
   handleDuplicate(item: unknown) {
@@ -180,6 +191,11 @@ export class ResultsTableComponent {
 
   handleDelete(item: unknown) {
     this.deleteRecord.emit(item as CatalogRecord)
+    this.closeActionMenu()
+  }
+
+  handleRollback(item: unknown) {
+    this.rollbackDraft.emit(item as CatalogRecord)
     this.closeActionMenu()
   }
 
@@ -208,5 +224,17 @@ export class ResultsTableComponent {
 
   handleRecordSelectedChange(selected: boolean, record: CatalogRecord) {
     this.recordsSelectedChange.emit([[record], selected])
+  }
+
+  isMultilingual(record: CatalogRecord): boolean {
+    return record.otherLanguages.length > 0
+  }
+
+  getTxtHoverMultilingual(record: CatalogRecord) {
+    return this.translateService.instant('dashboard.records.isMultilingual', {
+      languages: [...[record.defaultLanguage], ...record.otherLanguages].join(
+        ', '
+      ),
+    })
   }
 }

@@ -20,7 +20,7 @@ import { MockBuilder } from 'ng-mocks'
 import { RecordDownloadsComponent } from '../record-downloads/record-downloads.component'
 import { RecordOtherlinksComponent } from '../record-otherlinks/record-otherlinks.component'
 import { RecordApisComponent } from '../record-apis/record-apis.component'
-import { RecordRelatedRecordsComponent } from '../record-related-records/record-related-records.component'
+import { RecordInternalLinksComponent } from '../record-internal-links/record-internal-links.component'
 
 const SAMPLE_RECORD = {
   ...datasetRecordsFixture()[0],
@@ -109,6 +109,7 @@ describe('RecordMetadataComponent', () => {
 
     beforeEach(() => {
       facade.isPresent$.next(true)
+      component.kind = 'dataset'
       fixture.detectChanges()
       metadataInfo = fixture.debugElement.query(
         By.directive(MetadataInfoComponent)
@@ -120,7 +121,7 @@ describe('RecordMetadataComponent', () => {
         By.directive(MetadataCatalogComponent)
       ).componentInstance
     })
-    describe('if metadata present', () => {
+    describe('if metadata present and kind is dataset', () => {
       it('shows the full metadata', () => {
         expect(metadataInfo.metadata).toHaveProperty('abstract')
       })
@@ -134,6 +135,19 @@ describe('RecordMetadataComponent', () => {
         expect(catalogComponent.sourceLabel).toEqual('catalog label')
       })
     })
+    describe('if metadata present and kind is service', () => {
+      beforeEach(() => {
+        facade.isPresent$.next(true)
+        component.kind = 'service'
+        fixture.detectChanges()
+      })
+      it('does not display the metadata catalog component', () => {
+        expect(
+          fixture.debugElement.query(By.directive(MetadataCatalogComponent))
+        ).toBeFalsy()
+      })
+    })
+
     describe('if metadata not present', () => {
       beforeEach(() => {
         facade.isPresent$.next(false)
@@ -162,49 +176,6 @@ describe('RecordMetadataComponent', () => {
         ).toBeFalsy()
       })
     })
-    describe('Image Overlay Preview', () => {
-      describe('if metadata without overview', () => {
-        let imgOverlayPreview: ImageOverlayPreviewComponent
-        beforeEach(() => {
-          facade.isPresent$.next(true)
-          facade.metadata$.next({})
-          fixture.detectChanges()
-          imgOverlayPreview = fixture.debugElement.query(
-            By.directive(ImageOverlayPreviewComponent)
-          ).componentInstance
-        })
-        it('should send undefined as imageUrl to imgOverlayPreview component', () => {
-          expect(imgOverlayPreview).toBeTruthy()
-          expect(imgOverlayPreview.imageUrl).toBe(undefined)
-        })
-      })
-      describe('if metadata with overview', () => {
-        let imgOverlayPreview: ImageOverlayPreviewComponent
-        beforeEach(() => {
-          facade.isPresent$.next(true)
-          fixture.detectChanges()
-          imgOverlayPreview = fixture.debugElement.query(
-            By.directive(ImageOverlayPreviewComponent)
-          ).componentInstance
-        })
-        describe('and url defined', () => {
-          it('should send the imageUrl to imgOverlayPreview component', () => {
-            expect(imgOverlayPreview).toBeTruthy()
-            expect(imgOverlayPreview.imageUrl).toBeDefined()
-          })
-        })
-        describe('and url undefined', () => {
-          beforeEach(() => {
-            facade.metadata$.next({ overviews: [] })
-            fixture.detectChanges()
-          })
-          it('should send the imagUrl as null to imgOverlayPreview component', () => {
-            expect(imgOverlayPreview).toBeTruthy()
-            expect(imgOverlayPreview.imageUrl).toBeNull()
-          })
-        })
-      })
-    })
   })
   describe('Downloads', () => {
     let downloadsComponent
@@ -219,8 +190,9 @@ describe('RecordMetadataComponent', () => {
         expect(downloadsComponent).toBeFalsy()
       })
     })
-    describe('when DOWNLOAD link', () => {
+    describe('when DOWNLOAD link and kind is dataset', () => {
       beforeEach(() => {
+        component.kind = 'dataset'
         facade.downloadLinks$.next(['link'])
         fixture.detectChanges()
         downloadsComponent = fixture.debugElement.query(
@@ -229,6 +201,19 @@ describe('RecordMetadataComponent', () => {
       })
       it('download component renders', () => {
         expect(downloadsComponent).toBeTruthy()
+      })
+    })
+    describe('when DOWNLOAD link and kind is other than dataset', () => {
+      beforeEach(() => {
+        component.kind = 'service'
+        facade.downloadLinks$.next(['link'])
+        fixture.detectChanges()
+        downloadsComponent = fixture.debugElement.query(
+          By.directive(RecordDownloadsComponent)
+        )
+      })
+      it('download component does not render', () => {
+        expect(downloadsComponent).toBeFalsy()
       })
     })
   })
@@ -271,8 +256,9 @@ describe('RecordMetadataComponent', () => {
         expect(apiComponent).toBeFalsy()
       })
     })
-    describe('when API link', () => {
+    describe('when API link and kind is dataset', () => {
       beforeEach(() => {
+        component.kind = 'dataset'
         facade.apiLinks$.next(['link'])
         fixture.detectChanges()
         apiComponent = fixture.debugElement.query(
@@ -281,6 +267,19 @@ describe('RecordMetadataComponent', () => {
       })
       it('API component renders', () => {
         expect(apiComponent).toBeTruthy()
+      })
+    })
+    describe('when API link and kind is other than dataset', () => {
+      beforeEach(() => {
+        component.kind = 'reuse'
+        facade.apiLinks$.next(['link'])
+        fixture.detectChanges()
+        apiComponent = fixture.debugElement.query(
+          By.directive(RecordApisComponent)
+        )
+      })
+      it('API component does not render', () => {
+        expect(apiComponent).toBeFalsy()
       })
     })
   })
@@ -292,7 +291,7 @@ describe('RecordMetadataComponent', () => {
         facade.related$.next([])
         fixture.detectChanges()
         relatedComponent = fixture.debugElement.query(
-          By.directive(RecordRelatedRecordsComponent)
+          By.directive(RecordInternalLinksComponent)
         )
       })
       it('Related component does not render', () => {
@@ -304,7 +303,7 @@ describe('RecordMetadataComponent', () => {
         facade.related$.next([{ title: 'title' }])
         fixture.detectChanges()
         relatedComponent = fixture.debugElement.query(
-          By.directive(RecordRelatedRecordsComponent)
+          By.directive(RecordInternalLinksComponent)
         )
       })
       it('Related component renders', () => {
@@ -399,6 +398,7 @@ describe('RecordMetadataComponent', () => {
 
       describe('When the metadata is not fully loaded', () => {
         beforeEach(() => {
+          component.kind = 'dataset'
           facade.isMetadataLoading$.next(false)
           facade.apiLinks$.next([])
           facade.downloadLinks$.next([])

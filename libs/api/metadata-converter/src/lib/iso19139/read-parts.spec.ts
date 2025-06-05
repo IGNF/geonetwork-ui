@@ -17,9 +17,10 @@ import {
   findIdentification,
   getUpdateFrequencyFromCustomPeriod,
   readContacts,
+  readDefaultLanguage,
   readOnlineResources,
+  readOtherLanguages,
   readOwnerOrganization,
-  readResourceIdentifier,
   readSpatialExtents,
   readTemporalExtents,
 } from './read-parts'
@@ -30,6 +31,19 @@ describe('read parts', () => {
   describe('common functions', () => {
     beforeEach(() => {
       recordRootEl = getRootElement(parseXmlString(GEOCAT_CH_DATASET))
+    })
+    describe('readDefaultLanguage, readOtherLanguages', () => {
+      it('should read default language and otherLanguages separately, keep unsupported languages in ISO3', () => {
+        expect(readDefaultLanguage(recordRootEl)).toBe('de')
+        expect(readOtherLanguages(recordRootEl)).toEqual([
+          'fr',
+          'it',
+          'en',
+          'rm',
+          'de',
+          'aar',
+        ])
+      })
     })
     describe('readContacts', () => {
       it('returns an array of individuals with their organization', () => {
@@ -324,6 +338,7 @@ describe('read parts', () => {
               'https://api3.geo.admin.ch/rest/services/api/MapServer/ch.are.alpenkonvention'
             ),
             description: 'RESTful API von geo.admin.ch',
+            identifierInService: 'RESTful API von geo.admin.ch',
             name: 'RESTful API von geo.admin.ch',
             translations: {
               description: {
@@ -738,10 +753,10 @@ describe('read parts', () => {
           {
             description:
               'https://services.geo.sg.ch/wss/service/SG00170_WMS/guest?request=GetCapabilities&service=WMS',
-            endpointUrl: new URL(
+            url: new URL(
               'https://services.geo.sg.ch/wss/service/SG00170_WMS/guest?request=GetCapabilities&service=WMS'
             ),
-            protocol: 'wms',
+            accessServiceProtocol: 'wms',
             type: 'endpoint',
             translations: {
               description: {
@@ -765,7 +780,7 @@ describe('read parts', () => {
                     <gmd:URL/>
                 </gmd:linkage>
                 <gmd:protocol>
-                    <gco:CharacterString>WWW:LINK-1.0-http--link</gco:CharacterString>
+                    <gmx:MimeFileType>WWW:LINK-1.0-http--link</gmx:MimeFileType>
                 </gmd:protocol>
                 <gmd:function>
                     <gmd:CI_OnLineFunctionCode codeListValue="information" codeList="http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#CI_OnLineFunctionCode" />

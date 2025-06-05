@@ -242,6 +242,8 @@ export function getServiceDistributionProtocol(
   distribution: DatasetServiceDistribution
 ): string {
   switch (distribution.accessServiceProtocol.toLowerCase()) {
+    case 'ogcfeatures':
+      return 'OGC API Features'
     case 'wfs':
       return 'OGC:WFS'
     case 'wms':
@@ -269,6 +271,24 @@ export function getMaintenanceFrequencyCode(
       return 'continual'
     case 'periodic':
       return 'periodic'
+    case 'daily':
+      return 'daily'
+    case 'weekly':
+      return 'weekly'
+    case 'fortnightly':
+      return 'fortnightly'
+    case 'monthly':
+      return 'monthly'
+    case 'quarterly':
+      return 'quarterly'
+    case 'biannually':
+      return 'biannually'
+    case 'annually':
+      return 'annually'
+    case 'semimonthly':
+      return 'semimonthly'
+    case 'biennially':
+      return 'biennially'
   }
 }
 
@@ -737,6 +757,7 @@ export function appendOnlineResource(
   let functionCode: string
   let protocol: string
   if (onlineResource.type === 'service') {
+    // should we keep the identifierInService? read-write duplicate with name
     name = onlineResource.identifierInService // this is for GeoNetwork to know the layer name
     functionCode = 'download'
     protocol = getServiceDistributionProtocol(onlineResource)
@@ -1163,25 +1184,27 @@ export function writeGraphicOverviews(
     findOrCreateIdentification(),
     removeChildrenByName('gmd:graphicOverview'),
     appendChildren(
-      ...record.overviews.map((overview) =>
-        pipe(
-          createNestedElement('gmd:graphicOverview', 'gmd:MD_BrowseGraphic'),
-          appendChildren(
-            pipe(
-              createElement('gmd:fileName'),
-              writeCharacterString(overview.url.toString())
-            )
-          ),
-          'description' in overview
-            ? appendChildren(
-                pipe(
-                  createElement('gmd:fileDescription'),
-                  writeCharacterString(overview.description)
-                )
+      ...record.overviews
+        .filter((overview) => overview.url)
+        .map((overview) =>
+          pipe(
+            createNestedElement('gmd:graphicOverview', 'gmd:MD_BrowseGraphic'),
+            appendChildren(
+              pipe(
+                createElement('gmd:fileName'),
+                writeCharacterString(overview.url.toString())
               )
-            : noop
+            ),
+            'description' in overview
+              ? appendChildren(
+                  pipe(
+                    createElement('gmd:fileDescription'),
+                    writeCharacterString(overview.description)
+                  )
+                )
+              : noop
+          )
         )
-      )
     )
   )(rootEl)
 }
@@ -1204,7 +1227,7 @@ export function writeLineage(record: DatasetRecord, rootEl: XmlElement) {
 }
 
 export function getServiceEndpointProtocol(endpoint: ServiceEndpoint): string {
-  switch (endpoint.protocol.toLowerCase()) {
+  switch (endpoint.accessServiceProtocol.toLowerCase()) {
     case 'wfs':
       return 'OGC:WFS'
     case 'wms':
@@ -1212,14 +1235,14 @@ export function getServiceEndpointProtocol(endpoint: ServiceEndpoint): string {
     case 'wps':
       return 'OGC:WPS'
     default:
-      return endpoint.protocol
+      return endpoint.accessServiceProtocol
   }
 }
 
 export function createOnlineResource(onlineResource: ServiceOnlineResource) {
   let linkageUrl, functionCode, protocol
   if (onlineResource.type === 'endpoint') {
-    linkageUrl = onlineResource.endpointUrl.toString()
+    linkageUrl = onlineResource.url.toString()
     protocol = getServiceEndpointProtocol(onlineResource)
     functionCode = 'download'
   } else {
@@ -1448,7 +1471,10 @@ export function writeLanguages(record: DatasetRecord, rootEl: XmlElement) {
       writeAttribute('id', lang.toUpperCase()),
       createNestedChild('gmd:languageCode', 'gmd:LanguageCode'),
       writeAttribute('codeList', 'http://www.loc.gov/standards/iso639-2/'),
-      writeAttribute('codeListValue', LANG_2_TO_3_MAPPER[lang])
+      writeAttribute(
+        'codeListValue',
+        lang.length === 2 ? LANG_2_TO_3_MAPPER[lang] : lang
+      )
     )
 
   // add new languages (only if other than default one)

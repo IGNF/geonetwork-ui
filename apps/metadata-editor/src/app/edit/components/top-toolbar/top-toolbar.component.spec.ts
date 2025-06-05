@@ -8,7 +8,10 @@ import { TranslateModule } from '@ngx-translate/core'
 
 class EditorFacadeMock {
   changedSinceSave$ = new BehaviorSubject(false)
-  alreadySavedOnce$ = new BehaviorSubject(false)
+  isPublished$ = new BehaviorSubject(false)
+  record$ = new BehaviorSubject({
+    otherLanguages: [],
+  })
 }
 
 @Component({
@@ -62,17 +65,17 @@ describe('TopToolbarComponent', () => {
     })
     describe('saved and not published', () => {
       beforeEach(() => {
-        editorFacade.alreadySavedOnce$.next(false)
-        editorFacade.changedSinceSave$.next(true)
+        editorFacade.changedSinceSave$.next(false)
+        editorFacade.isPublished$.next(false)
       })
       it('sets the correct status', () => {
-        expect(saveStatus).toBe('draft_only')
+        expect(saveStatus).toBe('record_not_published')
       })
     })
     describe('saved, published and up to date', () => {
       beforeEach(() => {
-        editorFacade.alreadySavedOnce$.next(true)
         editorFacade.changedSinceSave$.next(false)
+        editorFacade.isPublished$.next(true)
       })
       it('sets the correct status', () => {
         expect(saveStatus).toBe('record_up_to_date')
@@ -80,12 +83,25 @@ describe('TopToolbarComponent', () => {
     })
     describe('saved, published, pending changes', () => {
       beforeEach(() => {
-        editorFacade.alreadySavedOnce$.next(true)
         editorFacade.changedSinceSave$.next(true)
+        editorFacade.isPublished$.next(true)
       })
       it('sets the correct status', () => {
         expect(saveStatus).toBe('draft_changes_pending')
       })
+    })
+  })
+  describe('Multilingual panel', () => {
+    it('should not have multilingual mode activate if the record has no extra languages', () => {
+      const ngIcon = fixture.nativeElement.querySelectorAll('ng-icon')[2]
+      expect(ngIcon.getAttribute('name')).not.toBe('matCircle')
+    })
+    it('should activate the multilingual mode if the record has extra languages', () => {
+      editorFacade.record$.next({ otherLanguages: ['en', 'it', 'fr'] })
+      fixture.detectChanges()
+
+      const ngIcon = fixture.nativeElement.querySelectorAll('ng-icon')[2]
+      expect(ngIcon.getAttribute('name')).toBe('matCircle')
     })
   })
 })

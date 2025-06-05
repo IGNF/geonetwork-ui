@@ -152,12 +152,22 @@ export class Gn4FieldMapper {
       )
       const languages = langList.map((lang) => LANG_3_TO_2_MAPPER[lang])
       const defaultLanguage = output.defaultLanguage ?? languages[0] ?? null // set the first language as main one as fallback
-      const otherLanguages = languages.filter(
-        (lang) => lang !== defaultLanguage
-      )
+
       return {
         ...output,
         defaultLanguage,
+      }
+    },
+    otherLanguage: (output, source) => {
+      const langList = getAsArray(selectField<string>(source, 'otherLanguage'))
+      const languages = langList.map((lang) => LANG_3_TO_2_MAPPER[lang])
+      const defaultLanguage = output.defaultLanguage ?? languages[0] ?? null
+      const otherLanguages = languages.filter(
+        (lang) => lang !== defaultLanguage
+      )
+
+      return {
+        ...output,
         otherLanguages,
       }
     },
@@ -277,10 +287,89 @@ export class Gn4FieldMapper {
         },
         output
       ),
+    featureTypes: (output, source) =>
+      this.addExtra(
+        {
+          featureTypes: selectField(source, 'featureTypes'),
+        },
+        output
+      ),
+    related: (output, source) => {
+      const fcatSource = selectField(
+        getFirstValue(
+          selectField(
+            <SourceWithUnknownProps>selectField(source, 'related'),
+            'fcats'
+          )
+        ) ?? {},
+        '_source'
+      )
+      const featureCatalogIdentifier: string = selectField(
+        <SourceWithUnknownProps>fcatSource,
+        'uuid'
+      )
+      const sourceOfLinks = getAsArray(
+        selectField(
+          <SourceWithUnknownProps>selectField(source, 'related'),
+          'hassources'
+        )
+      )
+      const sourceOfIdentifiers: string[] = sourceOfLinks
+        .filter((link) => link['origin'] === 'catalog')
+        .map((link) => {
+          return selectField(
+            selectField(<SourceWithUnknownProps>link, '_source'),
+            'uuid'
+          )
+        })
+      const extraValues: Record<string, string | string[]> = {}
+      if (featureCatalogIdentifier) {
+        extraValues.featureCatalogIdentifier = featureCatalogIdentifier
+      }
+      if (sourceOfIdentifiers && sourceOfIdentifiers.length > 0) {
+        extraValues.sourceOfIdentifiers = sourceOfIdentifiers
+      }
+      return Object.keys(extraValues).length > 0
+        ? this.addExtra(extraValues, output)
+        : output
+    },
+    recordLink: (output, source) => {
+      const recordLinks = getAsArray(
+        selectField<SourceWithUnknownProps[]>(source, 'recordLink')
+      )
+      const sourcesIdentifiers: string[] = recordLinks
+        .filter(
+          (link) => link['origin'] === 'catalog' && link['type'] === 'sources'
+        )
+        .map((link) => selectField(<SourceWithUnknownProps>link, 'to'))
+
+      return sourcesIdentifiers && sourcesIdentifiers.length > 0
+        ? this.addExtra(
+            {
+              sourcesIdentifiers,
+            },
+            output
+          )
+        : output
+    },
     isPublishedToAll: (output, source) =>
       this.addExtra(
         {
-          isPublishedToAll: selectField(source, 'isPublishedToAll') !== 'false',
+          isPublishedToAll: selectField(source, 'isPublishedToAll'),
+        },
+        output
+      ),
+    isHarvested: (output, source) =>
+      this.addExtra(
+        {
+          isHarvested: selectField(source, 'isHarvested') !== 'false',
+        },
+        output
+      ),
+    edit: (output, source) =>
+      this.addExtra(
+        {
+          edit: selectField(source, 'edit'),
         },
         output
       ),
@@ -398,6 +487,7 @@ export class Gn4FieldMapper {
       /^OGC:WMS/.test(protocol) ||
       /^OGC:WFS/.test(protocol) ||
       /^OGC:WMTS/.test(protocol) ||
+      /TMS/i.test(protocol) ||
       /ogc\W*api\W*features/i.test(protocol) ||
       (/^WWW:DOWNLOAD-/.test(protocol) && /data.geopf.fr/.test(url)) ||
       /gml/.test(protocol) // TO DO : change with the good protocol when decided
@@ -429,6 +519,11 @@ export class Gn4FieldMapper {
       ),
       selectField<string>(sourceLink, 'description')
     )
+    const descriptionLink = selectField<object>(sourceLink, 'descriptionObject')
+    const accessRestricted =
+      descriptionLink &&
+      'link' in descriptionLink &&
+      descriptionLink.link.toString().includes('#MD_RestrictionCode_restricted')
     // no url: fail early
     if (url === null) {
       // TODO: collect errors at the record level?
@@ -454,6 +549,7 @@ export class Gn4FieldMapper {
           type,
           url: url,
           accessServiceProtocol,
+          accessRestricted: accessRestricted,
         }
       case 'link':
         return {
@@ -472,8 +568,8 @@ export class Gn4FieldMapper {
         return {
           ...distribution,
           type,
-          endpointUrl: url,
-          protocol: accessServiceProtocol,
+          url: url,
+          accessServiceProtocol: accessServiceProtocol,
         }
     }
   }
