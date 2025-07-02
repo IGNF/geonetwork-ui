@@ -2,28 +2,10 @@
   <datahub-search-filters
     [isQualitySortable]="metadataQualityDisplay"
   ></datahub-search-filters>
-  <div
-    class="mt-6 rounded-lg text-gray-800 p-4 bg-secondary flex justify-between items-center"
-  >
-    <gn-ui-results-hits></gn-ui-results-hits>
-    <mat-button-toggle-group
-      id="layoutGroup"
-      #group="matButtonToggleGroup"
-      value="ROW"
-      (change)="change($event)"
-      [title]="'results.layout.selectOne' | translate"
-      style="font-variation-settings: 'FILL' 1"
-    >
-      <mat-button-toggle value="ROW" aria-label="Default">
-        <mat-icon class="material-symbols-outlined">view_list</mat-icon>
-      </mat-button-toggle>
-      <mat-button-toggle value="CARD" aria-label="Cartes">
-        <mat-icon class="material-symbols-outlined">view_module</mat-icon>
-      </mat-button-toggle>
-      <mat-button-toggle value="TITLE" aria-label="Liste de titres">
-        <mat-icon class="material-symbols-outlined">view_headline</mat-icon>
-      </mat-button-toggle>
-    </mat-button-toggle-group>
+  <div class="mt-6 rounded-lg text-gray-800 p-4 bg-slate-100">
+    <gn-ui-results-hits
+      [displayRecordKindFilter]="displayRecordKindFilter"
+    ></gn-ui-results-hits>
   </div>
   <div class="mt-8">
     <gn-ui-results-list-container
