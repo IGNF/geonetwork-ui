@@ -42,9 +42,9 @@
     [attr.data-cy-value]="saveStatus$ | async"
     [ngSwitch]="saveStatus$ | async"
   >
-    <ng-container *ngSwitchCase="'draft_only'">
-      <ng-icon class="text-slate-400" name="iconoirCheckCircle"></ng-icon>
-      <span translate>editor.record.saveStatus.asDraftOnly</span>
+    <ng-container *ngSwitchCase="'record_not_published'">
+      <ng-icon class="text-lime-400" name="iconoirCheckCircle"></ng-icon>
+      <span translate>editor.record.saveStatus.recordNotPublished</span>
     </ng-container>
     <ng-container *ngSwitchCase="'record_up_to_date'">
       <ng-icon class="text-lime-400" name="iconoirCheckCircle"></ng-icon>
@@ -61,8 +61,24 @@
     [title]="'editor.temporary.disabled' | translate"
   >
     <ng-icon name="matHelpOutlineOutline"></ng-icon>
-  </gn-ui-button>
+  </gn-ui-button> -->
   <gn-ui-button
+    [title]="'editor.record.form.multilingual.open' | translate"
+    [extraClass]="translatePanelOpen ? 'bg-neutral-200 border-0' : 'bg-white'"
+    (buttonClick)="toggleTranslatePanel()"
+    type="light"
+  >
+    <div class="relative inline-block">
+      <ng-icon
+        size="8px"
+        name="matCircle"
+        class="text-primary absolute top-0 right-0"
+        *ngIf="isRecordMultilingual$ | async"
+      ></ng-icon>
+      <ng-icon name="iconoirTranslate"></ng-icon>
+    </div>
+  </gn-ui-button>
+  <!-- <gn-ui-button
     type="light"
     disabled="true"
     [title]="'editor.temporary.disabled' | translate"

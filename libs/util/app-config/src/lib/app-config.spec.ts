@@ -134,6 +134,7 @@ describe('app config utils', () => {
           METADATA_LANGUAGE: 'fre',
           LOGIN_URL: '/cas/login?service=',
           LOGOUT_URL: '/geonetwork/signout',
+          SETTINGS_URL: '/geonetwork/settings',
           WEB_COMPONENT_EMBEDDER_URL: '/datahub/wc-embedder.html',
         })
       })
@@ -158,6 +159,7 @@ describe('app config utils', () => {
     describe('getOptionalSearchConfig', () => {
       it('returns the search config', () => {
         expect(getOptionalSearchConfig()).toEqual({
+          RECORD_KIND_QUICK_FILTER: false,
           FILTER_GEOMETRY_URL: 'https://my.domain.org/geom.json',
           SEARCH_PRESET: [
             {

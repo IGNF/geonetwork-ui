@@ -1,12 +1,12 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { CommonModule } from '@angular/common'
-import { TranslateModule } from '@ngx-translate/core'
+import { TranslatePipe } from '@ngx-translate/core'
 import {
   NgIconComponent,
   provideIcons,
   provideNgIconsConfig,
 } from '@ng-icons/core'
-import { iconoirFilterList } from '@ng-icons/iconoir'
+import { iconoirFilterAlt } from '@ng-icons/iconoir'
 import {
   FeatureSearchModule,
   SearchFiltersSummaryComponent,
@@ -17,14 +17,14 @@ import {
   standalone: true,
   imports: [
     CommonModule,
-    TranslateModule,
+    TranslatePipe,
     FeatureSearchModule,
     NgIconComponent,
     SearchFiltersSummaryComponent,
   ],
   providers: [
     provideIcons({
-      iconoirFilterList,
+      iconoirFilterAlt,
     }),
     provideNgIconsConfig({
       size: '1.5rem',

@@ -1,5 +1,8 @@
 import { createAction, props } from '@ngrx/store'
-import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
+import {
+  CatalogRecord,
+  LanguageCode,
+} from '@geonetwork-ui/common/domain/model/record'
 import { SaveRecordError } from './editor.models'
 import { EditorFieldIdentification } from '../models'
 
@@ -7,7 +10,6 @@ export const openRecord = createAction(
   '[Editor] Open record',
   props<{
     record: CatalogRecord
-    alreadySavedOnce: boolean
     recordSource?: string | null
   }>()
 )
@@ -15,6 +17,11 @@ export const openRecord = createAction(
 export const updateRecordField = createAction(
   '[Editor] Update record field',
   props<{ field: string; value: unknown }>()
+)
+
+export const updateRecordLanguages = createAction(
+  '[Editor] Update record languages',
+  props<{ defaultLanguage: LanguageCode; otherLanguages: LanguageCode[] }>()
 )
 
 export const markRecordAsChanged = createAction(
@@ -50,4 +57,14 @@ export const hasRecordChangedSinceDraft = createAction(
 export const hasRecordChangedSinceDraftSuccess = createAction(
   '[Editor] Has Record Changed Since Draft Success',
   props<{ changes: { user: string; date: Date } }>()
+)
+
+export const isPublished = createAction(
+  '[Editor] Record Saved But Not Published',
+  props<{ isPublished: boolean }>()
+)
+
+export const canEditRecord = createAction(
+  '[Editor] User can edit record',
+  props<{ canEditRecord: boolean }>()
 )

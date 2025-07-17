@@ -1,8 +1,9 @@
 import { Action, createReducer, on } from '@ngrx/store'
 import * as MetadataViewActions from './mdview.actions'
-import { DatavizConfigurationModel } from '@geonetwork-ui/common/domain/model/dataviz/dataviz-configuration.model'
+import { DatavizChartConfigModel } from '@geonetwork-ui/common/domain/model/dataviz/dataviz-configuration.model'
 import {
   CatalogRecord,
+  DatasetFeatureCatalog,
   UserFeedback,
 } from '@geonetwork-ui/common/domain/model/record'
 
@@ -13,10 +14,15 @@ export interface MetadataViewState {
   error: { notFound?: boolean; otherError?: string } | null
   metadata?: Partial<CatalogRecord>
   related?: CatalogRecord[]
+  sources?: CatalogRecord[]
+  sourceOf?: CatalogRecord[]
   userFeedbacks?: UserFeedback[]
   allUserFeedbacksLoading: boolean
   addUserFeedbackLoading: boolean
-  chartConfig?: DatavizConfigurationModel
+  chartConfig?: DatavizChartConfigModel
+  featureCatalog?: DatasetFeatureCatalog
+  featureCatalogLoading: boolean
+  featureCatalogError: string | null
 }
 
 export const initialMetadataViewState: MetadataViewState = {
@@ -24,6 +30,8 @@ export const initialMetadataViewState: MetadataViewState = {
   loadingFull: false,
   allUserFeedbacksLoading: false,
   addUserFeedbackLoading: false,
+  featureCatalogLoading: false,
+  featureCatalogError: null,
 }
 
 const metadataViewReducer = createReducer(
@@ -69,6 +77,16 @@ const metadataViewReducer = createReducer(
     related,
   })),
 
+  on(MetadataViewActions.setSources, (state, { sources }) => ({
+    ...state,
+    sources,
+  })),
+
+  on(MetadataViewActions.setSourceOf, (state, { sourceOf }) => ({
+    ...state,
+    sourceOf,
+  })),
+
   /*
     ChartConfig reducers
   */
@@ -105,7 +123,30 @@ const metadataViewReducer = createReducer(
       addUserFeedbackLoading: false,
       allUserFeedbacksLoading: false,
     })
-  )
+  ),
+
+  /**
+   * FeatureCatalog reducers
+   */
+
+  on(MetadataViewActions.loadFeatureCatalog, (state) => ({
+    ...state,
+    featureCatalogError: null,
+    featureCatalogLoading: true,
+  })),
+  on(
+    MetadataViewActions.loadFeatureCatalogSuccess,
+    (state, { datasetCatalog }) => ({
+      ...state,
+      featureCatalog: datasetCatalog,
+      featureCatalogLoading: false,
+    })
+  ),
+  on(MetadataViewActions.loadFeatureCatalogFailure, (state, { error }) => ({
+    ...state,
+    featureCatalogError: error,
+    featureCatalogLoading: false,
+  }))
 )
 
 export function reducer(

@@ -13,6 +13,7 @@ import {
   Organization,
   Role,
   RoleLabels,
+  RoleValues,
 } from '@geonetwork-ui/common/domain/model/record'
 import { UserModel } from '@geonetwork-ui/common/domain/model/user'
 import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
@@ -20,12 +21,10 @@ import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.
 import { SortableListComponent } from '@geonetwork-ui/ui/layout'
 import {
   AutocompleteComponent,
-  DropdownSelectorComponent,
-  UiInputsModule,
+  ButtonComponent,
 } from '@geonetwork-ui/ui/inputs'
-import { UiWidgetsModule } from '@geonetwork-ui/ui/widgets'
 import { createFuzzyFilter } from '@geonetwork-ui/util/shared'
-import { TranslateModule } from '@ngx-translate/core'
+import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
 import {
   debounceTime,
   distinctUntilChanged,
@@ -48,15 +47,14 @@ import { iconoirPlus } from '@ng-icons/iconoir'
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    DropdownSelectorComponent,
-    UiInputsModule,
     CommonModule,
-    UiWidgetsModule,
     AutocompleteComponent,
-    TranslateModule,
     ContactCardComponent,
     SortableListComponent,
     NgIconComponent,
+    ButtonComponent,
+    TranslatePipe,
+    TranslateDirective,
   ],
   providers: [
     provideIcons({ iconoirPlus }),
@@ -72,14 +70,11 @@ export class FormFieldContactsForResourceComponent
   @Output() valueChange: EventEmitter<Individual[]> = new EventEmitter()
 
   contactsForRessourceByRole: Map<Role, Individual[]> = new Map()
+  roleValues = RoleValues
 
-  rolesToPick: Role[] = [
-    'resource_provider',
-    'custodian',
-    'owner',
-    'point_of_contact',
-    'author',
-  ]
+  rolesToPick: Role[] = this.roleValues.filter(
+    (role) => role !== 'other' && role !== 'unspecified'
+  )
 
   roleSectionsToDisplay: Role[] = []
 
@@ -177,9 +172,11 @@ export class FormFieldContactsForResourceComponent
    * gn-ui-autocomplete
    */
   displayWithFn: (user: UserModel) => string = (user) =>
-    `${user.name} ${user.surname} ${
-      user.organisation ? `(${user.organisation})` : ''
-    }`
+    user.name
+      ? `${user.name} ${user.surname} ${
+          user.organisation ? `(${user.organisation})` : ''
+        }`
+      : ``
 
   /**
    * gn-ui-autocomplete

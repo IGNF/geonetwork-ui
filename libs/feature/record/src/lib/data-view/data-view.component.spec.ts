@@ -8,7 +8,6 @@ import { By } from '@angular/platform-browser'
 import { Subject } from 'rxjs'
 import { MdViewFacade } from '../state'
 import { DataViewComponent } from './data-view.component'
-import { TranslateModule } from '@ngx-translate/core'
 import {
   someDataLinksFixture,
   someGeoDatalinksFixture,
@@ -19,8 +18,11 @@ import {
   ChartViewComponent,
   TableViewComponent,
 } from '@geonetwork-ui/feature/dataviz'
+import { hot } from 'jasmine-marbles'
+import { provideI18n } from '@geonetwork-ui/util/i18n'
 
 class MdViewFacadeMock {
+  isHighUpdateFrequency$ = new Subject()
   dataLinks$ = new Subject()
   geoDataLinks$ = new Subject()
   setChartConfig = jest.fn()
@@ -50,8 +52,8 @@ describe('DataViewComponent', () => {
           provide: MdViewFacade,
           useClass: MdViewFacadeMock,
         },
+        provideI18n(),
       ],
-      imports: [TranslateModule.forRoot()],
     }).compileComponents()
     facade = TestBed.inject(MdViewFacade)
   })
@@ -143,6 +145,30 @@ describe('DataViewComponent', () => {
     })
     it('calls setChartConfig', () => {
       expect(facade.setChartConfig).toHaveBeenCalledWith(chartConfigMock)
+    })
+  })
+  describe('When the WFS link has too many features', () => {
+    beforeEach(fakeAsync(() => {
+      component.mode = 'chart'
+      fixture.detectChanges()
+      facade.dataLinks$.next(someDataLinksFixture())
+      facade.geoDataLinks$.next(someGeoDatalinksFixture())
+      flushMicrotasks()
+      fixture.detectChanges()
+
+      dropdownComponent = fixture.debugElement.query(
+        By.directive(DropdownSelectorComponent)
+      ).componentInstance
+      dropdownComponent.selectValue.emit(
+        JSON.stringify(someGeoDatalinksFixture()[1])
+      )
+      component.excludeWfs$.next(true)
+      flushMicrotasks()
+      fixture.detectChanges()
+    }))
+    it('should set hidePreview to true', () => {
+      const expected = hot('a', { a: true })
+      expect(component.hidePreview$).toBeObservable(expected)
     })
   })
 })

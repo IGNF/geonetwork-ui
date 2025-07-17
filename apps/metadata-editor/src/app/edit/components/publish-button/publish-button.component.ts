@@ -1,9 +1,4 @@
-import {
-  CdkConnectedOverlay,
-  CdkOverlayOrigin,
-  Overlay,
-  OverlayRef,
-} from '@angular/cdk/overlay'
+import { CdkOverlayOrigin, Overlay, OverlayRef } from '@angular/cdk/overlay'
 import { TemplatePortal } from '@angular/cdk/portal'
 import { CommonModule } from '@angular/common'
 import {
@@ -30,17 +25,10 @@ import {
 } from '@ng-icons/core'
 import { iconoirCloudUpload } from '@ng-icons/iconoir'
 import { matCheckCircleOutline } from '@ng-icons/material-icons/outline'
-import { TranslateModule, TranslateService } from '@ngx-translate/core'
+import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
 import { combineLatest, Observable, of, Subscription } from 'rxjs'
-import {
-  catchError,
-  concatMap,
-  map,
-  skip,
-  switchMap,
-  take,
-  withLatestFrom,
-} from 'rxjs/operators'
+import { catchError, map, skip, switchMap, take } from 'rxjs/operators'
+import { DateService } from '@geonetwork-ui/util/shared'
 
 export type RecordSaveStatus = 'saving' | 'upToDate' | 'hasChanges'
 @Component({
@@ -51,10 +39,10 @@ export type RecordSaveStatus = 'saving' | 'upToDate' | 'hasChanges'
     ButtonComponent,
     MatProgressSpinnerModule,
     MatTooltipModule,
-    TranslateModule,
+    TranslateDirective,
+    TranslatePipe,
     NgIconComponent,
     CdkOverlayOrigin,
-    CdkConnectedOverlay,
   ],
   providers: [
     provideIcons({ iconoirCloudUpload, matCheckCircleOutline }),
@@ -71,12 +59,13 @@ export class PublishButtonComponent implements OnDestroy {
   status$: Observable<RecordSaveStatus> = combineLatest([
     this.facade.changedSinceSave$,
     this.facade.saving$,
+    this.facade.isPublished$,
   ]).pipe(
-    map(([changedSinceSave, saving]) => {
+    map(([changedSinceSave, saving, isPublished]) => {
       if (saving) {
         return 'saving'
       }
-      if (changedSinceSave) {
+      if (changedSinceSave || !isPublished) {
         return 'hasChanges'
       }
       return 'upToDate'
@@ -102,7 +91,7 @@ export class PublishButtonComponent implements OnDestroy {
     private overlay: Overlay,
     private viewContainerRef: ViewContainerRef,
     private cdr: ChangeDetectorRef,
-    private translateService: TranslateService
+    private dateService: DateService
   ) {}
 
   ngOnDestroy() {
@@ -204,7 +193,7 @@ export class PublishButtonComponent implements OnDestroy {
   }
 
   formatDate(date: Date): string {
-    return date.toLocaleDateString(this.translateService.currentLang, {
+    return this.dateService.formatDate(date, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',

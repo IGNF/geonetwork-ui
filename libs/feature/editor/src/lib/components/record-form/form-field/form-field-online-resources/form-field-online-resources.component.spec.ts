@@ -1,12 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
-import { TranslateModule } from '@ngx-translate/core'
 import { FormFieldOnlineResourcesComponent } from './form-field-online-resources.component'
 import { MockBuilder, MockProvider } from 'ng-mocks'
-import { BehaviorSubject, Subject } from 'rxjs'
+import { Subject } from 'rxjs'
 import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
 import { NotificationsService } from '@geonetwork-ui/feature/notifications'
 import { MatDialog, MatDialogRef } from '@angular/material/dialog'
-import { EditorFacade } from '../../../../+state/editor.facade'
+import { provideI18n } from '@geonetwork-ui/util/i18n'
 
 let uploadSubject: Subject<any>
 class PlatformServiceInterfaceMock {
@@ -22,9 +21,6 @@ export class MatDialogMock {
     afterClosed: () => this._subject,
   }))
 }
-class EditorFacadeMock {
-  alreadySavedOnce$ = new BehaviorSubject(false)
-}
 
 describe('FormFieldOnlineResourcesComponent', () => {
   let component: FormFieldOnlineResourcesComponent
@@ -36,8 +32,8 @@ describe('FormFieldOnlineResourcesComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TranslateModule.forRoot()],
       providers: [
+        provideI18n(),
         MockProvider(
           PlatformServiceInterface,
           PlatformServiceInterfaceMock,
@@ -46,7 +42,6 @@ describe('FormFieldOnlineResourcesComponent', () => {
         MockProvider(NotificationsService),
         MockProvider(MatDialogRef),
         MockProvider(MatDialog, MatDialogMock, 'useClass'),
-        MockProvider(EditorFacade, EditorFacadeMock, 'useClass'),
       ],
     }).compileComponents()
 

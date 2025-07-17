@@ -18,7 +18,6 @@ import {
 import { TranslateCompiler, TranslateLoader } from '@ngx-translate/core'
 import { TranslateMessageFormatCompiler } from 'ngx-translate-messageformat-compiler'
 import { HttpClient } from '@angular/common/http'
-import { DEFAULT_LANG } from '@geonetwork-ui/util/i18n'
 import { FileWithOverridesTranslateLoader } from './i18n/file-with-overrides.translate.loader'
 
 const MISSING_CONFIG_ERROR = `Application configuration was not initialized correctly.
@@ -99,6 +98,7 @@ export function loadAppConfig() {
           'metadata_language',
           'login_url',
           'logout_url',
+          'settings_url',
           'web_component_embedder_url',
           'languages',
           'contact_email',
@@ -224,6 +224,7 @@ export function loadAppConfig() {
         'search',
         [],
         [
+          'record_kind_quick_filter',
           'filter_geometry_data',
           'filter_geometry_url',
           'search_preset',
@@ -244,6 +245,8 @@ export function loadAppConfig() {
         parsedSearchSection === null
           ? null
           : ({
+              RECORD_KIND_QUICK_FILTER:
+                parsedSearchSection.record_kind_quick_filter,
               FILTER_GEOMETRY_DATA: parsedSearchSection.filter_geometry_data,
               FILTER_GEOMETRY_URL: parsedSearchSection.filter_geometry_url,
               SEARCH_PRESET: parsedSearchParams.map((param) => ({
@@ -307,7 +310,6 @@ export const TRANSLATE_WITH_OVERRIDES_CONFIG = {
     useFactory: function HttpLoaderFactory(http: HttpClient) {
       return new FileWithOverridesTranslateLoader(http, './assets/i18n/')
     },
-    defaultLanguage: DEFAULT_LANG,
     deps: [HttpClient],
   },
 }

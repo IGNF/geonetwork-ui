@@ -5,7 +5,7 @@
 
 [global]
 # This URL (relative or absolute) must point to the API endpoint of a GeoNetwork4 instance
-geonetwork4_api_url = "https://data.geopf.fr/catalog"
+geonetwork4_api_url = "https://data-qua.priv.geopf.fr/catalog"
 datahub_url = "/catalogue"
 # This should point to a proxy to avoid CORS errors on some requests (data preview, OGC capabilities etc.)
 # The actual URL will be appended after this path, e.g. : https://my.proxy/?url=http%3A%2F%2Fencoded.url%2Fows`
@@ -74,6 +74,9 @@ favicon = "/catalogue/assets/img/favicon.ico"
 # This section contains settings used for fine-tuning the search experience
 [search]
 
+# Optional; Indicates whether the quick filter (by record kind dataset, service or reuse) below the search filters is displayed or not. Defaults to `true`.
+# record_kind_quick_filter = true
+
 # Optional; specify a GeoJSON object to be used as filter: all records contained inside the geometry will be boosted on top,
 # all records which do not intersect with the geometry will be shown with lower priority; can be specified as URL or inline
 # Note: if the GeoJSON object contains multiple features, only the geometry of the first one will be kept!
@@ -84,7 +87,8 @@ favicon = "/catalogue/assets/img/favicon.ico"
 # The following fields can be used for filtering: 'organization', 'format', 'publicationYear', 'standard', 'inspireKeyword', 'keyword', 'topic', 'isSpatial', 'license', 'resourceType', 'representationType', 'producerOrg', 'publisherOrg'
 # If not configured, the default values are 'organization', 'format', 'publicationYear', 'topic', 'isSpatial', 'license'
 # Note that some links in the datahub app set an 'organization' filter. So this field is needed to allow unsetting such filters.
-advanced_filters = ['topic', 'resourceType', 'publicationYear', 'format', 'inspireKeyword', 'isSpatial', 'license', 'organization']
+# WARNING: 'resourceType' filter has been deprecated, please use 'recordKind' instead. Breaking change: 'resourceType' filter won't retrieve featureCatalog anymore.
+advanced_filters = ['topic', 'organization', 'resourceType', 'publicationYear', 'format', 'inspireKeyword', 'isSpatial', 'license']
 
 # One or several search presets can be defined here; every search preset is composed of:
 # - a name (which can be a translation key)
@@ -144,9 +148,10 @@ enabled = true
 # external_viewer_url_template = 'https://dev.geo2france.fr/mapfishapp/?owsurl=${service_url}&layername=${layer_name}&owstype=${service_type}Layer'
 # mapstore template
 # external_viewer_url_template = 'https://dev.geo2france.fr/mapstore/#/?actions=[{"type":"CATALOG:ADD_LAYERS_FROM_CATALOGS","layers":["${layer_name}"],"sources":[{"url":"${service_url}","type":"${service_type}"}]}]'
+# external_viewer_url_template = 'https://qlf-cartes.ign.fr/cartes/?l=${layer_name}$GEOPORTAIL:OGC:${service_type}(1;1;1;0)&w=&permalink=no'
 
 # Optional; if true, opens external viewer in new tab (default false)
-# external_viewer_open_new_tab = false
+# external_viewer_open_new_tab = true
 
 # Optional; Will not tile WMS. False by default.
 # do_not_tile_wms = false

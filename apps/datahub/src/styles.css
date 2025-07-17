@@ -41,34 +41,56 @@ html.record-page-active {
 
 /* this targets the main search field */
 gn-ui-autocomplete .gn-ui-text-input {
-  @apply focus:outline-white focus:outline-2 focus:outline-dotted focus:outline-offset-2 shadow-xl focus:shadow-[0_0_24px_0_rgba(21,40,184,0.09)];
+  @apply focus:outline-white focus:outline-2 focus:outline-dotted focus:outline-offset-2 shadow-xl;
+
+  &:focus {
+    box-shadow: 0 0 24px 0 rgba(21, 40, 184, 0.09);
+  }
 }
 
-gn-ui-related-record-card > a[href]:hover {
+.basicLightbox.basicLightbox--visible {
+  z-index: 1003;
+  /* 1000 is for cdk overlays, 1002 is for nav bar */
+}
+
+/* Datahub IGN adaptation */
+gn-ui-autocomplete>span {
   background-color: white !important;
 }
 
-gn-ui-navigation-button > button:not(:disabled):hover,
-gn-ui-button > button:hover.bg-secondary {
-  background-color: rgba(0, 0, 145, 0.5) !important;
+gn-ui-internal-link-card>a,
+gn-ui-external-link-card>a {
+  background-image: none !important;
 }
 
-[target='_blank']:not(
-    .fr-footer__bottom-link,
-    .fr-footer__content-link,
-    edu-item-link > .fr-btn
-  )::after {
+gn-ui-internal-link-card>[target="_blank"]::after {
   content: none;
 }
 
-input {
-  background-color: white;
+gn-ui-favorite-star {
+  visibility: hidden;
 }
 
-h2.font-title {
-  color: white;
+#downloads,
+#user-feedbacks {
+  display: none;
 }
 
-a:not(.fr-footer__bottom-link, .fr-footer__content-link) {
+a>ng-icon[name="matOpenInNew"],
+a>ng-icon[name="iconoirOpenNewWindow"] {
+  display: none;
+}
+
+.hover\:underline:hover,
+.markdown-body>p>a:hover {
+  text-decoration-line: none !important;
+}
+
+[href].gn-ui-btn-primary {
   background-image: none !important;
+}
+
+[href].gn-ui-btn-primary:hover,
+.clear-btn:hover {
+  color: black;
 }

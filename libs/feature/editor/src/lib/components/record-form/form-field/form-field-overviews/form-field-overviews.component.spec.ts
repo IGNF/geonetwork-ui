@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
-import { TranslateModule } from '@ngx-translate/core'
 import { FormFieldOverviewsComponent } from './form-field-overviews.component'
 import { BehaviorSubject, Subject } from 'rxjs'
 import { NotificationsService } from '@geonetwork-ui/feature/notifications'
@@ -8,7 +7,7 @@ import {
   PlatformServiceInterface,
   RecordAttachment,
 } from '@geonetwork-ui/common/domain/platform.service.interface'
-import { EditorFacade } from '../../../../+state/editor.facade'
+import { provideI18n } from '@geonetwork-ui/util/i18n'
 
 let uploadSubject: Subject<any>
 
@@ -27,10 +26,6 @@ class PlatformServiceInterfaceMock {
   getRecordAttachments = jest.fn(() => recordAttachments)
 }
 
-class EditorFacadeMock {
-  alreadySavedOnce$ = new BehaviorSubject(false)
-}
-
 describe('FormFieldOverviewsComponent', () => {
   let component: FormFieldOverviewsComponent
   let fixture: ComponentFixture<FormFieldOverviewsComponent>
@@ -43,15 +38,14 @@ describe('FormFieldOverviewsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TranslateModule.forRoot()],
       providers: [
+        provideI18n(),
         MockProvider(
           PlatformServiceInterface,
           PlatformServiceInterfaceMock,
           'useClass'
         ),
         MockProvider(NotificationsService),
-        MockProvider(EditorFacade, EditorFacadeMock, 'useClass'),
       ],
     }).compileComponents()
 
@@ -114,7 +108,7 @@ describe('FormFieldOverviewsComponent', () => {
       expect(component.uploadProgress).toBeUndefined()
       expect(valueChange).toEqual([
         {
-          description: 'test.png',
+          description: 'test',
           url: new URL('http://example.com/test.png'),
         },
       ])

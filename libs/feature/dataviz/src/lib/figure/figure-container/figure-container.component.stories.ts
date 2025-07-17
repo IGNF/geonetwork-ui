@@ -2,32 +2,23 @@ import {
   applicationConfig,
   componentWrapperDecorator,
   Meta,
-  moduleMetadata,
   StoryObj,
 } from '@storybook/angular'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { FigureContainerComponent } from './figure-container.component'
-import {
-  someHabTableItemFixture,
-  tableItemFixture,
-  UiDatavizModule,
-} from '@geonetwork-ui/ui/dataviz'
 import { importProvidersFrom } from '@angular/core'
-import { TRANSLATE_DEFAULT_CONFIG } from '@geonetwork-ui/util/i18n'
-import { TranslateModule } from '@ngx-translate/core'
+import { provideI18n } from '@geonetwork-ui/util/i18n'
+import {
+  someFigureItemFixture,
+  someHabFigureItemFixture,
+} from '../figure.fixtures'
 
 export default {
   title: 'Dataviz/FigureContainerComponent',
   component: FigureContainerComponent,
   decorators: [
-    moduleMetadata({
-      imports: [UiDatavizModule],
-    }),
     applicationConfig({
-      providers: [
-        importProvidersFrom(BrowserAnimationsModule),
-        importProvidersFrom(TranslateModule.forRoot(TRANSLATE_DEFAULT_CONFIG)),
-      ],
+      providers: [importProvidersFrom(BrowserAnimationsModule), provideI18n()],
     }),
     componentWrapperDecorator(
       (story) => `
@@ -46,7 +37,7 @@ export const Sum: Story = {
     icon: 'maps_home_work',
     unit: 'hab.',
     expression: 'sum|pop',
-    dataset: someHabTableItemFixture(),
+    dataset: someHabFigureItemFixture(),
   },
 }
 
@@ -57,6 +48,6 @@ export const Average: Story = {
     unit: 'years old',
     expression: 'average|age',
     digits: 3,
-    dataset: tableItemFixture(),
+    dataset: someFigureItemFixture(),
   },
 }

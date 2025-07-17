@@ -41,6 +41,15 @@ export const getRelated = createSelector(
   (state: MetadataViewState) => state.related
 )
 
+export const getSources = createSelector(
+  getMdViewState,
+  (state: MetadataViewState) => state.sources
+)
+
+export const getSourceOf = createSelector(
+  getMdViewState,
+  (state: MetadataViewState) => state.sourceOf
+)
 /*
   Metadata selectors
 */
@@ -63,4 +72,16 @@ export const getAllUserFeedbacksLoading = createSelector(
 export const getAddUserFeedbacksLoading = createSelector(
   getMdViewState,
   (state: MetadataViewState) => state.addUserFeedbackLoading
+)
+
+/*
+  Feature Catalog Selectors
+*/
+export const getFeatureCatalog = createSelector(
+  getMdViewState,
+  (state: MetadataViewState) => state.featureCatalog
+)
+export const getFeatureCatalogIsLoading = createSelector(
+  getMdViewState,
+  (state: MetadataViewState) => state.featureCatalogLoading
 )

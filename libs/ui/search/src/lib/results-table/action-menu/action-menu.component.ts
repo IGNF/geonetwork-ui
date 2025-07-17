@@ -9,11 +9,10 @@ import {
 } from '@angular/core'
 import { MatDialog, MatDialogModule } from '@angular/material/dialog'
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu'
-import { ConfirmationDialogComponent } from '@geonetwork-ui/ui/elements'
 import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
-import { TranslateModule } from '@ngx-translate/core'
+import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
 
-type ActionMenuPage = 'mainMenu' | 'deleteMenu'
+type ActionMenuPage = 'mainMenu' | 'deleteMenu' | 'rollbackMenu'
 
 @Component({
   selector: 'gn-ui-action-menu',
@@ -25,16 +24,20 @@ type ActionMenuPage = 'mainMenu' | 'deleteMenu'
     ButtonComponent,
     MatMenuModule,
     MatDialogModule,
-    ConfirmationDialogComponent,
-    TranslateModule,
+    TranslateDirective,
+    TranslatePipe,
   ],
 })
 export class ActionMenuComponent {
-  @Input() canDuplicate: boolean
-  @Input() canDelete: boolean
+  @Input() canDuplicate = true
+  @Input() isDuplicating: boolean
+  @Input() canDelete = true
+  @Input() page: 'draft' | 'main' | 'record'
   @Output() duplicate = new EventEmitter<void>()
   @Output() delete = new EventEmitter<void>()
   @Output() closeActionMenu = new EventEmitter<void>()
+  @Output() rollback = new EventEmitter<void>()
+  @Output() switch = new EventEmitter<void>()
 
   @ViewChild(MatMenuTrigger) trigger: MatMenuTrigger
 
@@ -45,17 +48,23 @@ export class ActionMenuComponent {
     private cdr: ChangeDetectorRef
   ) {}
 
-  openMenu() {
-    this.trigger.openMenu()
-  }
-
   displayMainMenu() {
     this.sectionDisplayed = 'mainMenu'
     this.cdr.markForCheck()
   }
 
   displayDeleteMenu() {
-    this.sectionDisplayed = 'deleteMenu'
+    switch (this.page) {
+      case 'draft':
+        this.sectionDisplayed = 'rollbackMenu'
+        break
+      case 'record':
+        this.delete.emit()
+        break
+      case 'main':
+      default:
+        this.sectionDisplayed = 'deleteMenu'
+    }
     this.cdr.markForCheck()
   }
 }

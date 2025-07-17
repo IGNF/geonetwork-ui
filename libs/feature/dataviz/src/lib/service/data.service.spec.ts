@@ -5,11 +5,35 @@ import { PROXY_PATH } from '@geonetwork-ui/util/shared'
 import { lastValueFrom } from 'rxjs'
 import { MockProvider } from 'ng-mocks'
 import { Location } from '@angular/common'
+import { DatasetOnlineResource } from '@geonetwork-ui/common/domain/model/record'
 
 const newEndpointCall = jest.fn()
 
 jest.mock('@camptocamp/ogc-client', () => ({
   _newEndpointCall: jest.fn(),
+  TmsEndpoint: class {
+    constructor(private url) {
+      newEndpointCall(url)
+    }
+    allTileMaps =
+      this.url.indexOf('error.http') > -1
+        ? Promise.reject(new Error())
+        : Promise.resolve([{ href: 'tilemap1' }])
+
+    async getTileMapInfo(_href: string) {
+      if (this.url.indexOf('no-styles') > -1) {
+        return {
+          metadata: [],
+        }
+      }
+      return {
+        metadata: [
+          { href: 'https://my.tms.server/styles/style1.json', name: 'Style 1' },
+          { href: 'https://my.tms.server/styles/style2.json', name: 'Style 2' },
+        ],
+      }
+    }
+  },
   WfsEndpoint: class {
     constructor(private url) {
       newEndpointCall(url) // to track endpoint creation
@@ -87,9 +111,9 @@ jest.mock('@camptocamp/ogc-client', () => ({
   },
   OgcApiEndpoint: class {
     constructor(private url) {
-      newEndpointCall(url) // to track endpoint creation
+      newEndpointCall(url)
     }
-    getCollectionInfo() {
+    getCollectionInfo(collectionName) {
       if (this.url.indexOf('error.http') > -1) {
         return Promise.reject({
           type: 'http',
@@ -97,16 +121,26 @@ jest.mock('@camptocamp/ogc-client', () => ({
           httpStatus: 403,
         })
       }
+      if (this.url === 'https://my.ogc.api/features') {
+        return Promise.resolve({
+          name: collectionName,
+          id: collectionName === 'collection1' ? 'collection1' : 'collection2',
+          bulkDownloadLinks: { json: 'http://json', csv: 'http://csv' },
+        })
+      }
       return Promise.resolve({
         bulkDownloadLinks: { json: 'http://json', csv: 'http://csv' },
       })
     }
-    allCollections = Promise.resolve([{ name: 'collection1' }])
+    allCollections = Promise.resolve([
+      { name: 'collection1' },
+      { name: 'collection2' },
+    ])
     featureCollections =
       this.url.indexOf('error.http') > -1
         ? Promise.reject(new Error())
         : Promise.resolve(['collection1', 'collection2'])
-    getCollectionItem(collection, id) {
+    getCollectionItem(_collection: string, _id: string) {
       return Promise.resolve('item1')
     }
   },
@@ -170,6 +204,7 @@ jest.mock('@geonetwork-ui/data-fetcher', () => ({
 
 describe('DataService', () => {
   let service: DataService
+  const cacheActive = true
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -205,7 +240,7 @@ describe('DataService', () => {
               })
             )
           } catch (e) {
-            expect(e.message).toBe('wfs.unreachable.cors')
+            expect((e as Error).message).toBe('wfs.unreachable.cors')
           }
         })
       })
@@ -219,7 +254,7 @@ describe('DataService', () => {
               })
             )
           } catch (e) {
-            expect(e.message).toBe('wfs.unreachable.http')
+            expect((e as Error).message).toBe('wfs.unreachable.http')
           }
         })
       })
@@ -233,7 +268,7 @@ describe('DataService', () => {
               })
             )
           } catch (e) {
-            expect(e.message).toBe('wfs.unreachable.unknown')
+            expect((e as Error).message).toBe('wfs.unreachable.unknown')
           }
         })
       })
@@ -247,7 +282,7 @@ describe('DataService', () => {
               })
             )
           } catch (e) {
-            expect(e.message).toBe('wfs.featuretype.notfound')
+            expect((e as Error).message).toBe('wfs.featuretype.notfound')
           }
         })
       })
@@ -299,6 +334,16 @@ describe('DataService', () => {
               ),
               type: 'download',
               accessServiceProtocol: 'wfs',
+            },
+            {
+              accessServiceProtocol: 'wfs',
+              description: 'Lieu de surveillance (ligne)',
+              mimeType: 'application/json',
+              name: 'surval_parametre_ligne',
+              type: 'download',
+              url: new URL(
+                'http://local/wfs?GetFeature&FeatureType=surval_parametre_ligne&format=json'
+              ),
             },
           ])
         })
@@ -397,7 +442,35 @@ describe('DataService', () => {
               type: 'download',
               accessServiceProtocol: 'wfs',
             },
+            {
+              accessServiceProtocol: 'wfs',
+              description: 'Lieu de surveillance (ligne)',
+              mimeType: 'application/json',
+              name: '',
+              type: 'download',
+              url: new URL(
+                'http://local/wfs?GetFeature&FeatureType=surval_parametre_ligne&format=json'
+              ),
+            },
           ])
+        })
+      })
+      describe('WFS with forced collection name', () => {
+        it('should override the name with the provided collection name', async () => {
+          const link = {
+            description: 'Lieu de surveillance (ligne)',
+            name: 'collection_name_forced',
+            url: new URL('http://local/wfs'),
+            type: 'service',
+            accessServiceProtocol: 'wfs',
+          } as const
+
+          const urls = await lastValueFrom(
+            service.getDownloadLinksFromWfs(link)
+          )
+          urls.forEach((url) => {
+            expect(url.name).toBe('collection_name_forced')
+          })
         })
       })
     })
@@ -420,7 +493,7 @@ describe('DataService', () => {
             service.getWfsFeatureCount(wfsUrl, featureTypeName)
           )
         } catch (e) {
-          expect(e.message).toBe('wfs.featuretype.notfound')
+          expect((e as Error).message).toBe('wfs.featuretype.notfound')
         }
       })
 
@@ -479,7 +552,7 @@ describe('DataService', () => {
               service.getDownloadUrlsFromWfs('http://local/wfs', 'nojsontype')
             )
           } catch (e) {
-            expect(e.message).toBe('wfs.geojsongml.notsupported')
+            expect((e as Error).message).toBe('wfs.geojsongml.notsupported')
           }
         })
       })
@@ -543,21 +616,21 @@ describe('DataService', () => {
         it('returns links with formats for link', async () => {
           const url = new URL('https://my.ogc.api/features')
           const links = await service.getDownloadLinksFromOgcApiFeatures({
-            name: 'mycollection',
+            name: undefined,
             url,
             type: 'service',
             accessServiceProtocol: 'ogcFeatures',
           })
           expect(links).toEqual([
             {
-              name: 'mycollection',
+              name: 'collection1',
               mimeType: 'application/json',
               url: new URL('http://json'),
               type: 'download',
               accessServiceProtocol: 'ogcFeatures',
             },
             {
-              name: 'mycollection',
+              name: 'collection1',
               mimeType: 'text/csv',
               url: new URL('http://csv'),
               type: 'download',
@@ -565,7 +638,20 @@ describe('DataService', () => {
             },
           ])
         })
+
+        it('should OGC override the collection title when it is wrong', async () => {
+          const url = new URL('https://my.ogc.api/features')
+          const links = await service.getDownloadLinksFromOgcApiFeatures({
+            name: 'myFakecollection',
+            url,
+            type: 'service',
+            accessServiceProtocol: 'ogcFeatures',
+          })
+          expect(links[0].name).toBe('collection1')
+          expect(links[1].name).toBe('collection1')
+        })
       })
+
       describe('calling getDownloadLinksFromOgcApiFeatures() with a erroneous URL', () => {
         it('returns an error', async () => {
           try {
@@ -588,11 +674,14 @@ describe('DataService', () => {
         it('returns an observable that errors with a relevant error', async () => {
           try {
             await lastValueFrom(
-              service.getDataset({
-                url: new URL('http://error.parse/geojson'),
-                mimeType: 'application/geo+json',
-                type: 'download',
-              })
+              service.getDataset(
+                {
+                  url: new URL('http://error.parse/geojson'),
+                  mimeType: 'application/geo+json',
+                  type: 'download',
+                },
+                cacheActive
+              )
             )
           } catch (e) {
             expect(e).toStrictEqual({
@@ -606,11 +695,14 @@ describe('DataService', () => {
         it('returns an observable that errors with a relevant error', async () => {
           try {
             await lastValueFrom(
-              service.getDataset({
-                url: new URL('http://error.network/xls'),
-                mimeType: 'application/vnd.ms-excel',
-                type: 'download',
-              })
+              service.getDataset(
+                {
+                  url: new URL('http://error.network/xls'),
+                  mimeType: 'application/vnd.ms-excel',
+                  type: 'download',
+                },
+                cacheActive
+              )
             )
           } catch (e) {
             expect(e).toStrictEqual({
@@ -624,11 +716,14 @@ describe('DataService', () => {
         it('returns an observable that errors with a relevant error', async () => {
           try {
             await lastValueFrom(
-              service.getDataset({
-                url: new URL('http://error.http/csv'),
-                mimeType: 'text/csv',
-                type: 'download',
-              })
+              service.getDataset(
+                {
+                  url: new URL('http://error.http/csv'),
+                  mimeType: 'text/csv',
+                  type: 'download',
+                },
+                cacheActive
+              )
             )
           } catch (e) {
             expect(e).toStrictEqual({
@@ -643,11 +738,14 @@ describe('DataService', () => {
         it('returns an observable that errors with a relevant error', async () => {
           try {
             await lastValueFrom(
-              service.getDataset({
-                url: new URL('http://error/xls'),
-                mimeType: 'application/vnd.ms-excel',
-                type: 'download',
-              })
+              service.getDataset(
+                {
+                  url: new URL('http://error/xls'),
+                  mimeType: 'application/vnd.ms-excel',
+                  type: 'download',
+                },
+                cacheActive
+              )
             )
           } catch (e) {
             expect(e).toStrictEqual({
@@ -658,23 +756,31 @@ describe('DataService', () => {
       })
       describe('valid file', () => {
         it('calls DataFetcher.openDataset', () => {
-          service.getDataset({
-            url: new URL('http://sample/geojson'),
-            mimeType: 'text/csv',
-            type: 'download',
-          })
+          service.getDataset(
+            {
+              url: new URL('http://sample/geojson'),
+              mimeType: 'text/csv',
+              type: 'download',
+            },
+            cacheActive
+          )
           expect(openDataset).toHaveBeenCalledWith(
             'http://sample/geojson',
-            'csv'
+            'csv',
+            undefined,
+            true
           )
         })
         it('returns an observable that emits the array of features', async () => {
           const result = await lastValueFrom(
-            service.getDataset({
-              url: new URL('http://sample/csv'),
-              mimeType: 'text/csv',
-              type: 'download',
-            })
+            service.getDataset(
+              {
+                url: new URL('http://sample/csv'),
+                mimeType: 'text/csv',
+                type: 'download',
+              },
+              cacheActive
+            )
           )
           await expect(result.read()).resolves.toEqual(SAMPLE_GEOJSON.features)
         })
@@ -685,14 +791,85 @@ describe('DataService', () => {
       describe('valid file', () => {
         it('returns an observable that emits the feature collection', async () => {
           const result = await lastValueFrom(
-            service.readAsGeoJson({
-              url: new URL('http://sample/geojson'),
-              mimeType: 'application/geo+json',
-              type: 'download',
-            })
+            service.readAsGeoJson(
+              {
+                url: new URL('http://sample/geojson'),
+                mimeType: 'application/geo+json',
+                type: 'download',
+              },
+              cacheActive
+            )
           )
           expect(result).toEqual(SAMPLE_GEOJSON)
         })
+      })
+    })
+
+    describe('#getGeodataLinksFromTms', () => {
+      const tmsLink = {
+        url: new URL('https://my.tms.server/tms'),
+        name: 'LayerName',
+        description: 'Layer Description',
+        type: 'service',
+        accessServiceProtocol: 'tms',
+      } as const
+
+      it('returns style links as DatasetServiceDistribution objects', async () => {
+        const styles = await service.getGeodataLinksFromTms(tmsLink)
+        expect(styles).toEqual([
+          {
+            type: 'service',
+            url: new URL('https://my.tms.server/styles/style1.json'),
+            name: 'Layer Description - style1',
+            accessServiceProtocol: 'maplibre-style',
+          },
+          {
+            type: 'service',
+            url: new URL('https://my.tms.server/styles/style2.json'),
+            name: 'Layer Description - style2',
+            accessServiceProtocol: 'maplibre-style',
+          },
+        ])
+      })
+
+      it('returns [tmsLink] when there are no styles', async () => {
+        const noStyleLink = {
+          ...tmsLink,
+          url: new URL('https://my.tms.server/no-styles'),
+        }
+        const styles = await service.getGeodataLinksFromTms(noStyleLink)
+        expect(styles).toEqual([noStyleLink])
+      })
+
+      it('throws an error', async () => {
+        const noStyleLink = {
+          ...tmsLink,
+          url: new URL('http://error.http/tms'),
+        }
+
+        try {
+          await service.getGeodataLinksFromTms(noStyleLink)
+        } catch (e) {
+          expect((e as Error).message).toBe('ogc.unreachable.unknown')
+        }
+      })
+    })
+    describe('writeConfigAsJSON', () => {
+      it('should return a File object for the config', async () => {
+        const config = {
+          view: 'map',
+          source: {
+            url: new URL('http://example.com'),
+            type: 'link',
+            name: 'test',
+          } as DatasetOnlineResource,
+          chartConfig: null,
+        }
+        const file = await service.writeConfigAsJSON(config)
+
+        expect(file).toBeInstanceOf(File)
+        expect(file.name).toBe('datavizConfig.json')
+        expect(file.type).toBe('application/json')
       })
     })
   })
@@ -742,39 +919,56 @@ describe('DataService', () => {
         )
       })
       it('calls DataFetcher.openDataset with a proxied url', () => {
-        service.getDataset({
-          url: new URL('http://esri.rest/local'),
-          accessServiceProtocol: 'esriRest',
-          type: 'service',
-        })
+        service.getDataset(
+          {
+            url: new URL('http://esri.rest/local'),
+            accessServiceProtocol: 'esriRest',
+            type: 'service',
+          },
+          cacheActive
+        )
         expect(openDataset).toHaveBeenCalledWith(
           'http://proxy.local/?url=http%3A%2F%2Fesri.rest%2Flocal%2Fquery%3Ff%3Dgeojson%26where%3D1%3D1%26outFields%3D*',
-          'geojson'
+          'geojson',
+          undefined,
+          true
         )
       })
     })
 
     describe('#readGeoJsonDataset', () => {
       it('calls DataFetcher.openDataset with a proxied url', () => {
-        service.getDataset({
-          url: new URL('http://sample/geojson'),
-          mimeType: 'text/csv',
-          type: 'download',
-        })
+        service.getDataset(
+          {
+            url: new URL('http://sample/geojson'),
+            mimeType: 'text/csv',
+            type: 'download',
+          },
+          cacheActive
+        )
         expect(openDataset).toHaveBeenCalledWith(
           'http://proxy.local/?url=http%3A%2F%2Fsample%2Fgeojson',
-          'csv'
+          'csv',
+          undefined,
+          true
         )
       })
       it('does not apply the proxy twice', () => {
-        service.getDataset({
-          url: new URL('http://proxy.local/?url=http%3A%2F%2Fsample%2Fgeojson'),
-          mimeType: 'text/csv',
-          type: 'download',
-        })
+        service.getDataset(
+          {
+            url: new URL(
+              'http://proxy.local/?url=http%3A%2F%2Fsample%2Fgeojson'
+            ),
+            mimeType: 'text/csv',
+            type: 'download',
+          },
+          cacheActive
+        )
         expect(openDataset).toHaveBeenCalledWith(
           'http://proxy.local/?url=http%3A%2F%2Fsample%2Fgeojson',
-          'csv'
+          'csv',
+          undefined,
+          true
         )
       })
     })
@@ -793,7 +987,7 @@ describe('DataService', () => {
           try {
             await service.getItemsFromOgcApi('http://error.http/ogcapi')
           } catch (e) {
-            expect(e.message).toBe('ogc.unreachable.unknown')
+            expect((e as Error).message).toBe('ogc.unreachable.unknown')
           }
         })
       })

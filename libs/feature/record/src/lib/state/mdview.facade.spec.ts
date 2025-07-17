@@ -11,9 +11,10 @@ import {
   datasetRecordsFixture,
   userFeedbackFixture,
 } from '@geonetwork-ui/common/fixtures'
-import { DatavizConfigurationModel } from '@geonetwork-ui/common/domain/model/dataviz/dataviz-configuration.model'
+import { DatavizChartConfigModel } from '@geonetwork-ui/common/domain/model/dataviz/dataviz-configuration.model'
 import { AvatarServiceInterface } from '@geonetwork-ui/api/repository'
 import { TestScheduler } from 'rxjs/testing'
+import { firstValueFrom } from 'rxjs'
 
 const newEndpointCall = jest.fn()
 let testScheduler: TestScheduler
@@ -38,7 +39,7 @@ describe('MdViewFacade', () => {
   let store: MockStore
   let facade: MdViewFacade
 
-  const chartConfigMock: DatavizConfigurationModel = {
+  const chartConfigMock: DatavizChartConfigModel = {
     aggregation: 'sum',
     xProperty: 'anneeappro',
     yProperty: 'nbre_com',
@@ -149,6 +150,57 @@ describe('MdViewFacade', () => {
     })
   })
 
+  describe('isHighUpdateFrequency$', () => {
+    describe('When frequency is more than once a day', () => {
+      it('emits true', () => {
+        store.setState({
+          [METADATA_VIEW_FEATURE_STATE_KEY]: {
+            ...initialMetadataViewState,
+            metadata: { updateFrequency: { per: 'day', updatedTimes: 2 } },
+          },
+        })
+        const expected = hot('a', { a: true })
+        expect(facade.isHighUpdateFrequency$).toBeObservable(expected)
+      })
+    })
+    describe('When frequency is "continual"', () => {
+      it('emits true', () => {
+        store.setState({
+          [METADATA_VIEW_FEATURE_STATE_KEY]: {
+            ...initialMetadataViewState,
+            metadata: { updateFrequency: 'continual' },
+          },
+        })
+        const expected = hot('a', { a: true })
+        expect(facade.isHighUpdateFrequency$).toBeObservable(expected)
+      })
+    })
+    describe('When frequency is less than once a day', () => {
+      it('emits false', () => {
+        store.setState({
+          [METADATA_VIEW_FEATURE_STATE_KEY]: {
+            ...initialMetadataViewState,
+            metadata: { updateFrequency: { per: 'month', updatedTimes: 2 } },
+          },
+        })
+        const expected = hot('a', { a: false })
+        expect(facade.isHighUpdateFrequency$).toBeObservable(expected)
+      })
+    })
+    describe('When frequency is not continual', () => {
+      it('emits false', () => {
+        store.setState({
+          [METADATA_VIEW_FEATURE_STATE_KEY]: {
+            ...initialMetadataViewState,
+            metadata: { updateFrequency: 'weekly' },
+          },
+        })
+        const expected = hot('a', { a: false })
+        expect(facade.isHighUpdateFrequency$).toBeObservable(expected)
+      })
+    })
+  })
+
   describe('error$', () => {
     let values
 
@@ -197,6 +249,54 @@ describe('MdViewFacade', () => {
         }),
       })
       expect(store.scannedActions$).toBeObservable(expected)
+    })
+  })
+
+  describe('related$', () => {
+    it('emits related', () => {
+      store.setState({
+        [METADATA_VIEW_FEATURE_STATE_KEY]: {
+          ...initialMetadataViewState,
+          metadata: datasetRecordsFixture()[0],
+          related: [datasetRecordsFixture()[1]],
+        },
+      })
+      const expected = hot('a', {
+        a: [datasetRecordsFixture()[1]],
+      })
+      expect(facade.related$).toBeObservable(expected)
+    })
+  })
+
+  describe('sources$', () => {
+    it('emits sources', () => {
+      store.setState({
+        [METADATA_VIEW_FEATURE_STATE_KEY]: {
+          ...initialMetadataViewState,
+          metadata: datasetRecordsFixture()[0],
+          sources: [datasetRecordsFixture()[1]],
+        },
+      })
+      const expected = hot('a', {
+        a: [datasetRecordsFixture()[1]],
+      })
+      expect(facade.sources$).toBeObservable(expected)
+    })
+  })
+
+  describe('sourceOf$', () => {
+    it('emits sourceOf', () => {
+      store.setState({
+        [METADATA_VIEW_FEATURE_STATE_KEY]: {
+          ...initialMetadataViewState,
+          metadata: datasetRecordsFixture()[0],
+          sourceOf: [datasetRecordsFixture()[1]],
+        },
+      })
+      const expected = hot('a', {
+        a: [datasetRecordsFixture()[1]],
+      })
+      expect(facade.sourceOf$).toBeObservable(expected)
     })
   })
 
@@ -379,6 +479,88 @@ describe('MdViewFacade', () => {
         tick()
         expect(result).toEqual(values.a)
       }))
+    })
+  })
+
+  describe('mapApiLinks$ & apiLinks$', () => {
+    const tmsLink = {
+      type: 'service' as const,
+      url: new URL('https://my-org.net/tms'),
+      accessServiceProtocol: 'tms' as const,
+      name: 'TMS Service',
+    }
+    const wmsLink = {
+      type: 'service' as const,
+      url: new URL('https://my-org.net/wms'),
+      accessServiceProtocol: 'wms' as const,
+      name: 'WMS Service',
+    }
+    const links = [tmsLink, wmsLink]
+
+    beforeEach(() => {
+      store.setState({
+        [METADATA_VIEW_FEATURE_STATE_KEY]: {
+          ...initialMetadataViewState,
+          metadata: {
+            ...datasetRecordsFixture()[0],
+            onlineResources: links,
+          },
+        },
+      })
+      jest.spyOn(facade.dataService, 'getGeodataLinksFromTms')
+    })
+
+    it('mapApiLinks$: should return TMS & WMS services unchanged', async () => {
+      const result = await firstValueFrom(facade.mapApiLinks$)
+      expect(result).toEqual(links)
+      expect(facade.dataService.getGeodataLinksFromTms).not.toHaveBeenCalled()
+    })
+
+    it('apiLinks$: should return TMS & WMS services unchanged', async () => {
+      const result = await firstValueFrom(facade.apiLinks$)
+      expect(result).toEqual(links)
+      expect(facade.dataService.getGeodataLinksFromTms).not.toHaveBeenCalled()
+    })
+
+    describe('links containing other link types and protocols', () => {
+      const nonMapLinks = [
+        {
+          type: 'download' as const,
+          url: new URL('http://my-org.net/download/data.csv'),
+          name: 'Download CSV',
+        },
+        {
+          type: 'service' as const,
+          accessServiceProtocol: 'wfs' as const,
+          url: new URL('https://my-org.net/wfs'),
+          name: 'WFS Service',
+        },
+      ]
+
+      beforeEach(() => {
+        store.setState({
+          [METADATA_VIEW_FEATURE_STATE_KEY]: {
+            ...initialMetadataViewState,
+            metadata: {
+              ...datasetRecordsFixture()[0],
+              onlineResources: [...links, ...nonMapLinks],
+            },
+          },
+        })
+        jest.spyOn(facade.dataService, 'getGeodataLinksFromTms')
+      })
+
+      it('mapApiLinks$: should only return map api links', async () => {
+        const result = await firstValueFrom(facade.mapApiLinks$)
+        expect(result).toEqual(links)
+        expect(facade.dataService.getGeodataLinksFromTms).not.toHaveBeenCalled()
+      })
+
+      it('apiLinks$: should only return api links', async () => {
+        const result = await firstValueFrom(facade.apiLinks$)
+        expect(result).toEqual([...links, nonMapLinks[1]])
+        expect(facade.dataService.getGeodataLinksFromTms).not.toHaveBeenCalled()
+      })
     })
   })
 })

@@ -1,38 +1,58 @@
 <div
-  style="height: 612px"
+  class="h-[750px]"
   *ngIf="(displayMap$ | async) || (displayData$ | async)"
   id="preview"
 >
-  <div
-    class="bg-primary-opacity-10 pt-8 overflow-visible sm:pt-5"
-    style="height: 512px"
-  >
-    <div class="container-lg px-4 lg:mx-auto">
+  <div class="bg-primary-opacity-10 overflow-visible h-[480px]">
+    <div class="container-lg pb-4 px-4 lg:mx-auto">
       <div>
-        <div
-          class="text-[28px] text-title font-title transform sm:translate-y-10"
-          translate
-        >
+        <h2 class="gn-ui-section-title transform translate-y-11 pt-0" translate>
           record.metadata.preview
-        </div>
+        </h2>
         <mat-tab-group
           (selectedIndexChange)="onTabIndexChange($event)"
           [selectedIndex]="(displayMap$ | async) ? 0 : 1"
           animationDuration="200ms"
           mat-stretch-tabs="false"
           mat-align-tabs="start"
+          disableRipple
         >
           <mat-tab [disabled]="(displayMap$ | async) === false">
             <ng-template mat-tab-label>
+              <gn-ui-button
+                *ngIf="displayDatavizConfig$ | async"
+                class="pr-4 md:pr-10"
+                type="primary"
+                [class.opacity-50]="savingStatus === 'saved'"
+                (buttonClick)="saveDatavizConfig()"
+                [disabled]="savingStatus === 'saving'"
+              >
+                <ng-container [ngSwitch]="savingStatus">
+                  <span *ngSwitchCase="'idle'" translate>
+                    record.metadata.preview.config.idle
+                  </span>
+                  <span *ngSwitchCase="'saving'" translate>
+                    record.metadata.preview.config.saving
+                  </span>
+                  <span *ngSwitchCase="'saved'" translate>
+                    record.metadata.preview.config.saved
+                  </span>
+                  <span *ngSwitchCase="'error'" translate>
+                    record.metadata.preview.config.error
+                  </span>
+                </ng-container>
+              </gn-ui-button>
               <span class="tab-header-label" translate>record.tab.map</span>
             </ng-template>
             <div
               class="block"
-              style="height: 500px"
+              style="height: 639px"
               *ngIf="displayMap$ | async"
             >
               <gn-ui-map-view
-                [excludeWfs]="exceedsMaxFeatureCount$ | async"
+                [exceedsLimit]="exceedsMaxFeatureCount$ | async"
+                (linkSelected)="onSelectedLinkChange($event)"
+                [selectedView]="selectedView$ | async"
               ></gn-ui-map-view>
             </div>
           </mat-tab>
@@ -41,22 +61,11 @@
               <span class="tab-header-label" translate>record.tab.data</span>
             </ng-template>
             <div class="block" *ngIf="displayData$ | async">
-              <ng-container
-                *ngIf="exceedsMaxFeatureCount$ | async; else tableView"
-              >
-                <gn-ui-popup-alert
-                  type="warning"
-                  icon="matErrorOutlineOutline"
-                  class="block h-12 p-1"
-                >
-                  <span translate [translateParams]="{ count: maxFeatureCount }"
-                    >record.feature.limit</span
-                  >
-                </gn-ui-popup-alert>
-              </ng-container>
-              <ng-template #tableView>
-                <gn-ui-data-view mode="table"></gn-ui-data-view>
-              </ng-template>
+              <gn-ui-data-view
+                [exceedsLimit]="exceedsMaxFeatureCount$ | async"
+                (linkSelected)="onSelectedLinkChange($event)"
+                mode="table"
+              ></gn-ui-data-view>
             </div>
           </mat-tab>
           <mat-tab [disabled]="(displayData$ | async) === false">
@@ -64,22 +73,12 @@
               <span class="tab-header-label" translate>record.tab.chart</span>
             </ng-template>
             <div class="block" *ngIf="displayData$ | async">
-              <ng-container
-                *ngIf="exceedsMaxFeatureCount$ | async; else chartView"
-              >
-                <gn-ui-popup-alert
-                  type="warning"
-                  icon="matErrorOutlineOutline"
-                  class="block h-12 p-1"
-                >
-                  <span translate [translateParams]="{ count: maxFeatureCount }"
-                    >record.feature.limit</span
-                  >
-                </gn-ui-popup-alert>
-              </ng-container>
-              <ng-template #chartView>
-                <gn-ui-data-view mode="chart"></gn-ui-data-view>
-              </ng-template>
+              <gn-ui-data-view
+                [exceedsLimit]="exceedsMaxFeatureCount$ | async"
+                (linkSelected)="onSelectedLinkChange($event)"
+                [selectedView]="selectedView$ | async"
+                mode="chart"
+              ></gn-ui-data-view>
             </div>
           </mat-tab>
         </mat-tab-group>
@@ -87,7 +86,11 @@
     </div>
   </div>
 </div>
-<gn-ui-data-view-share
+<div
+  class="container-lg lg:mx-auto mb-10 px-4"
   *ngIf="displayViewShare$ | async"
-  [viewType]="selectedView$ | async"
-></gn-ui-data-view-share>
+>
+  <gn-ui-data-view-share
+    [viewType]="selectedView$ | async"
+  ></gn-ui-data-view-share>
+</div>

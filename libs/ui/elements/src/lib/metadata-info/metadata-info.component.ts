@@ -6,27 +6,29 @@ import {
   Output,
 } from '@angular/core'
 import {
-  DatasetRecord,
+  CatalogRecord,
   Keyword,
 } from '@geonetwork-ui/common/domain/model/record'
-import { getTemporalRangeUnion } from '@geonetwork-ui/util/shared'
+import { DateService, getTemporalRangeUnion } from '@geonetwork-ui/util/shared'
 import { MarkdownParserComponent } from '../markdown-parser/markdown-parser.component'
 import {
   ExpandablePanelComponent,
   MaxLinesComponent,
 } from '@geonetwork-ui/ui/layout'
-import { TranslateModule } from '@ngx-translate/core'
+import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
 import {
   BadgeComponent,
   CopyTextButtonComponent,
 } from '@geonetwork-ui/ui/inputs'
 import { ContentGhostComponent } from '../content-ghost/content-ghost.component'
 import { NgIcon, provideIcons } from '@ng-icons/core'
-import { CommonModule } from '@angular/common'
 import { matOpenInNew } from '@ng-icons/material-icons/baseline'
 import { matMailOutline } from '@ng-icons/material-icons/outline'
 import { ThumbnailComponent } from '../thumbnail/thumbnail.component'
 import { GnUiLinkifyDirective } from './linkify.directive'
+
+import { CommonModule } from '@angular/common'
+import { SpatialExtentComponent } from '@geonetwork-ui/ui/map'
 
 @Component({
   selector: 'gn-ui-metadata-info',
@@ -36,7 +38,8 @@ import { GnUiLinkifyDirective } from './linkify.directive'
   standalone: true,
   imports: [
     CommonModule,
-    TranslateModule,
+    TranslateDirective,
+    TranslatePipe,
     MarkdownParserComponent,
     ExpandablePanelComponent,
     BadgeComponent,
@@ -46,6 +49,7 @@ import { GnUiLinkifyDirective } from './linkify.directive'
     CopyTextButtonComponent,
     NgIcon,
     GnUiLinkifyDirective,
+    SpatialExtentComponent,
   ],
   viewProviders: [
     provideIcons({
@@ -55,10 +59,12 @@ import { GnUiLinkifyDirective } from './linkify.directive'
   ],
 })
 export class MetadataInfoComponent {
-  @Input() metadata: Partial<DatasetRecord>
+  @Input() metadata: Partial<CatalogRecord>
   @Input() incomplete: boolean
   @Output() keyword = new EventEmitter<Keyword>()
   updatedTimes: number
+
+  constructor(private dateService: DateService) { }
 
   get hasUsage() {
     return (
@@ -121,8 +127,9 @@ export class MetadataInfoComponent {
   }
 
   get temporalExtent(): { start: string; end: string } {
-    const temporalExtents = this.metadata.temporalExtents
-    return getTemporalRangeUnion(temporalExtents)
+    const temporalExtents =
+      this.metadata.kind === 'dataset' ? this.metadata.temporalExtents : []
+    return getTemporalRangeUnion(temporalExtents, this.dateService)
   }
 
   get shownOrganization() {
@@ -141,11 +148,19 @@ export class MetadataInfoComponent {
     this.keyword.emit(keyword)
   }
 
+  formatDate(date: Date): string {
+    return this.dateService.formatDate(date)
+  }
+
+  formatDateTime(date: Date): string {
+    return this.dateService.formatDateTime(date)
+  }
+
   get ignLandingPage() {
     return new URL(
       this.metadata.landingPage.origin +
-        '/csw?REQUEST=GetRecordById&SERVICE=CSW&VERSION=2.0.2&OUTPUTSCHEMA=http://standards.iso.org/iso/19115/-3/mdb/2.0&elementSetName=full&ID=' +
-        this.metadata.uniqueIdentifier
+      '/csw?REQUEST=GetRecordById&SERVICE=CSW&VERSION=2.0.2&OUTPUTSCHEMA=http://standards.iso.org/iso/19115/-3/mdb/2.0&elementSetName=full&ID=' +
+      this.metadata.uniqueIdentifier
     )
   }
 }

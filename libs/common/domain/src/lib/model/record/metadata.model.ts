@@ -21,18 +21,40 @@ marker('domain.record.updateFrequency.irregular')
 marker('domain.record.updateFrequency.continual')
 marker('domain.record.updateFrequency.periodic')
 
-export type UpdateFrequencyCode =
-  | 'unknown'
-  | 'notPlanned'
-  | 'asNeeded'
-  | 'irregular'
-  | 'continual'
-  | 'periodic'
+export const updateFrequencyCodeValues = [
+  'unknown',
+  'notPlanned',
+  'asNeeded',
+  'irregular',
+  'continual',
+  'periodic',
+  'daily',
+  'weekly',
+  'fortnightly',
+  'semimonthly',
+  'monthly',
+  'quarterly',
+  'biannually',
+  'annually',
+  'biennially',
+] as const
+
+export type UpdateFrequencyCode = (typeof updateFrequencyCodeValues)[number]
 
 marker('domain.record.updateFrequency.day')
 marker('domain.record.updateFrequency.week')
 marker('domain.record.updateFrequency.month')
 marker('domain.record.updateFrequency.year')
+
+marker('domain.record.updateFrequency.daily')
+marker('domain.record.updateFrequency.weekly')
+marker('domain.record.updateFrequency.fortnightly')
+marker('domain.record.updateFrequency.monthly')
+marker('domain.record.updateFrequency.quarterly')
+marker('domain.record.updateFrequency.biannually')
+marker('domain.record.updateFrequency.annually')
+marker('domain.record.updateFrequency.semimonthly')
+marker('domain.record.updateFrequency.biennially')
 
 export type UpdateFrequencyCustom = {
   updatedTimes: number // this should be an integer
@@ -130,6 +152,8 @@ export type ServiceProtocol =
   | 'esriRest'
   | 'ogcFeatures'
   | 'GPFDL'
+  | 'tms'
+  | 'maplibre-style'
   | 'other'
 
 export type OnlineResourceType = 'service' | 'download' | 'link' | 'endpoint'
@@ -138,10 +162,11 @@ export interface DatasetServiceDistribution {
   type: 'service'
   url: URL
   accessServiceProtocol: ServiceProtocol
-  identifierInService?: string
+  identifierInService?: string // should we keep the identifierInService? read-write duplicate with name
   name?: string
   description?: string
   translations?: OnlineResourceTranslations
+  accessRestricted?: boolean
 }
 
 export interface DatasetDownloadDistribution {
@@ -156,6 +181,7 @@ export interface DatasetDownloadDistribution {
   description?: string
   accessServiceProtocol?: ServiceProtocol
   translations?: OnlineResourceTranslations
+  accessRestricted?: boolean
 }
 
 export interface OnlineLinkResource {
@@ -164,6 +190,8 @@ export interface OnlineLinkResource {
   name?: string
   description?: string
   translations?: OnlineResourceTranslations
+  mimeType?: string
+  accessRestricted?: boolean
 }
 
 export type DatasetOnlineResource = (
@@ -206,8 +234,8 @@ export interface DatasetRecord extends BaseRecord {
 }
 
 export interface ServiceEndpoint {
-  endpointUrl: URL
-  protocol: string
+  url: URL
+  accessServiceProtocol: ServiceProtocol
   type: 'endpoint'
   description?: string
   translations?: OnlineResourceTranslations
@@ -230,6 +258,34 @@ export interface ReuseRecord extends BaseRecord {
   reuseType: ReuseType
   spatialExtents: Array<DatasetSpatialExtent>
   temporalExtents: Array<DatasetTemporalExtent>
+}
+
+export type DatasetFeatureCatalog = {
+  featureTypes: Array<{
+    name: string
+    definition: string
+    attributes: DatasetFeatureAttribute[]
+  }>
+}
+export interface DatasetFeatureAttributeValue {
+  code?: string
+  definition?: string
+  label?: string
+}
+export interface DatasetFeatureAttribute {
+  name: string
+  definition: string
+  type: string
+  code: string
+  values?: Array<DatasetFeatureAttributeValue>
+}
+export interface DatasetFeatureType {
+  aliases: string
+  code: string
+  isAbstract: string
+  typeName: string
+  definition: string
+  attributeTable: Array<DatasetFeatureAttribute>
 }
 
 export type ReuseType = 'application' | 'map' | 'other'

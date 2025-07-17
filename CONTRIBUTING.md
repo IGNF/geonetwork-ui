@@ -122,13 +122,13 @@ You'll need manual configuration to make the application running:
     // ...
     TRANSLATE_WITH_OVERRIDES_CONFIG,
   } from '@geonetwork-ui/util/app-config'
+  import { provideI18n } from '@geonetwork-ui/util/i18n'
 
   @NgModule({
     // ...
-    imports: [
+    providers: [
       // ...
-      UtilI18nModule,
-      TranslateModule.forRoot(TRANSLATE_WITH_OVERRIDES_CONFIG),
+      provideI18n(TRANSLATE_WITH_OVERRIDES_CONFIG),
     ],
   })
   export class AppModule {
@@ -224,10 +224,10 @@ If you want Prettier to run on all the code and make sure everything is formatte
 
 ### OpenAPI client generation
 
-GeoNetwork-UI contains auto-generated API clients for two backends: [GeoNetwork](https://github.com/geonetwork/core-geonetwork) 4 and [Datafeeder](https://github.com/georchestra/georchestra/tree/master/datafeeder).
+GeoNetwork-UI contains auto-generated API clients for [GeoNetwork](https://github.com/geonetwork/core-geonetwork) 4.
 This relies on the [OpenAPI standard](https://www.openapis.org/) (formerly Swagger).
 
-To regenerate the clients, update the `spec.yaml` files in the `libs/data-access/<backend>/src` folder and use either `npm run generate-api -- gn4` or `npm run generate-api -- datafeeder`.
+To regenerate the client, update the `spec.yaml` files in the `libs/data-access/gn4/src` folder and use `npm run generate-api -- gn4`.
 
 ### i18n
 
@@ -235,28 +235,36 @@ To regenerate the clients, update the `spec.yaml` files in the `libs/data-access
 
 Translations are managed by [ngx-translate](https://github.com/ngx-translate/core).
 
-To set up translate service, import the module in your application/lib root module:
+To set up translate service, use the predefined providers in your application/lib root module:
 
 ```typescript
 // Application module, root
+import { provideI18n } from '@geonetwork-ui/util/i18n'
+
 export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http)
 }
+
+...
+providers: [
+  provideI18n({
+    loader: {
+      provide: TranslateLoader,
+      useFactory: HttpLoaderFactory,
+      deps: [HttpClient],
+    },
+    defaultLanguage: 'fr',
+  }),
+]
+```
+
+```typescript
+// In standalone components
+import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
+
 ...
 imports: [
-    TranslateModule.forRoot({
-      loader: {
-        provide: TranslateLoader,
-        useFactory: HttpLoaderFactory,
-        deps: [HttpClient],
-      },
-      defaultLanguage: 'fr',
-    }),
-]
-
-// Library module, child
-imports: [
-    TranslateModule.forChild(),
+  TranslateDirective, TranslatePipe
 ]
 ```
 
@@ -304,7 +312,7 @@ another.
 To run it:
 
 ```bash
-node tools/i18n/cli.js merge ./apps/datafeeder/src/assets/i18n/fr.json ./translations/fr.json
+node tools/i18n/cli.js merge ./apps/datahub/src/assets/i18n/fr.json ./translations/fr.json
 ```
 
 ## Documentation

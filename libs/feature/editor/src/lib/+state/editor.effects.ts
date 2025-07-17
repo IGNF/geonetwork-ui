@@ -4,11 +4,10 @@ import { debounceTime, EMPTY, filter, of, withLatestFrom } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import * as EditorActions from './editor.actions'
 import { EditorService } from '../services/editor.service'
-import { Store } from '@ngrx/store'
+import { Action, Store } from '@ngrx/store'
 import {
   selectEditorConfig,
   selectRecord,
-  selectRecordAlreadySavedOnce,
   selectRecordSource,
 } from './editor.selectors'
 import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
@@ -28,31 +27,32 @@ export class EditorEffects {
       withLatestFrom(
         this.store.select(selectRecord),
         this.store.select(selectRecordSource),
-        this.store.select(selectEditorConfig),
-        this.store.select(selectRecordAlreadySavedOnce)
+        this.store.select(selectEditorConfig)
       ),
-      switchMap(([, record, recordSource, fieldsConfig, alreadySavedOnce]) =>
-        this.editorService
-          .saveRecord(record, recordSource, fieldsConfig, !alreadySavedOnce)
-          .pipe(
-            switchMap(([record, recordSource]) =>
-              of(
-                EditorActions.saveRecordSuccess(),
+      switchMap(([, record, recordSource, fieldsConfig]) =>
+        this.editorService.saveRecord(record, recordSource, fieldsConfig).pipe(
+          switchMap(([savedRecord, savedRecordSource]) => {
+            const actions: Action[] = [EditorActions.saveRecordSuccess()]
+
+            if (!record?.uniqueIdentifier) {
+              actions.push(
                 EditorActions.openRecord({
-                  record,
-                  alreadySavedOnce: true,
-                  recordSource,
+                  record: savedRecord,
+                  recordSource: savedRecordSource,
                 })
               )
-            ),
-            catchError((error) =>
-              of(
-                EditorActions.saveRecordFailure({
-                  error,
-                })
-              )
+            }
+
+            return of(...actions)
+          }),
+          catchError((error) =>
+            of(
+              EditorActions.saveRecordFailure({
+                error,
+              })
             )
           )
+        )
       )
     )
   )
@@ -63,12 +63,14 @@ export class EditorEffects {
         ofType(EditorActions.saveRecordSuccess),
         withLatestFrom(this.store.select(selectRecord)),
         switchMap(([_, record]) => {
-          this.gn4PlateformService.cleanRecordAttachments(record).subscribe({
-            next: (_) => undefined,
-            error: (err) => {
-              console.error(err)
-            },
-          })
+          if (record.uniqueIdentifier !== null) {
+            this.gn4PlateformService.cleanRecordAttachments(record).subscribe({
+              next: (_) => undefined,
+              error: (err) => {
+                console.error(err)
+              },
+            })
+          }
           return EMPTY
         }),
         catchError((error) => {
@@ -81,14 +83,20 @@ export class EditorEffects {
 
   markAsChanged$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(EditorActions.updateRecordField),
+      ofType(
+        EditorActions.updateRecordField,
+        EditorActions.updateRecordLanguages
+      ),
       map(() => EditorActions.markRecordAsChanged())
     )
   )
 
   saveRecordDraft$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(EditorActions.updateRecordField),
+      ofType(
+        EditorActions.updateRecordField,
+        EditorActions.updateRecordLanguages
+      ),
       debounceTime(1000),
       withLatestFrom(
         this.store.select(selectRecord),
@@ -106,10 +114,9 @@ export class EditorEffects {
       ofType(EditorActions.undoRecordDraft),
       withLatestFrom(this.store.select(selectRecord)),
       switchMap(([, record]) => this.editorService.undoRecordDraft(record)),
-      map(([record, recordSource, alreadySavedOnce]) =>
+      map(([record, recordSource]) =>
         EditorActions.openRecord({
           record,
-          alreadySavedOnce,
           recordSource,
         })
       )
@@ -138,6 +145,36 @@ export class EditorEffects {
               EditorActions.hasRecordChangedSinceDraftSuccess({ changes })
             )
           )
+      )
+    )
+  )
+
+  checkIsRecordPublished$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EditorActions.openRecord),
+      map(({ record }) => record.uniqueIdentifier),
+      switchMap((uniqueIdentifier) =>
+        this.recordsRepository.getRecordPublicationStatus(uniqueIdentifier)
+      ),
+      map((isPublished) =>
+        EditorActions.isPublished({
+          isPublished: isPublished,
+        })
+      )
+    )
+  )
+
+  checkCanEditRecord$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EditorActions.openRecord),
+      map(({ record }) => record.uniqueIdentifier),
+      switchMap((uniqueIdentifier) =>
+        this.recordsRepository.canEditRecord(uniqueIdentifier)
+      ),
+      map((canEditRecord) =>
+        EditorActions.canEditRecord({
+          canEditRecord: canEditRecord,
+        })
       )
     )
   )

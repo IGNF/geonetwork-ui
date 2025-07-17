@@ -1,7 +1,8 @@
-import { DatavizConfigurationModel } from '@geonetwork-ui/common/domain/model/dataviz/dataviz-configuration.model'
+import { DatavizChartConfigModel } from '@geonetwork-ui/common/domain/model/dataviz/dataviz-configuration.model'
 import { createAction, props } from '@ngrx/store'
 import {
   CatalogRecord,
+  DatasetFeatureCatalog,
   UserFeedback,
 } from '@geonetwork-ui/common/domain/model/record'
 
@@ -28,6 +29,21 @@ export const loadFullMetadataFailure = createAction(
   props<{ otherError?: string; notFound?: boolean }>()
 )
 
+export const loadFeatureCatalog = createAction(
+  "[Metadata view] Load metadata's feature catalog",
+  props<{ metadata: CatalogRecord }>()
+)
+
+export const loadFeatureCatalogSuccess = createAction(
+  '[Metadata view] Load metadata feature catalog success',
+  props<{ datasetCatalog: DatasetFeatureCatalog | null }>()
+)
+
+export const loadFeatureCatalogFailure = createAction(
+  '[Metadata view] Load metadata feature catalog failure',
+  props<{ error?: string }>()
+)
+
 export const closeMetadata = createAction('[Metadata view] close')
 
 /*
@@ -38,12 +54,22 @@ export const setRelated = createAction(
   props<{ related: CatalogRecord[] }>()
 )
 
+export const setSources = createAction(
+  '[Metadata view] Set sources',
+  props<{ sources: CatalogRecord[] }>()
+)
+
+export const setSourceOf = createAction(
+  '[Metadata view] Set has sources',
+  props<{ sourceOf: CatalogRecord[] }>()
+)
+
 /*
   ChartConfig actions
  */
 export const setChartConfig = createAction(
   '[Metadata view] Set chart config',
-  props<{ chartConfig: DatavizConfigurationModel }>()
+  props<{ chartConfig: DatavizChartConfigModel }>()
 )
 
 /*

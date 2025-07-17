@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { FormFieldOnlineLinkResourcesComponent } from './form-field-online-link-resources.component'
 import { aSetOfLinksFixture } from '@geonetwork-ui/common/fixtures'
 import { MockBuilder, MockProvider } from 'ng-mocks'
-import { TranslateModule } from '@ngx-translate/core'
 import {
   PlatformServiceInterface,
   RecordAttachment,
@@ -13,7 +12,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog'
 import { OnlineLinkResource } from '@geonetwork-ui/common/domain/model/record'
 import { ModalDialogComponent } from '@geonetwork-ui/ui/layout'
 import { ChangeDetectorRef } from '@angular/core'
-import { EditorFacade } from '../../../../+state/editor.facade'
+import { provideI18n } from '@geonetwork-ui/util/i18n'
 
 let uploadSubject: Subject<any>
 
@@ -39,10 +38,6 @@ export class MatDialogMock {
   }))
 }
 
-class EditorFacadeMock {
-  alreadySavedOnce$ = new BehaviorSubject(false)
-}
-
 describe('FormFieldOnlineLinkResourcesComponent', () => {
   let component: FormFieldOnlineLinkResourcesComponent
   let fixture: ComponentFixture<FormFieldOnlineLinkResourcesComponent>
@@ -55,8 +50,8 @@ describe('FormFieldOnlineLinkResourcesComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TranslateModule.forRoot()],
       providers: [
+        provideI18n(),
         MockProvider(
           PlatformServiceInterface,
           PlatformServiceInterfaceMock,
@@ -70,7 +65,6 @@ describe('FormFieldOnlineLinkResourcesComponent', () => {
           detectChanges: jest.fn(),
         }),
         MockProvider(MatDialog, MatDialogMock, 'useClass'),
-        MockProvider(EditorFacade, EditorFacadeMock, 'useClass'),
       ],
     }).compileComponents()
 

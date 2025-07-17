@@ -1,21 +1,14 @@
-import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  tick,
-} from '@angular/core/testing'
+import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { PublishButtonComponent } from './publish-button.component'
 import { EditorFacade } from '@geonetwork-ui/feature/editor'
-import { BehaviorSubject, Subject, firstValueFrom, of } from 'rxjs'
-import { TranslateModule } from '@ngx-translate/core'
-import { HttpClientModule } from '@angular/common/http'
+import { BehaviorSubject, firstValueFrom, of, Subject } from 'rxjs'
 import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
 import {
   GroupsApiService,
   RecordsApiService,
 } from '@geonetwork-ui/data-access/gn4'
 import { barbieUserFixture } from '@geonetwork-ui/common/fixtures'
-import { OverlayRef } from '@angular/cdk/overlay'
+import { provideI18n } from '@geonetwork-ui/util/i18n'
 
 class EditorFacadeMock {
   changedSinceSave$ = new BehaviorSubject(false)
@@ -44,6 +37,7 @@ class EditorFacadeMock {
       extras: { ownerInfo: '1|John|Doe' },
     })
   )
+  isPublished$ = new BehaviorSubject(true)
 }
 
 const user = barbieUserFixture()
@@ -74,12 +68,8 @@ describe('PublishButtonComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [
-        PublishButtonComponent,
-        TranslateModule.forRoot(),
-        HttpClientModule,
-      ],
       providers: [
+        provideI18n(),
         {
           provide: EditorFacade,
           useClass: EditorFacadeMock,
@@ -130,6 +120,16 @@ describe('PublishButtonComponent', () => {
         facade.changedSinceSave$.next(true)
       })
       it('should return "hasChanges" when not saving and changed', async () => {
+        await expect(firstValueFrom(component.status$)).resolves.toBe(
+          'hasChanges'
+        )
+      })
+    })
+    describe('has never been published', () => {
+      beforeEach(() => {
+        facade.isPublished$.next(false)
+      })
+      it('should return "hasChanges" when has never been published', async () => {
         await expect(firstValueFrom(component.status$)).resolves.toBe(
           'hasChanges'
         )

@@ -18,8 +18,14 @@ import {
   datasetRecordsFixture,
   simpleDatasetRecordAsXmlFixture,
   simpleDatasetRecordFixture,
+  simpleDatasetRecordWithFcatsFixture,
+  duplicateDatasetRecordAsXmlFixture,
+  simpleServiceRecordFixture,
 } from '@geonetwork-ui/common/fixtures'
-import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
+import {
+  CatalogRecord,
+  DatasetFeatureCatalog,
+} from '@geonetwork-ui/common/domain/model/record'
 import { map } from 'rxjs/operators'
 import { HttpErrorResponse } from '@angular/common/http'
 import {
@@ -29,6 +35,7 @@ import {
 import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
 import { PublicationVersionError } from '@geonetwork-ui/common/domain/model/error'
 import { TranslateService } from '@ngx-translate/core'
+import { Gn4SettingsService } from './settings/gn4-settings.service'
 
 class Gn4MetadataMapperMock {
   readRecords = jest.fn((records) =>
@@ -42,8 +49,8 @@ class ElasticsearchServiceMock {
     aggregations,
     size,
   }))
-  getMetadataByIdPayload = jest.fn((uuid) => ({
-    uuids: [uuid],
+  getMetadataByIdsPayload = jest.fn((uuid) => ({
+    uuids: uuid,
   }))
   getRelatedRecordPayload = jest.fn(() => ({}))
   buildAutocompletePayload = jest.fn(() => ({}))
@@ -52,7 +59,7 @@ class ElasticsearchServiceMock {
 }
 
 class SearchApiServiceMock {
-  search = jest.fn((bucket, relatedType, payload) => {
+  search(bucket, relatedType, payload) {
     const body = JSON.parse(payload)
     const count = body.size || 1234
     const result: EsSearchResponse = {
@@ -69,39 +76,45 @@ class SearchApiServiceMock {
       }
     }
     return of(result)
-  })
+  }
 }
 
 class RecordsApiServiceMock {
   getRecordAs = jest.fn((uuid) =>
     of(`<gmd:MD_Metadata>
-  <gmd:fileIdentifier>
-    <gco:CharacterString>${uuid}</gco:CharacterString>
-  </gmd:fileIdentifier>
-</gmd:MD_Metadata>`).pipe(map((xml) => ({ body: xml })))
+      <gmd:fileIdentifier>
+        <gco:CharacterString>${uuid}</gco:CharacterString>
+      </gmd:fileIdentifier>
+    </gmd:MD_Metadata>`).pipe(map((xml) => ({ body: xml })))
   )
   insert = jest.fn(() =>
     of({
       metadataInfos: {
-        1234: [
-          {
-            uuid: '1234-5678-9012',
-          },
-        ],
+        1234: {
+          uuid: '1234-5678-9012',
+        },
       },
     })
   )
   deleteRecord = jest.fn(() => of({}))
+  create = jest.fn(() => of('1234-5678'))
 }
 
 class PlatformServiceInterfaceMock {
   getApiVersion = jest.fn(() => of('4.2.5'))
 }
 
+let allowEditHarvested = false
+class Gn4SettingsServiceMock {
+  allowEditHarvested$ = of(allowEditHarvested)
+}
+
 const SAMPLE_RECORD = {
   ...datasetRecordsFixture()[0],
   extras: {
     ownerInfo: 'Owner|SomeDetails',
+    isHarvested: false,
+    edit: true,
   },
 }
 
@@ -115,6 +128,7 @@ describe('Gn4Repository', () => {
   let gn4SearchApi: SearchApiService
   let gn4RecordsApi: RecordsApiService
   let platformService: PlatformServiceInterface
+  let settingsService: Gn4SettingsService
   let httpTestingController: HttpTestingController
 
   beforeEach(() => {
@@ -143,6 +157,10 @@ describe('Gn4Repository', () => {
           useClass: PlatformServiceInterfaceMock,
         },
         {
+          provide: Gn4SettingsService,
+          useClass: Gn4SettingsServiceMock,
+        },
+        {
           provide: TranslateService,
           useValue: translateServiceMock,
         },
@@ -153,6 +171,7 @@ describe('Gn4Repository', () => {
     gn4SearchApi = TestBed.inject(SearchApiService)
     gn4RecordsApi = TestBed.inject(RecordsApiService)
     platformService = TestBed.inject(PlatformServiceInterface)
+    settingsService = TestBed.inject(Gn4SettingsService)
     httpTestingController = TestBed.inject(HttpTestingController)
   })
 
@@ -232,7 +251,9 @@ describe('Gn4Repository', () => {
       record = await lastValueFrom(repository.getRecord('1234-5678'))
     })
     it('builds a payload with the specified uuid', () => {
-      expect(gn4Helper.getMetadataByIdPayload).toHaveBeenCalledWith('1234-5678')
+      expect(gn4Helper.getMetadataByIdsPayload).toHaveBeenCalledWith([
+        '1234-5678',
+      ])
     })
     it('returns the given result as record', () => {
       expect(record).toStrictEqual(datasetRecordsFixture()[0])
@@ -252,24 +273,316 @@ describe('Gn4Repository', () => {
       })
     })
   })
+
+  describe('getMultipleRecords', () => {
+    let records: CatalogRecord[]
+    beforeEach(async () => {
+      records = await lastValueFrom(
+        repository.getMultipleRecords(['1234-5678', '1234-5679'])
+      )
+    })
+    it('builds a payload with the specified uuid', () => {
+      expect(gn4Helper.getMetadataByIdsPayload).toHaveBeenCalledWith([
+        '1234-5678',
+        '1234-5679',
+      ])
+    })
+    it('returns the given result as records', () => {
+      expect(records).toStrictEqual(datasetRecordsFixture())
+    })
+    describe('if records are not found', () => {
+      beforeEach(async () => {
+        ;(gn4SearchApi as any).search = () =>
+          of({
+            hits: {
+              hits: [],
+            },
+          })
+        records = await lastValueFrom(
+          repository.getMultipleRecords(['1234-5678', '1234-5679'])
+        )
+      })
+      it('returns null', () => {
+        expect(records).toBe(null)
+      })
+    })
+  })
+
+  describe('getFeatureCatalog', () => {
+    let catalog: DatasetFeatureCatalog
+    let metadata: CatalogRecord
+    const spySearch = jest.spyOn(SearchApiServiceMock.prototype, 'search')
+
+    describe('when extras feature catalog is defined ', () => {
+      beforeEach(async () => {
+        jest.clearAllMocks()
+        metadata = datasetRecordsFixture()[0]
+        catalog = await lastValueFrom(repository.getFeatureCatalog(metadata))
+      })
+
+      it('should not call the feature catalog API (extras contain the answer) ', () => {
+        expect(spySearch).not.toHaveBeenCalled()
+      })
+
+      it('returns the feature catalog with mapped features', () => {
+        expect(catalog).toEqual({
+          featureTypes: [
+            {
+              name: "Catalogue d'attributs N°1",
+              definition: 'Définition du catalogue d attributs N°1',
+              attributes: [
+                {
+                  code: 'OBJECTID',
+                  name: 'OBJECTID',
+                  definition: 'Object identifier',
+                  type: 'OID',
+                },
+                {
+                  code: 'NOM',
+                  name: 'Nom',
+                  definition: 'Nom de la rue',
+                  type: 'String (48)',
+                  values: [
+                    {
+                      code: 'Pomme',
+                      definition: undefined,
+                      label: 'Les Pommiers',
+                    },
+                    {
+                      code: 'Cotton',
+                      definition: undefined,
+                      label: 'Rue Cotton',
+                    },
+                    {
+                      code: "Passage de l'échiquier",
+                      definition: undefined,
+                      label: undefined,
+                    },
+                  ],
+                },
+                {
+                  code: 'RUE',
+                  name: 'Rue',
+                  definition: '',
+                  type: 'String (50)',
+                },
+              ],
+            },
+            {
+              name: "Catalogue d'attributs N°2",
+              definition: 'Définition du catalogue d attributs N°2',
+              attributes: [
+                {
+                  code: 'UniqueObject',
+                  name: 'unique object ',
+                  definition: 'this is the only object of this catalog',
+                  type: 'String (50)',
+                },
+              ],
+            },
+          ],
+        })
+      })
+    })
+    describe('when feature catalog exists, no extras defined', () => {
+      beforeEach(async () => {
+        metadata = simpleDatasetRecordWithFcatsFixture()
+        spySearch.mockReturnValue(
+          of({ hits: { hits: datasetRecordsFixture(), total: { value: 0 } } })
+        )
+        catalog = await lastValueFrom(repository.getFeatureCatalog(metadata))
+      })
+
+      afterEach(() => {
+        spySearch.mockRestore()
+      })
+
+      it('calls the API with correct parameters', () => {
+        expect(spySearch).toHaveBeenCalledWith(
+          'bucket',
+          ['fcats', 'hassources'],
+          '{"uuids":["feature-catalog-identifier"]}'
+        )
+      })
+
+      it('returns the attributes coming from the linked feature catalog', () => {
+        expect(catalog).toEqual({
+          featureTypes: [
+            {
+              name: "Catalogue d'attributs N°1",
+              definition: 'Définition du catalogue d attributs N°1',
+              attributes: [
+                {
+                  code: 'OBJECTID',
+                  name: 'OBJECTID',
+                  definition: 'Object identifier',
+                  type: 'OID',
+                },
+                {
+                  code: 'NOM',
+                  name: 'Nom',
+                  definition: 'Nom de la rue',
+                  type: 'String (48)',
+                  values: [
+                    {
+                      code: 'Pomme',
+                      definition: undefined,
+                      label: 'Les Pommiers',
+                    },
+                    {
+                      code: 'Cotton',
+                      definition: undefined,
+                      label: 'Rue Cotton',
+                    },
+                    {
+                      code: "Passage de l'échiquier",
+                      definition: undefined,
+                      label: undefined,
+                    },
+                  ],
+                },
+                {
+                  code: 'RUE',
+                  name: 'Rue',
+                  definition: '',
+                  type: 'String (50)',
+                },
+              ],
+            },
+            {
+              name: "Catalogue d'attributs N°2",
+              definition: 'Définition du catalogue d attributs N°2',
+              attributes: [
+                {
+                  code: 'UniqueObject',
+                  name: 'unique object ',
+                  definition: 'this is the only object of this catalog',
+                  type: 'String (50)',
+                },
+              ],
+            },
+          ],
+        })
+      })
+
+      it('prevent looping', async () => {
+        metadata = {
+          ...simpleDatasetRecordWithFcatsFixture(),
+          extras: {
+            ...simpleDatasetRecordWithFcatsFixture().extras,
+            featureCatalogIdentifier: 'my-dataset-with-fcats',
+          },
+        }
+        spySearch.mockReturnValue(
+          of({
+            hits: {
+              hits: metadata,
+              total: { value: 0 },
+            },
+          })
+        )
+        repository.getRecord = jest.fn().mockReturnValue(of(metadata))
+        catalog = await lastValueFrom(repository.getFeatureCatalog(metadata))
+        expect(catalog).toEqual(null)
+      })
+    })
+
+    describe('when feature catalog does not exist, nor in extras', () => {
+      beforeEach(async () => {
+        metadata = {
+          ...simpleDatasetRecordFixture(),
+          extras: {},
+        }
+        catalog = await lastValueFrom(repository.getFeatureCatalog(metadata))
+      })
+      it('returns null', () => {
+        expect(catalog).toEqual(null)
+      })
+    })
+  })
+
   describe('getSimilarRecords', () => {
     let results: CatalogRecord[]
     beforeEach(async () => {
       results = await lastValueFrom(
-        repository.getSimilarRecords(
-          datasetRecordsFixture()[0] as CatalogRecord
-        )
+        repository.getSimilarRecords(datasetRecordsFixture()[0])
       )
     })
     it('uses a related record ES payload', () => {
-      expect(gn4Helper.getRelatedRecordPayload).toHaveBeenCalledWith(
-        'A very interesting dataset (un jeu de données très intéressant)',
-        'my-dataset-001',
-        3
-      )
+      const record = datasetRecordsFixture()[0]
+      expect(gn4Helper.getRelatedRecordPayload).toHaveBeenCalledWith(record, 3)
     })
     it('returns the given results as records', () => {
       expect(results).toStrictEqual(datasetRecordsFixture())
+    })
+  })
+  describe('getSources', () => {
+    let sources: CatalogRecord[]
+    const mockRecord = {
+      ...SAMPLE_RECORD,
+      extras: {
+        sourcesIdentifiers: ['source-1', 'source-2'],
+      },
+    }
+
+    beforeEach(async () => {
+      repository.getMultipleRecords = jest
+        .fn()
+        .mockImplementation((ids) => of(ids.map((id) => ({ uuid: id }))))
+      sources = await lastValueFrom(repository.getSources(mockRecord))
+    })
+
+    it('calls getMultipleRecords for source identifiers', () => {
+      expect(repository.getMultipleRecords).toHaveBeenCalledWith([
+        'source-1',
+        'source-2',
+      ])
+    })
+
+    it('returns the sources as an array of CatalogRecord', () => {
+      expect(sources).toEqual([{ uuid: 'source-1' }, { uuid: 'source-2' }])
+    })
+
+    it('returns null if no sourcesIdentifiers are defined', async () => {
+      const recordWithoutSources = { ...mockRecord, extras: {} }
+      const result = await lastValueFrom(
+        repository.getSources(recordWithoutSources)
+      )
+      expect(result).toBeNull()
+    })
+  })
+  describe('getSourceOf', () => {
+    let sourceOf: CatalogRecord[]
+    const mockRecord = {
+      ...SAMPLE_RECORD,
+      extras: {
+        sourceOfIdentifiers: ['hasSource-1', 'hasSource-2'],
+      },
+    }
+    beforeEach(async () => {
+      repository.getMultipleRecords = jest
+        .fn()
+        .mockImplementation((ids) => of(ids.map((id) => ({ uuid: id }))))
+      sourceOf = await lastValueFrom(repository.getSourceOf(mockRecord))
+    })
+    it('calls getMultipleRecords for hasSource identifiers', () => {
+      expect(repository.getMultipleRecords).toHaveBeenCalledWith([
+        'hasSource-1',
+        'hasSource-2',
+      ])
+    })
+    it('returns the sourceOf as an array of CatalogRecord', () => {
+      expect(sourceOf).toEqual([
+        { uuid: 'hasSource-1' },
+        { uuid: 'hasSource-2' },
+      ])
+    })
+    it('returns null if no sourceOfIdentifiers are defined', async () => {
+      const recordWithoutSourceOf = { ...mockRecord, extras: {} }
+      const result = await lastValueFrom(
+        repository.getSourceOf(recordWithoutSourceOf)
+      )
+      expect(result).toBeNull()
     })
   })
   describe('aggregate', () => {
@@ -377,7 +690,7 @@ describe('Gn4Repository', () => {
 
     beforeEach(async () => {
       ;(gn4RecordsApi.getRecordAs as jest.Mock).mockReturnValueOnce(
-        of(simpleDatasetRecordAsXmlFixture()).pipe(
+        of(duplicateDatasetRecordAsXmlFixture()).pipe(
           map((xml) => ({ body: xml }))
         )
       )
@@ -401,17 +714,13 @@ describe('Gn4Repository', () => {
     })
     it('parses the XML record into a native object, and updates the id and title', () => {
       expect(record).toMatchObject({
-        uniqueIdentifier: `TEMP-ID-1720656000000`,
+        uniqueIdentifier: `my-dataset-001`,
         title:
-          'A very interesting dataset (un jeu de données très intéressant) (Copy)',
+          'Copy of record A very interesting dataset (un jeu de données très intéressant)',
       })
     })
-    it('saves the duplicated record as draft', () => {
-      const hasDraft = repository.recordHasDraft(`TEMP-ID-1720656000000`)
-      expect(hasDraft).toBe(true)
-    })
-    it('tells the record it has not been saved yet', () => {
-      expect(savedOnce).toBe(false)
+    it('tells the record it has been saved', () => {
+      expect(savedOnce).toBe(true)
     })
     it('returns the record as serialized', () => {
       expect(recordSource).toMatch(/<mdb:MD_Metadata/)
@@ -435,12 +744,20 @@ describe('Gn4Repository', () => {
         expect(error).toEqual(new PublicationVersionError('4.2.4'))
       })
     })
-    describe('with reference', () => {
+    describe('Existing record - with reference', () => {
       beforeEach(async () => {
+        ;(gn4RecordsApi.insert as jest.Mock).mockReturnValueOnce(
+          of({
+            metadataInfos: {
+              1234: [{ uuid: '1234-5678-9012' }],
+            },
+          })
+        )
         recordSource = await lastValueFrom(
           repository.saveRecord(
             simpleDatasetRecordFixture(),
-            simpleDatasetRecordAsXmlFixture()
+            simpleDatasetRecordAsXmlFixture(),
+            true
           )
         )
       })
@@ -451,13 +768,13 @@ describe('Gn4Repository', () => {
             <mcc:code>
                 <gco:CharacterString>my-dataset-001</gco:CharacterString>`)
       })
-      it('calls the API to insert the record as XML', () => {
+      it('calls the API to insert the record as XML for existing records', () => {
         expect(gn4RecordsApi.insert).toHaveBeenCalledWith(
           expect.anything(),
           undefined,
           undefined,
           undefined,
-          expect.anything(),
+          true,
           undefined,
           expect.anything(),
           undefined,
@@ -473,12 +790,19 @@ describe('Gn4Repository', () => {
                 <gco:CharacterString>my-dataset-001</gco:CharacterString>`)
         )
       })
-      it('returns the unique identifier of the record as it was saved', () => {
+      it('returns the unique identifier of the record and the draft status as it was saved', () => {
         expect(recordSource).toEqual('1234-5678-9012')
       })
     })
-    describe('without reference', () => {
+    describe('Existing record - without reference', () => {
       beforeEach(async () => {
+        ;(gn4RecordsApi.insert as jest.Mock).mockReturnValueOnce(
+          of({
+            metadataInfos: {
+              1234: [{ uuid: '1234-5678-9012' }],
+            },
+          })
+        )
         await lastValueFrom(repository.saveRecord(datasetRecordsFixture()[0]))
       })
       it('uses the ISO19139 converter by default', () => {
@@ -492,8 +816,82 @@ describe('Gn4Repository', () => {
       })
     })
   })
+  describe('duplicateExternalRecord', () => {
+    const recordDownloadUrl = 'https://example.com/record/xml'
+    const mockXml = simpleDatasetRecordAsXmlFixture()
+    const mockRecord = simpleDatasetRecordFixture()
+
+    beforeEach(() => {
+      jest.spyOn(repository, 'saveRecord').mockReturnValue(of('mock-uuid'))
+      jest
+        .spyOn(repository as any, 'getExternalRecordAsXml')
+        .mockReturnValue(of(mockXml))
+    })
+
+    it('fetches the external record as XML', async () => {
+      await lastValueFrom(repository.duplicateExternalRecord(recordDownloadUrl))
+      expect((repository as any).getExternalRecordAsXml).toHaveBeenCalledWith(
+        recordDownloadUrl
+      )
+    })
+
+    it('edits title and calls saveRecord with record and recordAsXml', async () => {
+      const result = await lastValueFrom(
+        repository.duplicateExternalRecord(recordDownloadUrl)
+      )
+      expect(repository.saveRecord).toHaveBeenCalledWith(
+        {
+          ...mockRecord,
+          title: mockRecord.title + ' (Copy)',
+          defaultLanguage: null,
+          recordUpdated: expect.any(Date),
+          resourceCreated: expect.any(Date),
+          resourceUpdated: expect.any(Date),
+        },
+        mockXml
+          .replace(
+            'A very interesting dataset (un jeu de données très intéressant)',
+            'A very interesting dataset (un jeu de données très intéressant) (Copy)'
+          )
+          .concat('\n'),
+        false
+      )
+      expect(result).toBe('mock-uuid')
+    })
+
+    it('handles errors when fetching the external record', fakeAsync(() => {
+      jest
+        .spyOn(repository as any, 'getExternalRecordAsXml')
+        .mockReturnValue(
+          throwError(
+            () =>
+              new HttpErrorResponse({ status: 404, statusText: 'Not Found' })
+          )
+        )
+
+      let errorResponse: any
+      repository.duplicateExternalRecord(recordDownloadUrl).subscribe({
+        error: (error) => {
+          errorResponse = error
+        },
+      })
+
+      tick()
+
+      expect(errorResponse).toBeDefined()
+      expect(errorResponse.status).toBe(404)
+      expect(errorResponse.statusText).toBe('Not Found')
+    }))
+  })
   describe('record draft', () => {
     beforeEach(async () => {
+      ;(gn4RecordsApi.insert as jest.Mock).mockReturnValueOnce(
+        of({
+          metadataInfos: {
+            1234: [{ uuid: '1234-5678-9012' }],
+          },
+        })
+      )
       // save a record, then a draft, then open the record again
       await lastValueFrom(
         repository.saveRecord(
@@ -624,13 +1022,11 @@ describe('Gn4Repository', () => {
   describe('importRecordFromExternalFileUrlAsDraft', () => {
     const recordDownloadUrl = 'https://example.com/record/xml'
     const mockXml = simpleDatasetRecordAsXmlFixture()
-    let tempId: string
 
-    it('should fetch the external record and save it as a draft', fakeAsync(() => {
+    it('should fetch the external record and save it immediately', fakeAsync(() => {
       repository.duplicateExternalRecord(recordDownloadUrl).subscribe((id) => {
-        tempId = id
-
-        expect(tempId).toMatch(/^TEMP-ID-\d+$/)
+        expect(id).toMatch('my-dataset-001')
+        expect(repository.saveRecord).toHaveBeenCalled()
       })
 
       const req = httpTestingController.expectOne(recordDownloadUrl)
@@ -756,19 +1152,9 @@ describe('Gn4Repository', () => {
     })
   })
 
-  describe('isRecordNotYetSaved', () => {
-    it('returns true if the record has a temporary ID', () => {
-      expect(repository.isRecordNotYetSaved('TEMP-ID-12345')).toBe(true)
-    })
-
-    it('returns false if the record does not have a temporary ID', () => {
-      expect(repository.isRecordNotYetSaved('1234-5678')).toBe(false)
-    })
-  })
   describe('hasRecordChangedSinceDraft', () => {
     it('should return an empty array if the record is unsaved', () => {
       // Mock dependencies
-      repository.isRecordNotYetSaved = jest.fn().mockReturnValue(true)
       repository.recordHasDraft = jest.fn().mockReturnValue(true)
 
       repository
@@ -780,7 +1166,6 @@ describe('Gn4Repository', () => {
 
     it('should return an empty array if there is no draft', () => {
       // Mock dependencies
-      repository.isRecordNotYetSaved = jest.fn().mockReturnValue(false)
       repository.recordHasDraft = jest.fn().mockReturnValue(false)
 
       repository
@@ -804,7 +1189,6 @@ describe('Gn4Repository', () => {
       }
 
       // Mock dependencies
-      repository.isRecordNotYetSaved = jest.fn().mockReturnValue(false)
       repository.recordHasDraft = jest.fn().mockReturnValue(true)
       repository.getAllDrafts = jest.fn().mockReturnValue(of(mockDrafts))
       repository.getRecord = jest.fn().mockReturnValue(of(mockRecentRecord))
@@ -829,7 +1213,6 @@ describe('Gn4Repository', () => {
       }
 
       // Mock dependencies
-      repository.isRecordNotYetSaved = jest.fn().mockReturnValue(false)
       repository.recordHasDraft = jest.fn().mockReturnValue(true)
       repository.getAllDrafts = jest.fn().mockReturnValue(of(mockDrafts))
       repository.getRecord = jest.fn().mockReturnValue(of(mockRecentRecord))
@@ -838,6 +1221,62 @@ describe('Gn4Repository', () => {
         .hasRecordChangedSinceDraft(SAMPLE_RECORD)
         .subscribe((result) => {
           expect(result).toEqual([])
+        })
+    })
+  })
+  describe('getRecordPublicationStatus', () => {
+    it('should return the publication status of a record', () => {
+      repository
+        .getRecordPublicationStatus('my-dataset-001')
+        .subscribe((publicationStatus) => {
+          expect(publicationStatus).toEqual(true)
+        })
+    })
+  })
+
+  describe('canEditIndexedRecord', () => {
+    it('should return true when the record can be edited', () => {
+      repository.canEditIndexedRecord(SAMPLE_RECORD).subscribe((canEdit) => {
+        expect(canEdit).toEqual(true)
+      })
+    })
+    it('should return false when the record is of the wrong type', () => {
+      repository
+        .canEditIndexedRecord(simpleServiceRecordFixture())
+        .subscribe((canEdit) => {
+          expect(canEdit).toEqual(false)
+        })
+    })
+    it("should return false when the record has been harvested and the settings don't allow edit on harvested records", () => {
+      repository
+        .canEditIndexedRecord({
+          ...SAMPLE_RECORD,
+          extras: { isHarvested: true },
+        })
+        .subscribe((canEdit) => {
+          expect(canEdit).toEqual(false)
+        })
+    })
+    describe('when the record is harvested and the settings allow edit on harvested records', () => {
+      beforeEach(() => {
+        allowEditHarvested = true
+      })
+      it('should return true', () => {
+        repository
+          .canEditIndexedRecord({
+            ...SAMPLE_RECORD,
+            extras: { isHarvested: true },
+          })
+          .subscribe((canEdit) => {
+            expect(canEdit).toEqual(true)
+          })
+      })
+    })
+    it('should return false when the record has edit rights set to false', () => {
+      repository
+        .canEditIndexedRecord({ ...SAMPLE_RECORD, extras: { edit: false } })
+        .subscribe((canEdit) => {
+          expect(canEdit).toEqual(false)
         })
     })
   })

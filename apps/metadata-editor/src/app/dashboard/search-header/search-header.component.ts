@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common'
-import { ChangeDetectionStrategy, Component, ViewChild } from '@angular/core'
-import { LetDirective } from '@ngrx/component'
-import { FeatureSearchModule } from '@geonetwork-ui/feature/search'
-import { UiElementsModule } from '@geonetwork-ui/ui/elements'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Output,
+} from '@angular/core'
+import { FuzzySearchComponent } from '@geonetwork-ui/feature/search'
 import { AvatarServiceInterface } from '@geonetwork-ui/api/repository'
-import { TranslateModule } from '@ngx-translate/core'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { Router } from '@angular/router'
 
@@ -14,17 +16,12 @@ import { Router } from '@angular/router'
   styleUrls: ['./search-header.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [
-    FeatureSearchModule,
-    CommonModule,
-    LetDirective,
-    UiElementsModule,
-    TranslateModule,
-  ],
+  imports: [CommonModule, FuzzySearchComponent],
 })
 export class SearchHeaderComponent {
   public placeholder$ = this.avatarService.getPlaceholder()
   activeBtn = false
+  @Output() isSearchActive = new EventEmitter<boolean>()
 
   constructor(
     private avatarService: AvatarServiceInterface,
@@ -33,5 +30,9 @@ export class SearchHeaderComponent {
 
   handleItemSelection(item: CatalogRecord) {
     this.router.navigate(['edit', item.uniqueIdentifier])
+  }
+
+  handleSearchActive(event: boolean) {
+    this.isSearchActive.emit(event)
   }
 }

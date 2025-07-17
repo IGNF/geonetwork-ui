@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
-import { TranslateModule } from '@ngx-translate/core'
 import { FormFieldUpdateFrequencyComponent } from './form-field-update-frequency.component'
+import { provideTranslateService } from '@ngx-translate/core'
 
 describe('FormFieldUpdateFrequencyComponent', () => {
   let component: FormFieldUpdateFrequencyComponent
@@ -8,7 +8,7 @@ describe('FormFieldUpdateFrequencyComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FormFieldUpdateFrequencyComponent, TranslateModule.forRoot()],
+      providers: [provideTranslateService()],
     }).compileComponents()
 
     fixture = TestBed.createComponent(FormFieldUpdateFrequencyComponent)
@@ -30,7 +30,7 @@ describe('FormFieldUpdateFrequencyComponent', () => {
     })
 
     it('should offer a set of initial choices', () => {
-      expect(component['choices']).toHaveLength(10)
+      expect(component['choices']).toHaveLength(13)
       expect(component['choices']).toContainEqual({
         label: 'domain.record.updateFrequency.week',
         value: 'week.3',
@@ -77,10 +77,7 @@ describe('FormFieldUpdateFrequencyComponent', () => {
     it('should emit once per day on toggle', () => {
       const spy = jest.spyOn(component.valueChange, 'emit')
       component.onPlannedToggled()
-      expect(spy).toHaveBeenCalledWith({
-        updatedTimes: 1,
-        per: 'day',
-      })
+      expect(spy).toHaveBeenCalledWith('continual')
     })
   })
 })

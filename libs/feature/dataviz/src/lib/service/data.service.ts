@@ -6,6 +6,7 @@ import {
   OgcApiRecord,
   WfsEndpoint,
   WfsVersion,
+  TmsEndpoint,
 } from '@camptocamp/ogc-client'
 import {
   BaseReader,
@@ -27,9 +28,11 @@ import {
   DatasetOnlineResource,
   DatasetServiceDistribution,
 } from '@geonetwork-ui/common/domain/model/record'
+import { DatavizConfigModel } from '@geonetwork-ui/common/domain/model/dataviz/dataviz-configuration.model'
 
 marker('wfs.unreachable.cors')
 marker('wfs.unreachable.http')
+marker('dataset.error.forbidden')
 marker('wfs.unreachable.unknown')
 marker('wfs.featuretype.notfound')
 marker('wfs.geojsongml.notsupported')
@@ -164,17 +167,26 @@ export class DataService {
       wfsLink.url.toString(),
       wfsLink.name
     ).pipe(
-      map((urls) => urls.all),
-      map((urls) =>
-        Object.keys(urls).map((format) => ({
-          ...wfsLink,
-          type: 'download',
-          url: new URL(urls[format]),
-          mimeType: getMimeTypeForFormat(
-            getFileFormatFromServiceOutput(format)
-          ),
-        }))
-      )
+      map((urls) => {
+        if (urls.geojson) {
+          urls.all['application/json'] = urls.geojson
+        }
+        return urls
+      }),
+      map((urls) => {
+        const resources: DatasetOnlineResource[] = Object.keys(urls.all).map(
+          (format) => ({
+            ...wfsLink,
+            name: wfsLink.name,
+            type: 'download' as const,
+            url: new URL(urls.all[format]),
+            mimeType: getMimeTypeForFormat(
+              getFileFormatFromServiceOutput(format)
+            ),
+          })
+        )
+        return resources
+      })
     )
   }
 
@@ -187,6 +199,7 @@ export class DataService {
     return Object.keys(collectionInfo.bulkDownloadLinks).map((downloadLink) => {
       return {
         ...ogcApiLink,
+        name: collectionInfo.id,
         type: 'download',
         url: new URL(collectionInfo.bulkDownloadLinks[downloadLink]),
         mimeType: getMimeTypeForFormat(
@@ -215,9 +228,47 @@ export class DataService {
           ? endpoint.getCollectionItem(collections[0], '1')
           : null
       })
-      .catch((error) => {
+      .catch(() => {
         throw new Error(`ogc.unreachable.unknown`)
       })
+  }
+
+  async getGeodataLinksFromTms(
+    tmsLink: DatasetServiceDistribution,
+    keepOriginalLink = false
+  ): Promise<DatasetServiceDistribution[]> {
+    const endpoint = new TmsEndpoint(tmsLink.url.toString())
+    const tileMaps = await endpoint.allTileMaps.catch(() => {
+      throw new Error(`ogc.unreachable.unknown`)
+    })
+    if (!tileMaps?.length) return null
+
+    // TODO: at some point use the identifierInService field if more that one layers in the TMS service
+    const tileMapInfo = await endpoint.getTileMapInfo(tileMaps[0].href)
+
+    // case 1: no styles; return a plain TMS link
+    if (!tileMapInfo?.metadata?.length) return [tmsLink]
+
+    // case 2: styles present; return each as a separate link
+    const styleLinks = tileMapInfo.metadata
+      .filter((meta) => meta.href)
+      .map((meta) => {
+        const fileName = meta.href.split('/').pop() || ''
+        const linkName =
+          tmsLink.description || ('name' in tmsLink ? tmsLink.name : '')
+        const styleName = fileName.split('.')[0]
+        const name = `${linkName} - ${styleName}`
+        return {
+          type: 'service',
+          url: new URL(meta.href),
+          name,
+          accessServiceProtocol: 'maplibre-style',
+        } as DatasetServiceDistribution
+      })
+    if (keepOriginalLink) {
+      styleLinks.unshift(tmsLink)
+    }
+    return styleLinks
   }
 
   getDownloadLinksFromEsriRest(
@@ -232,8 +283,11 @@ export class DataService {
     }))
   }
 
-  readAsGeoJson(link: DatasetOnlineResource): Observable<FeatureCollection> {
-    return this.getDataset(link).pipe(
+  readAsGeoJson(
+    link: DatasetOnlineResource,
+    cacheActive: boolean
+  ): Observable<FeatureCollection> {
+    return this.getDataset(link, cacheActive).pipe(
       switchMap((dataset) => dataset.selectAll().read()),
       map((features) => ({
         type: 'FeatureCollection',
@@ -242,23 +296,29 @@ export class DataService {
     )
   }
 
-  getDataset(link: DatasetOnlineResource): Observable<BaseReader> {
+  writeConfigAsJSON(config: DatavizConfigModel): File {
+    const jsonContent = JSON.stringify(config, null, 2)
+    const blob = new Blob([jsonContent], { type: 'application/json' })
+    return new File([blob], 'datavizConfig.json', {
+      type: 'application/json',
+    })
+  }
+
+  getDataset(
+    link: DatasetOnlineResource,
+    cacheActive: boolean
+  ): Observable<BaseReader> {
     if (link.type === 'service' && link.accessServiceProtocol === 'wfs') {
-      return this.getDownloadUrlsFromWfs(link.url.toString(), link.name).pipe(
-        switchMap((urls) => {
-          if (urls.geojson) return openDataset(urls.geojson, 'geojson')
-          if (urls.gml)
-            return openDataset(urls.gml.featureUrl, 'gml', {
-              namespace: urls.gml.namespace,
-              wfsVersion: urls.gml.wfsVersion,
-            })
-          return null
-        }),
-        tap((url) => {
-          if (url === null) {
-            throw new Error('wfs.geojsongml.notsupported')
-          }
-        })
+      const wfsUrlEndpoint = this.proxy.getProxiedUrl(link.url.toString())
+      return from(
+        openDataset(
+          wfsUrlEndpoint,
+          'wfs',
+          {
+            wfsFeatureType: link.name,
+          },
+          cacheActive
+        )
       )
     } else if (link.type === 'download') {
       const linkProxifiedUrl = this.proxy.getProxiedUrl(link.url.toString())
@@ -267,7 +327,9 @@ export class DataService {
         SupportedTypes.indexOf(format as any) > -1
           ? (format as SupportedType)
           : undefined
-      return from(openDataset(linkProxifiedUrl, supportedType)).pipe()
+      return from(
+        openDataset(linkProxifiedUrl, supportedType, undefined, cacheActive)
+      ).pipe()
     } else if (
       link.type === 'service' &&
       link.accessServiceProtocol === 'esriRest'
@@ -276,7 +338,7 @@ export class DataService {
         link.url.toString(),
         'geojson'
       )
-      return from(openDataset(url, 'geojson')).pipe()
+      return from(openDataset(url, 'geojson', undefined, cacheActive)).pipe()
     } else if (
       link.type === 'service' &&
       link.accessServiceProtocol === 'ogcFeatures'
@@ -284,7 +346,7 @@ export class DataService {
       return from(this.getDownloadUrlsFromOgcApi(link.url.href)).pipe(
         switchMap((collectionInfo) => {
           const geojsonUrl = collectionInfo.jsonDownloadLink
-          return openDataset(geojsonUrl, 'geojson')
+          return openDataset(geojsonUrl, 'geojson', undefined, cacheActive)
         }),
         tap((url) => {
           if (url === null) {

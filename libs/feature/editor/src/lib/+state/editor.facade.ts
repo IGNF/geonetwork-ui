@@ -2,7 +2,10 @@ import { inject, Injectable } from '@angular/core'
 import { select, Store } from '@ngrx/store'
 import * as EditorActions from './editor.actions'
 import * as EditorSelectors from './editor.selectors'
-import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
+import {
+  CatalogRecord,
+  LanguageCode,
+} from '@geonetwork-ui/common/domain/model/record'
 import { filter } from 'rxjs'
 import { Actions, ofType } from '@ngrx/effects'
 import { EditorFieldIdentification } from '../models'
@@ -14,9 +17,6 @@ export class EditorFacade {
 
   record$ = this.store.pipe(select(EditorSelectors.selectRecord))
   recordSource$ = this.store.pipe(select(EditorSelectors.selectRecordSource))
-  alreadySavedOnce$ = this.store.pipe(
-    select(EditorSelectors.selectRecordAlreadySavedOnce)
-  )
   saving$ = this.store.pipe(select(EditorSelectors.selectRecordSaving))
   saveError$ = this.store.pipe(
     select(EditorSelectors.selectRecordSaveError),
@@ -35,14 +35,15 @@ export class EditorFacade {
   hasRecordChanged$ = this.store.pipe(
     select(EditorSelectors.selectHasRecordChanged)
   )
+  isPublished$ = this.store.pipe(select(EditorSelectors.selectIsPublished))
+  canEditRecord$ = this.store.pipe(select(EditorSelectors.selectCanEditRecord))
 
-  openRecord(
-    record: CatalogRecord,
-    recordSource: string,
-    alreadySavedOnce: boolean
-  ) {
+  openRecord(record: CatalogRecord, recordSource: string) {
     this.store.dispatch(
-      EditorActions.openRecord({ record, recordSource, alreadySavedOnce })
+      EditorActions.openRecord({
+        record,
+        recordSource,
+      })
     )
     this.setCurrentPage(0)
   }
@@ -59,6 +60,15 @@ export class EditorFacade {
     this.store.dispatch(EditorActions.updateRecordField({ field, value }))
   }
 
+  updateRecordLanguages(
+    defaultLanguage: LanguageCode,
+    otherLanguages: LanguageCode[]
+  ) {
+    this.store.dispatch(
+      EditorActions.updateRecordLanguages({ defaultLanguage, otherLanguages })
+    )
+  }
+
   setCurrentPage(page: number) {
     this.store.dispatch(EditorActions.setCurrentPage({ page }))
   }
@@ -69,5 +79,13 @@ export class EditorFacade {
 
   checkHasRecordChanged(record: CatalogRecord) {
     this.store.dispatch(EditorActions.hasRecordChangedSinceDraft({ record }))
+  }
+
+  isPublished(isPublished: boolean) {
+    this.store.dispatch(EditorActions.isPublished({ isPublished }))
+  }
+
+  canEditRecord(canEditRecord: boolean) {
+    this.store.dispatch(EditorActions.canEditRecord({ canEditRecord }))
   }
 }

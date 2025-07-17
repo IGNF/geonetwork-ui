@@ -6,21 +6,21 @@ import {
   filter,
   map,
   mergeMap,
+  shareReplay,
   switchMap,
   toArray,
 } from 'rxjs/operators'
 import * as MdViewActions from './mdview.actions'
 import * as MdViewSelectors from './mdview.selectors'
 import { LinkClassifierService, LinkUsage } from '@geonetwork-ui/util/shared'
-import { DatavizConfigurationModel } from '@geonetwork-ui/common/domain/model/dataviz/dataviz-configuration.model'
+import { DatavizChartConfigModel } from '@geonetwork-ui/common/domain/model/dataviz/dataviz-configuration.model'
 import {
   CatalogRecord,
-  DatasetServiceDistribution,
   UserFeedback,
 } from '@geonetwork-ui/common/domain/model/record'
 import { AvatarServiceInterface } from '@geonetwork-ui/api/repository'
 import { OgcApiRecord } from '@camptocamp/ogc-client'
-import { from, of } from 'rxjs'
+import { from, of, Observable } from 'rxjs'
 import { DataService } from '@geonetwork-ui/feature/dataviz'
 
 @Injectable()
@@ -52,37 +52,48 @@ export class MdViewFacade {
     filter((md) => !!md)
   )
 
+  featureCatalog$ = this.store.pipe(select(MdViewSelectors.getFeatureCatalog))
+
   isIncomplete$ = this.store.pipe(
     select(MdViewSelectors.getMetadataIsIncomplete),
     filter((incomplete) => incomplete !== null)
+  )
+
+  isHighUpdateFrequency$ = this.metadata$.pipe(
+    map((record) => {
+      if (record.updateFrequency instanceof Object) {
+        return (
+          record.updateFrequency.per === 'day' &&
+          record.updateFrequency.updatedTimes > 1
+        )
+      }
+
+      return record.updateFrequency === 'continual'
+    })
   )
 
   error$ = this.store.pipe(select(MdViewSelectors.getMetadataError))
 
   related$ = this.store.pipe(select(MdViewSelectors.getRelated))
 
+  sources$ = this.store.pipe(select(MdViewSelectors.getSources))
+
+  sourceOf$ = this.store.pipe(select(MdViewSelectors.getSourceOf))
+
   chartConfig$ = this.store.pipe(select(MdViewSelectors.getChartConfig))
 
   allLinks$ = this.metadata$.pipe(
     map((record) =>
-      record.kind === 'dataset' && 'onlineResources' in record
-        ? record.onlineResources
-        : []
-    )
+      'onlineResources' in record ? record.onlineResources : []
+    ),
+    shareReplay(1)
   )
 
   apiLinks$ = this.allLinks$.pipe(
     map((links) =>
-      links
-        .filter((link) => this.linkClassifier.hasUsage(link, LinkUsage.API))
-        // Put links to IGN Géoplateforme first
-        .sort((dd1, dd2) => {
-          return (dd2 as DatasetServiceDistribution).accessServiceProtocol ===
-            'GPFDL'
-            ? 1
-            : undefined // do not change the sorting otherwise
-        })
-    )
+      links.filter((link) => this.linkClassifier.hasUsage(link, LinkUsage.API))
+    ),
+    shareReplay(1)
   )
 
   mapApiLinks$ = this.allLinks$.pipe(
@@ -90,7 +101,8 @@ export class MdViewFacade {
       links.filter((link) =>
         this.linkClassifier.hasUsage(link, LinkUsage.MAP_API)
       )
-    )
+    ),
+    shareReplay(1)
   )
 
   downloadLinks$ = this.allLinks$.pipe(
@@ -190,7 +202,7 @@ export class MdViewFacade {
     this.store.dispatch(MdViewActions.closeMetadata())
   }
 
-  setChartConfig(chartConfig: DatavizConfigurationModel) {
+  setChartConfig(chartConfig: DatavizChartConfigModel) {
     this.store.dispatch(MdViewActions.setChartConfig({ chartConfig }))
   }
 
@@ -203,5 +215,12 @@ export class MdViewFacade {
 
   loadUserFeedbacks(datasetUuid: string) {
     this.store.dispatch(MdViewActions.loadUserFeedbacks({ datasetUuid }))
+  }
+
+  /**
+   * loadFeatureCatalog
+   */
+  loadFeatureCatalog(metadata: CatalogRecord) {
+    this.store.dispatch(MdViewActions.loadFeatureCatalog({ metadata }))
   }
 }

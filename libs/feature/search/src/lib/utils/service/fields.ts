@@ -9,6 +9,7 @@ import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.
 import {
   AggregationBuckets,
   AggregationsParams,
+  FieldFilter,
   FieldFilterByExpression,
   FieldFilters,
   TermBucket,
@@ -19,8 +20,8 @@ import {
   isDateRange,
   METADATA_LANGUAGE,
 } from '@geonetwork-ui/api/repository'
-import { LangService } from '@geonetwork-ui/util/i18n'
 import { formatUserInfo } from '@geonetwork-ui/util/shared'
+import { PossibleResourceTypes } from '@geonetwork-ui/api/metadata-converter'
 
 export type FieldType = 'values' | 'dateRange'
 
@@ -28,6 +29,7 @@ export type FieldValue = string | number
 export interface FieldAvailableValue {
   value: FieldValue
   label: string
+  count?: number
 }
 
 export abstract class AbstractSearchField {
@@ -79,6 +81,7 @@ export class SimpleSearchField implements AbstractSearchField {
         const bucketPromises = buckets.map(async (bucket) => ({
           label: `${await this.getBucketLabel(bucket)} (${bucket.count})`,
           value: bucket.term.toString(),
+          count: bucket.count,
         }))
         return Promise.all(bucketPromises)
       })
@@ -166,8 +169,10 @@ export class TranslatedSearchField extends SimpleSearchField {
  * The provided ES field name should not include any prefix such as `.langeng`
  */
 export class MultilingualSearchField extends SimpleSearchField {
-  private langService = this.injector.get(LangService)
-  private searchLanguage = this.injector.get(METADATA_LANGUAGE, null)
+  // we're using a getter in case the token value changes over time
+  private get searchLanguage() {
+    return this.injector.get(METADATA_LANGUAGE, null)
+  }
 
   constructor(
     protected esFieldName: string,
@@ -423,5 +428,155 @@ export class DateRangeSearchField extends SimpleSearchField {
 
   getType(): FieldType {
     return 'dateRange'
+  }
+}
+
+marker('search.filters.availableServices.view')
+marker('search.filters.availableServices.download')
+
+export class AvailableServicesField extends SimpleSearchField {
+  private translateService = this.injector.get(TranslateService)
+
+  constructor(injector: Injector) {
+    super('availableServices', injector, 'asc')
+  }
+
+  linkProtocolViewFilter = '/OGC:WMT?S.*/'
+  linkProtocolDownloadFilter = '/OGC:WFS.*/'
+
+  protected async getBucketLabel(bucket: TermBucket) {
+    return firstValueFrom(
+      this.translateService.get(
+        `search.filters.availableServices.${bucket.term}`
+      )
+    )
+  }
+
+  protected getAggregations(): AggregationsParams {
+    return {
+      availableServices: {
+        type: 'filters',
+        filters: {
+          view: `+linkProtocol:${this.linkProtocolViewFilter}`,
+          download: `+linkProtocol:${this.linkProtocolDownloadFilter}`,
+        },
+      },
+    }
+  }
+
+  getFiltersForValues(values: FieldValue[]): Observable<FieldFilters> {
+    const filters: FieldFilter = {}
+    if (values.includes('view')) filters[this.linkProtocolViewFilter] = true
+    if (values.includes('download'))
+      filters[this.linkProtocolDownloadFilter] = true
+
+    return of({
+      linkProtocol: filters,
+    })
+  }
+
+  getValuesForFilter(filters: FieldFilters): Observable<FieldValue[]> {
+    const linkFilter = filters.linkProtocol
+    if (!linkFilter) return of([])
+    const values = []
+    if (linkFilter[this.linkProtocolViewFilter]) values.push('view')
+    if (linkFilter[this.linkProtocolDownloadFilter]) values.push('download')
+    return of(values)
+  }
+}
+
+/**
+ * This class is meant to be used with the legacy filter on `resourceType` (now deprecated, the use of `recordKind` field is recommended).
+ * Since creating filters on the same ES field is not possible, in order to make the resource type filter still working,
+ * we create an ES on the fly: `resourceTypeLegacy` that references the `resourceType` under the hood.
+ * @deprecated Use `recordKind` field instead.
+ */
+export class ResourceTypeLegacyField extends TranslatedSearchField {
+  constructor(injector: Injector) {
+    super('resourceTypeLegacy', injector, 'asc')
+
+    // Ask ES to create a field on the fly: 'resourceTypeLegacy' that is in fact, 'resourceType'
+    this.esService.registerRuntimeField(
+      'resourceTypeLegacy',
+      `for (resourceType in doc.resourceType) { emit(resourceType) }`
+    )
+  }
+}
+
+export class RecordKindField extends SimpleSearchField {
+  TYPE_MAPPING = {
+    dataset: ['dataset', 'series', 'featureCatalog'],
+    service: ['service'],
+    reuse: Object.entries(PossibleResourceTypes)
+      .filter(([_, v]) => v === 'reuse')
+      .map(([k]) => k), // = ['application', 'map', 'staticMap', 'interactiveMap', ...]
+  }
+
+  constructor(injector: Injector) {
+    super('resourceType', injector, 'asc')
+  }
+
+  getAvailableValues(): Observable<FieldAvailableValue[]> {
+    return this.repository.aggregate(this.getAggregations()).pipe(
+      map(
+        (response) =>
+          (response[this.esFieldName] as AggregationBuckets).buckets || []
+      ),
+      map((buckets: TermBucket[]) => {
+        const counts = buckets.reduce(
+          (acc, { term, count }) => {
+            const value = term.toString()
+            const key = this.TYPE_MAPPING.reuse.includes(value)
+              ? 'reuse'
+              : this.TYPE_MAPPING.dataset.includes(value)
+                ? 'dataset'
+                : value
+
+            acc[key] = (acc[key] || 0) + count
+            return acc
+          },
+          {} as Record<string, number>
+        )
+
+        return Object.keys(this.TYPE_MAPPING).map((type) => ({
+          label: type,
+          value: type,
+          count: counts[type] ?? 0,
+        }))
+      })
+    )
+  }
+
+  getFiltersForValues(values: FieldValue[]): Observable<FieldFilters> {
+    const filters = {
+      [this.esFieldName]: values.reduce((acc, value) => {
+        if (value === '') return { ...acc, [value]: true }
+
+        const keysToAdd = this.TYPE_MAPPING[value] || [value]
+        keysToAdd.forEach((key: string) => (acc[key] = true))
+
+        return acc
+      }, {}),
+    }
+
+    return of(filters)
+  }
+
+  getValuesForFilter(filters: FieldFilters): Observable<FieldValue[]> {
+    const filter = filters[this.esFieldName]
+    if (!filter) return of([])
+
+    const activeValues = Object.keys(filter).filter((v) => filter[v])
+    const activeTypes = Object.keys(this.TYPE_MAPPING).filter((type) =>
+      this.TYPE_MAPPING[type].every((t: string) => activeValues.includes(t))
+    )
+
+    // Allow unknown values eg. 'type=somethingnotexist' (for UI to select none)
+    const allTypes = [].concat(...Object.values(this.TYPE_MAPPING))
+    const unknownValues = activeValues.filter(
+      (value) => !allTypes.includes(value)
+    )
+
+    return of([...activeTypes, ...unknownValues])
   }
 }

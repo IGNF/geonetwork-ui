@@ -3,8 +3,8 @@ import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { datasetRecordsFixture } from '@geonetwork-ui/common/fixtures'
-import { TranslateModule } from '@ngx-translate/core'
 import { ResultsTableComponent } from './results-table.component'
+import { provideI18n } from '@geonetwork-ui/util/i18n'
 
 describe('ResultsTableComponent', () => {
   let component: ResultsTableComponent
@@ -12,7 +12,8 @@ describe('ResultsTableComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TranslateModule.forRoot(), NoopAnimationsModule],
+      imports: [NoopAnimationsModule],
+      providers: [provideI18n()],
     }).compileComponents()
 
     fixture = TestBed.createComponent(ResultsTableComponent)
@@ -40,7 +41,7 @@ describe('ResultsTableComponent', () => {
             datasetRecordsFixture()[0] as CatalogRecord
           )[0]
         )
-      ).toEqual('#b3cde8') // geojson
+      ).toEqual('#293C6F') // geojson
     })
   })
 
@@ -108,7 +109,7 @@ describe('ResultsTableComponent', () => {
     })
   })
 
-  describe('clicking on a dataset', () => {
+  describe('User can edit - clicking on a dataset', () => {
     let clickedRecord: CatalogRecord
 
     beforeEach(() => {
@@ -140,6 +141,23 @@ describe('ResultsTableComponent', () => {
     it('emits a duplicateRecord event', () => {
       component.handleDuplicate(datasetRecordsFixture()[0])
       expect(JSON.stringify(recordToBeDuplicated)).toEqual(
+        JSON.stringify(datasetRecordsFixture()[0])
+      )
+    })
+  })
+  describe('rollback a dataset', () => {
+    let draftToBeUndone: CatalogRecord
+
+    beforeEach(() => {
+      draftToBeUndone = null
+      component.rollbackDraft.subscribe((r) => {
+        draftToBeUndone = r
+      })
+    })
+
+    it('emits a rollbackDraft event', () => {
+      component.handleRollback(datasetRecordsFixture()[0])
+      expect(JSON.stringify(draftToBeUndone)).toEqual(
         JSON.stringify(datasetRecordsFixture()[0])
       )
     })

@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common'
 import { HttpClient } from '@angular/common/http'
 import { Component, Input, OnInit } from '@angular/core'
-import { NgIconsModule } from '@ng-icons/core'
-import { TranslateModule } from '@ngx-translate/core'
-import { Observable, map, take } from 'rxjs'
+import { NgIconsModule, provideIcons } from '@ng-icons/core'
+import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
+import { map, take, Observable } from 'rxjs'
+import { matCloudDownloadOutline } from '@ng-icons/material-icons/outline'
 import { CdkAccordionModule } from '@angular/cdk/accordion'
 
 @Component({
@@ -12,7 +13,12 @@ import { CdkAccordionModule } from '@angular/cdk/accordion'
   styleUrls: ['./gpf-api-dl-list-item.component.css'],
   standalone: true,
 
-  imports: [CommonModule, TranslateModule, NgIconsModule, CdkAccordionModule],
+  imports: [CommonModule, TranslateDirective, TranslatePipe, NgIconsModule, CdkAccordionModule],
+  providers: [
+    provideIcons({
+      matCloudDownloadOutline,
+    }),
+  ],
 })
 export class GpfApiDlListItemComponent implements OnInit {
   @Input() link
@@ -20,7 +26,7 @@ export class GpfApiDlListItemComponent implements OnInit {
   @Input() format: string
   @Input() isFromWfs: boolean
 
-  constructor(protected http: HttpClient) {}
+  constructor(protected http: HttpClient) { }
 
   liste$: Observable<any>
   isOpen = false
