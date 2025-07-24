@@ -52,3 +52,46 @@ gn-ui-autocomplete .gn-ui-text-input {
   z-index: 1003;
   /* 1000 is for cdk overlays, 1002 is for nav bar */
 }
+
+/* Datahub IGN adaptation */
+gn-ui-autocomplete > span {
+  background-color: white !important;
+}
+
+gn-ui-internal-link-card > a,
+gn-ui-external-link-card > a {
+  background-image: none !important;
+}
+
+gn-ui-internal-link-card > [target='_blank']::after,
+gn-ui-external-link-card > [target='_blank']::after {
+  content: none;
+}
+
+gn-ui-favorite-star {
+  visibility: hidden;
+}
+
+#downloads,
+#user-feedbacks {
+  display: none;
+}
+
+a > ng-icon[name='matOpenInNew'],
+a > ng-icon[name='iconoirOpenNewWindow'] {
+  display: none;
+}
+
+.hover\:underline:hover,
+.markdown-body > p > a:hover {
+  text-decoration-line: none !important;
+}
+
+[href].gn-ui-btn-primary {
+  background-image: none !important;
+}
+
+[href].gn-ui-btn-primary:hover,
+.clear-btn:hover {
+  color: black;
+}

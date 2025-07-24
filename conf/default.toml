@@ -88,7 +88,7 @@ favicon = "/catalogue/assets/img/favicon.ico"
 # If not configured, the default values are 'organization', 'format', 'publicationYear', 'topic', 'isSpatial', 'license'
 # Note that some links in the datahub app set an 'organization' filter. So this field is needed to allow unsetting such filters.
 # WARNING: 'resourceType' filter has been deprecated, please use 'recordKind' instead. Breaking change: 'resourceType' filter won't retrieve featureCatalog anymore.
-# advanced_filters = ['organization', 'format', 'publicationYear', 'topic', 'isSpatial', 'license']
+advanced_filters = ['topic', 'organization', 'recordKind', 'publicationYear', 'format', 'isSpatial', 'license']
 
 # One or several search presets can be defined here; every search preset is composed of:
 # - a name (which can be a translation key)
@@ -213,4 +213,5 @@ datahub.header.title.html="<div>Catalogue de données et de services</div>"
 datahub.header.datasets="Données et services"
 ogc.unreachable.unknown="Le flux n'est pas accessible ou est à accès restreint"
 wfs.unreachable.unknown="Le service n'est pas accessible ou est à accès restreint"
-record.metadata.api="API et téléchargements"
+record.metadata.api="Téléchargements et flux"
+search.filters.recordKind="Type de ressource"
