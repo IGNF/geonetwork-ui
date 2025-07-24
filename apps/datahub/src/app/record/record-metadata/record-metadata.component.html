@@ -84,14 +84,14 @@
     </div>
   </section>
 
-  <section id="user-feedbacks" #userFeedbacks *ngIf="(metadataViewFacade.isPresent$ | async) === true" class="pb-10">
+  <!--<section id="user-feedbacks" #userFeedbacks *ngIf="(metadataViewFacade.isPresent$ | async) === true" class="pb-10">
     <div *ngIf="(metadataViewFacade.isPresent$ | async) === true">
       <div class="container-lg px-4 lg:mx-auto">
         <datahub-record-user-feedbacks [organisationName$]="organisationName$"
           [metadataUuid]="metadataUuid$ | async"></datahub-record-user-feedbacks>
       </div>
     </div>
-  </section>
+  </section>-->
   <section *ngIf="displayRelated$ | async" class="pt-6">
     <div class="py-10 mt-[32px] bg-gray-100">
       <div class="container-lg px-4 lg:mx-auto">

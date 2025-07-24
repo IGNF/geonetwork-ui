@@ -63,7 +63,8 @@ gn-ui-external-link-card>a {
   background-image: none !important;
 }
 
-gn-ui-internal-link-card>[target="_blank"]::after {
+gn-ui-internal-link-card>[target="_blank"]::after,
+gn-ui-external-link-card>[target="_blank"]::after {
   content: none;
 }
 
