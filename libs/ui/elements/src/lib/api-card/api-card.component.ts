@@ -15,6 +15,7 @@ import { TranslateModule } from '@ngx-translate/core'
 import { MatTooltipModule } from '@angular/material/tooltip'
 import { NgIcon, provideIcons } from '@ng-icons/core'
 import { matMoreHoriz } from '@ng-icons/material-icons/baseline'
+import { matFileDownloadOutline } from '@ng-icons/material-icons/outline'
 
 @Component({
   selector: 'gn-ui-api-card',
@@ -32,6 +33,7 @@ import { matMoreHoriz } from '@ng-icons/material-icons/baseline'
   viewProviders: [
     provideIcons({
       matMoreHoriz,
+      matFileDownloadOutline,
     }),
   ],
 })
