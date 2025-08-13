@@ -49,7 +49,11 @@
         >
           <ng-icon
             class="pointer-events-none align-middle card-icon"
-            name="matMoreHoriz"
+            [name]="
+              link.accessServiceProtocol === 'GPFDL'
+                ? 'matFileDownloadOutline'
+                : 'matMoreHoriz'
+            "
             [ngClass]="{
               'text-secondary opacity-100': currentlyActive,
             }"
