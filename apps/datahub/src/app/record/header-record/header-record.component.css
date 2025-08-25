@@ -7,3 +7,7 @@
   --gn-ui-button-bg-hover: var(--color-primary-lightest);
   --gn-ui-button-padding: 4px;
 }
+
+::ng-deep .nav-hub-top>nav {
+  bottom: unset !important;
+}
