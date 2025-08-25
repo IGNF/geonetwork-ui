@@ -42,6 +42,7 @@ describe('editor form', () => {
 
       cy.get('@abstractField').should('be.visible')
     })
+
     it('form shows correctly', () => {
       cy.get('gn-ui-record-form').should('be.visible')
       cy.get('gn-ui-record-form gn-ui-form-field').should('have.length.gt', 0)

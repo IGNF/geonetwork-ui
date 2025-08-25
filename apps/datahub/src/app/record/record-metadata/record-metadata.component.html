@@ -18,7 +18,7 @@
           <div *ngIf="metadataQualityDisplay" class="border border-gray-300 rounded-lg py-4 px-5">
             <p class="mb-3" translate>record.metadata.quality</p>
             <gn-ui-metadata-quality [metadata]="metadataViewFacade.metadata$ | async"
-              [metadataQualityDisplay]="metadataQualityDisplay"></gn-ui-metadata-quality>
+              [metadataQualityDisplay]="metadataQualityDisplay" [popoverDisplay]="true"></gn-ui-metadata-quality>
           </div>
           <div *ngIf="
               (kind$ | async) === 'dataset' && sourceLabel$
@@ -30,8 +30,17 @@
           <!--<gn-ui-button type="outline" extraClass="w-full flex flex-row justify-between bg-white"
             [style.--gn-ui-button-rounded]="'10px'" (buttonClick)="scrollToQuestions()">
             <span translate>service.metadata.question</span>
-            <ng-icon class="mr-[5px] text-[1em]" name="matChatOutline"></ng-icon>
+            <ng-icon
+              class="mr-[5px] text-[1em]"
+              name="matChatOutline"
+            ></ng-icon>
           </gn-ui-button>-->
+          <gn-ui-button *ngIf="showReuseButton() | async" type="outline"
+            extraClass="w-full flex flex-row justify-between bg-white" [style.--gn-ui-button-rounded]="'10px'"
+            (buttonClick)="navigateToReuseForm()">
+            <span translate>service.metadata.reuse</span>
+            <ng-icon class="mr-[5px] text-[1em]" name="iconoirAppWindow"></ng-icon>
+          </gn-ui-button>
         </div>
       </div>
     </div>

@@ -23,8 +23,8 @@ export const FORMATS = {
   excel: {
     extensions: [
       'excel',
-      'xls',
       'xlsx',
+      'xls',
       'ms-excel',
       'openxmlformats-officedocument',
     ],
@@ -190,6 +190,7 @@ export function isFormatInQueryParam(
   alias: string
 ): boolean {
   const queryParams = link.url.searchParams
+  if (!queryParams) return false
   for (const [key, value] of queryParams.entries()) {
     if (key === 'format' || key === 'f') {
       return value === alias
@@ -228,6 +229,15 @@ export function getBadgeColor(linkFormat: FileFormat): string {
     }
   }
   return 'var(--color-gray-700)' // Default color ?
+}
+
+export function getLinkId(link: DatasetOnlineResource): string {
+  const href = link.url.href ?? link.url
+  return `${getLinkLabel(link)
+    .replace(/Ã©/g, 'e')
+    .replace(/Ã¨/g, 'e')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')}-${href}`
 }
 
 export function getLinkLabel(

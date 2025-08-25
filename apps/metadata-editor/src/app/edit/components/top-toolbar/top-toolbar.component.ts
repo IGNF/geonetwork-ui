@@ -19,6 +19,7 @@ import {
 import { combineLatest, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { PublishButtonComponent } from '../publish-button/publish-button.component'
+import { MetadataQualityComponent } from '../metadata-quality/metadata-quality.component'
 import {
   NgIconComponent,
   provideIcons,
@@ -49,6 +50,7 @@ import { matCircle } from '@ng-icons/material-icons/baseline'
     LetDirective,
     MatTooltipModule,
     MatDialogModule,
+    MetadataQualityComponent,
     TranslateDirective,
     TranslatePipe,
     NgIconComponent,
@@ -75,8 +77,10 @@ import { matCircle } from '@ng-icons/material-icons/baseline'
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TopToolbarComponent {
-  @Output() openTranslatePanel = new EventEmitter(false)
-  translatePanelOpen = false
+  @Output() openSidePanel = new EventEmitter<
+    null | 'multilingual' | 'metadataQuality'
+  >()
+  sidePanelOpen: 'multilingual' | 'metadataQuality' | null = null
   protected SaveStatus = [
     'record_not_published', // => when the record is not published yet but saved
     'record_up_to_date', // => when the record was just published (ie saved on the server)
@@ -102,6 +106,7 @@ export class TopToolbarComponent {
   isRecordMultilingual$ = this.editorFacade.record$.pipe(
     map((record) => record.otherLanguages.length)
   )
+  record$ = this.editorFacade.record$
 
   constructor(
     public dialog: MatDialog,
@@ -135,8 +140,8 @@ export class TopToolbarComponent {
     })
   }
 
-  toggleTranslatePanel() {
-    this.translatePanelOpen = !this.translatePanelOpen
-    this.openTranslatePanel.emit(this.translatePanelOpen)
+  toggleSidePanel(sidePanel: 'multilingual' | 'metadataQuality') {
+    this.sidePanelOpen = this.sidePanelOpen === sidePanel ? null : sidePanel
+    this.openSidePanel.emit(this.sidePanelOpen)
   }
 }

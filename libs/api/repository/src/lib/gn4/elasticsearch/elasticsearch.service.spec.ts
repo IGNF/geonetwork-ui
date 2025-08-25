@@ -5,14 +5,14 @@ import {
 } from '@geonetwork-ui/common/fixtures'
 import { EsSearchParams } from '@geonetwork-ui/api/metadata-converter'
 import { TestBed } from '@angular/core/testing'
-import { METADATA_LANGUAGE } from '../../metadata-language'
+import { METADATA_LANGUAGE } from '../../metadata-language.token'
 import { TranslateService } from '@ngx-translate/core'
 
 class TranslateServiceMock {
   currentLang = 'en'
 }
 
-let currentMetadataLang: string
+let currentMetadataLang: string | (() => string)
 
 describe('ElasticsearchService', () => {
   let service: ElasticsearchService
@@ -615,7 +615,7 @@ describe('ElasticsearchService', () => {
                     shape: geojsonPolygon,
                     relation: 'within',
                   },
-                  boost: 10.0,
+                  boost: 5.0,
                 },
               },
               {
@@ -624,7 +624,15 @@ describe('ElasticsearchService', () => {
                     shape: geojsonPolygon,
                     relation: 'intersects',
                   },
-                  boost: 7.0,
+                  boost: 2.0,
+                },
+              },
+              {
+                distance_feature: {
+                  boost: 5,
+                  field: 'location',
+                  origin: [3.063904886799392, 50.635541344891436],
+                  pivot: '2848m',
                 },
               },
             ],
@@ -784,14 +792,12 @@ describe('ElasticsearchService', () => {
           'codelist_status_text',
           'link',
           'linkProtocol',
-          'contactForResource.organisation',
-          'contact.organisation',
-          'contact.email',
+          'contactForResource*.organisation*',
+          'contact*.organisation*',
+          'contact*.email',
           'userSavedCount',
-          'updateFrequency',
           'cl_topic',
           'cl_maintenanceAndUpdateFrequency',
-          'tag',
           'MD_LegalConstraints*Object',
           'qualityScore',
           'allKeywords',
@@ -1177,6 +1183,166 @@ Cette section contient des *caractères internationaux* (ainsi que des "caractè
             { type: 'histogram' } as any
           )
         ).toStrictEqual(expectedHistogram)
+      })
+    })
+  })
+
+  describe('with METADATA_LANGUAGE not set', () => {
+    beforeEach(() => {
+      TestBed.resetTestingModule()
+      TestBed.configureTestingModule({
+        providers: [
+          {
+            provide: TranslateService,
+            useClass: TranslateServiceMock,
+          },
+        ],
+      })
+      service = TestBed.inject(ElasticsearchService)
+    })
+    it('uses a catch-all behavior', () => {
+      const query = service['buildPayloadQuery'](
+        {
+          any: 'hello',
+        },
+        {}
+      )
+
+      expect(query).toEqual({
+        bool: {
+          filter: [
+            {
+              terms: {
+                isTemplate: ['n'],
+              },
+            },
+          ],
+          should: [],
+          must: [
+            {
+              query_string: {
+                default_operator: 'AND',
+                fields: [
+                  'resourceTitleObject.*^5',
+                  'tag.*^4',
+                  'resourceAbstractObject.*^3',
+                  'lineageObject.*^2',
+                  'any.*',
+                  'uuid',
+                ],
+                query: 'hello',
+              },
+            },
+          ],
+          must_not: [
+            {
+              query_string: {
+                query:
+                  'resourceType:featureCatalog AND !resourceType:dataset AND !cl_level.key:dataset',
+              },
+            },
+          ],
+        },
+      })
+    })
+  })
+
+  describe('with METADATA_LANGUAGE set to a language factory instead of literal value', () => {
+    let langFactoryResult
+    beforeEach(() => {
+      langFactoryResult = 'ger'
+      currentMetadataLang = () => langFactoryResult // use a language factory
+      service = TestBed.inject(ElasticsearchService)
+    })
+    it('properly handles a language factory', () => {
+      const query = service['buildPayloadQuery'](
+        {
+          any: 'hello',
+        },
+        {}
+      )
+
+      expect(query).toEqual({
+        bool: {
+          filter: [
+            {
+              terms: {
+                isTemplate: ['n'],
+              },
+            },
+          ],
+          should: [],
+          must: [
+            {
+              query_string: {
+                default_operator: 'AND',
+                fields: [
+                  'resourceTitleObject.langger^5',
+                  'tag.langger^4',
+                  'resourceAbstractObject.langger^3',
+                  'lineageObject.langger^2',
+                  'any.langger',
+                  'uuid',
+                ],
+                query: 'hello',
+              },
+            },
+          ],
+          must_not: [
+            {
+              query_string: {
+                query:
+                  'resourceType:featureCatalog AND !resourceType:dataset AND !cl_level.key:dataset',
+              },
+            },
+          ],
+        },
+      })
+    })
+    it('properly handles a language value change', () => {
+      langFactoryResult = 'eng'
+      const query = service['buildPayloadQuery'](
+        {
+          any: 'hello',
+        },
+        {}
+      )
+
+      expect(query).toEqual({
+        bool: {
+          filter: [
+            {
+              terms: {
+                isTemplate: ['n'],
+              },
+            },
+          ],
+          should: [],
+          must: [
+            {
+              query_string: {
+                default_operator: 'AND',
+                fields: [
+                  'resourceTitleObject.langeng^5',
+                  'tag.langeng^4',
+                  'resourceAbstractObject.langeng^3',
+                  'lineageObject.langeng^2',
+                  'any.langeng',
+                  'uuid',
+                ],
+                query: 'hello',
+              },
+            },
+          ],
+          must_not: [
+            {
+              query_string: {
+                query:
+                  'resourceType:featureCatalog AND !resourceType:dataset AND !cl_level.key:dataset',
+              },
+            },
+          ],
+        },
       })
     })
   })

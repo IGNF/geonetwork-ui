@@ -45,7 +45,7 @@ import {
   throwError,
 } from 'rxjs'
 import { TranslateService } from '@ngx-translate/core'
-import { getLang3FromLang2 } from '@geonetwork-ui/util/i18n'
+import { toLang3 } from '@geonetwork-ui/util/i18n'
 
 const minApiVersion = '4.2.2'
 
@@ -55,6 +55,7 @@ export class Gn4PlatformService implements PlatformServiceInterface {
   private readonly me$: Observable<UserModel>
   private readonly users$: Observable<UserModel[]>
   private readonly isUserAnonymous$: Observable<boolean>
+  private readonly gnParseVersion = '4.2.5'
 
   private keyTranslations$ = this.toolsApiService
     .getTranslationsPackage1('gnui')
@@ -97,7 +98,7 @@ export class Gn4PlatformService implements PlatformServiceInterface {
   private keywordsByThesauri: Record<string, Observable<Keyword[]>> = {}
 
   private get lang3() {
-    return getLang3FromLang2(this.translateService.currentLang)
+    return toLang3(this.translateService.currentLang)
   }
 
   constructor(
@@ -323,10 +324,15 @@ export class Gn4PlatformService implements PlatformServiceInterface {
           ...(Array.isArray(onlines) ? onlines : []),
           ...(Array.isArray(thumbnails) ? thumbnails : []),
         ].map((resource) => Object.values(resource.url)[0])
-
-        const fileToDelete = attachments
-          .filter((attachment) => !urlsToKeep.includes(attachment.url))
-          .map((attachment) => attachment.filename)
+        const fileToDelete = attachments.reduce<string[]>((acc, attachment) => {
+          if (
+            !urlsToKeep.includes(attachment.url) &&
+            attachment.filename !== 'datavizConfig.json'
+          ) {
+            acc.push(attachment.filename)
+          }
+          return acc
+        }, [])
 
         return fileToDelete
       }),
@@ -383,6 +389,34 @@ export class Gn4PlatformService implements PlatformServiceInterface {
           )
         })
       )
+  }
+  getFileContent(url: URL | string): Observable<any> {
+    return combineLatest([
+      this.httpClient.get(url.toString(), { responseType: 'text' }),
+      this.getApiVersion(),
+    ]).pipe(
+      map(([text, version]) => {
+        const parsed = JSON.parse(text)
+
+        if (version > this.gnParseVersion) {
+          return parsed
+        }
+
+        const decoded = this.decodeBase64(parsed)
+        return JSON.parse(decoded)
+      })
+    )
+  }
+
+  decodeBase64(base64) {
+    const text = atob(base64)
+    const length = text.length
+    const bytes = new Uint8Array(length)
+    for (let i = 0; i < length; i++) {
+      bytes[i] = text.charCodeAt(i)
+    }
+    const decoder = new TextDecoder()
+    return decoder.decode(bytes)
   }
 
   attachFileToRecord(

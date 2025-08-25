@@ -6,13 +6,14 @@
 [global]
 # This URL (relative or absolute) must point to the API endpoint of a GeoNetwork4 instance
 geonetwork4_api_url = "https://data-qua.priv.geopf.fr/catalog"
+# deprecated - not used anymore
 datahub_url = "/catalogue"
 # This should point to a proxy to avoid CORS errors on some requests (data preview, OGC capabilities etc.)
 # The actual URL will be appended after this path, e.g. : https://my.proxy/?url=http%3A%2F%2Fencoded.url%2Fows`
 # This is an optional parameter: leave empty to disable proxy usage
 proxy_path = ""
 # This optional parameter defines, in which language metadata should be queried in elasticsearch.
-# Use ISO 639-2/B (https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) format to indicate the language of the metadata.
+# Use ISO 639-1 (https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) format in 2 characters to indicate the language of the metadata.
 # Setting to "current" will use the current language of the User Interface.
 # If not indicated, a wildcard is used and no language preference is applied for the search.
 # metadata_language = "fre"
@@ -38,6 +39,9 @@ proxy_path = ""
 
 # Enables displaying a "contact block" wherever relevant in applications
 # contact_email = "opendata@mycompany.com"
+
+# Enable declare a specific reuse configuration in datahub
+# reuse_form_url = "http://path.to.reuseform.fr"
 
 ### VISUAL THEME
 
@@ -76,6 +80,9 @@ favicon = "/catalogue/assets/img/favicon.ico"
 
 # Optional; Indicates whether the quick filter (by record kind dataset, service or reuse) below the search filters is displayed or not. Defaults to `true`.
 # record_kind_quick_filter = true
+
+# Optional; Indicates the number of elements per page ( datahub news, search, organization pages)
+# limit = 5
 
 # Optional; specify a GeoJSON object to be used as filter: all records contained inside the geometry will be boosted on top,
 # all records which do not intersect with the geometry will be shown with lower priority; can be specified as URL or inline
@@ -194,6 +201,7 @@ name = 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2'
 ### TRANSLATIONS
 
 # To override translations in a specific language, use a 'translations.xx' section where 'xx' is a language code.
+# Add ?debugTranslations=true to datahub URLs to get a nice display of translation keys.
 # Language codes are expressed in ISO 639-1 codes, see https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
 # Example:
 #

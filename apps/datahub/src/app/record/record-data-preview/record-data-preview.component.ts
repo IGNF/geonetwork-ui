@@ -7,9 +7,11 @@ import {
   InjectionToken,
   Input,
   OnDestroy,
+  OnInit,
   Optional,
 } from '@angular/core'
 import { MatTabsModule } from '@angular/material/tabs'
+import { DatavizConfigModel } from '@geonetwork-ui/common/domain/model/dataviz/dataviz-configuration.model'
 import { DatasetOnlineResource } from '@geonetwork-ui/common/domain/model/record'
 import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
 import { DataService } from '@geonetwork-ui/feature/dataviz'
@@ -20,12 +22,14 @@ import {
   MdViewFacade,
 } from '@geonetwork-ui/feature/record'
 import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
+import { getIsMobile } from '@geonetwork-ui/util/shared'
 import { TranslateDirective } from '@ngx-translate/core'
 import {
   BehaviorSubject,
   combineLatest,
   map,
   of,
+  skip,
   startWith,
   Subscription,
   switchMap,
@@ -33,6 +37,7 @@ import {
 } from 'rxjs'
 
 export const MAX_FEATURE_COUNT = new InjectionToken<string>('maxFeatureCount')
+export const REUSE_FORM_URL = new InjectionToken<string>('reuseFormUrl')
 
 @Component({
   selector: 'datahub-record-data-preview',
@@ -50,16 +55,22 @@ export const MAX_FEATURE_COUNT = new InjectionToken<string>('maxFeatureCount')
     ButtonComponent,
   ],
 })
-export class RecordDataPreviewComponent implements OnDestroy {
+export class RecordDataPreviewComponent implements OnDestroy, OnInit {
   @Input() recordUuid: string
   sub = new Subscription()
+  hasConfig = false
   savingStatus: 'idle' | 'saving' | 'saved' | 'error' = 'idle'
+  views = ['map', 'table', 'chart']
   displayMap$ = combineLatest([
     this.metadataViewFacade.mapApiLinks$,
     this.metadataViewFacade.geoDataLinksWithGeometry$,
   ]).pipe(
     map(([mapApiLinks, geoDataLinksWithGeometry]) => {
-      return mapApiLinks?.length > 0 || geoDataLinksWithGeometry?.length > 0
+      const display =
+        mapApiLinks?.length > 0 || geoDataLinksWithGeometry?.length > 0
+      this.selectedIndex$.next(display ? 1 : 2)
+      this.selectedView$.next(display ? 'map' : 'table')
+      return display
     }),
     startWith(false)
   )
@@ -73,6 +84,8 @@ export class RecordDataPreviewComponent implements OnDestroy {
         dataLinks?.length > 0 || geoDataLinks?.length > 0
     )
   )
+
+  displayChart$ = getIsMobile().pipe(map((isMobile) => !isMobile))
 
   selectedLink$ = new BehaviorSubject<DatasetOnlineResource>(null)
 
@@ -92,7 +105,11 @@ export class RecordDataPreviewComponent implements OnDestroy {
     })
   )
 
-  selectedView$ = new BehaviorSubject('map')
+  selectedView$ = new BehaviorSubject(null)
+  datavizConfig = null
+
+  selectedIndex$ = new BehaviorSubject(0)
+  selectedTMSStyle$ = new BehaviorSubject(0)
 
   displayViewShare$ = combineLatest([
     this.displayMap$,
@@ -108,27 +125,85 @@ export class RecordDataPreviewComponent implements OnDestroy {
   )
 
   displayDatavizConfig$ = combineLatest([
-    this.platformService.getMe(),
+    this.platformServiceInterface.getMe(),
     this.metadataViewFacade.metadata$,
   ]).pipe(
-    map(
-      ([userInfo, metadata]) =>
+    map(([userInfo, metadata]) => {
+      const isAdmin =
         userInfo?.profile === 'Administrator' ||
         userInfo?.username ===
           (metadata?.extras?.ownerInfo as string).split('|')[0]
-    )
+      const isPublished = metadata?.extras?.isPublishedToAll
+      return isAdmin && isPublished
+    })
   )
 
   constructor(
     public metadataViewFacade: MdViewFacade,
-    private platformService: PlatformServiceInterface,
     private dataService: DataService,
     @Inject(MAX_FEATURE_COUNT)
     @Optional()
     protected maxFeatureCount: number,
+    @Inject(REUSE_FORM_URL)
+    @Optional()
+    public reuseFormUrl: string,
     private platformServiceInterface: PlatformServiceInterface,
     private cdr: ChangeDetectorRef
   ) {}
+
+  ngOnInit(): void {
+    this.platformServiceInterface
+      .getRecordAttachments(this.recordUuid)
+      .pipe(
+        map((attachments) =>
+          attachments.find((att) => att.fileName === 'datavizConfig.json')
+        ),
+        switchMap((configAttachment) =>
+          (configAttachment
+            ? this.platformServiceInterface.getFileContent(configAttachment.url)
+            : of(null)
+          ).pipe(
+            switchMap((config: DatavizConfigModel) =>
+              this.displayMap$.pipe(
+                skip(1),
+                take(1),
+                map((displayMap) => ({ config, displayMap }))
+              )
+            )
+          )
+        )
+      )
+      .subscribe(({ config, displayMap }) => {
+        let view
+        if (config) {
+          view =
+            window.innerWidth < 640
+              ? config.view === 'chart'
+                ? 'chart'
+                : 'map'
+              : config.view
+
+          if (!displayMap && view === 'map') {
+            view = 'table'
+          }
+
+          const tab = this.views.indexOf(view) + 1 || 3
+
+          this.datavizConfig = {
+            ...config,
+            view,
+          }
+          this.selectedIndex$.next(tab)
+          this.selectedView$.next(view)
+          this.selectedLink$.next(config.source)
+        } else {
+          this.datavizConfig = {
+            link: this.selectedLink$.value,
+            view: this.selectedView$.value,
+          }
+        }
+      })
+  }
 
   ngOnDestroy() {
     this.sub.unsubscribe()
@@ -141,14 +216,16 @@ export class RecordDataPreviewComponent implements OnDestroy {
         this.selectedView$,
         this.selectedLink$,
         this.metadataViewFacade.chartConfig$,
+        this.selectedTMSStyle$,
       ])
         .pipe(
           take(1),
-          map(([selectedView, selectedLink, chartConfig]) => {
+          map(([selectedView, selectedLink, chartConfig, selectedTMSStyle]) => {
             return this.dataService.writeConfigAsJSON({
               view: selectedView,
               source: selectedLink,
               chartConfig: selectedView === 'chart' ? chartConfig : null,
+              styleTMSIndex: selectedView === 'map' ? selectedTMSStyle : null,
             })
           }),
           switchMap((config) =>
@@ -181,17 +258,7 @@ export class RecordDataPreviewComponent implements OnDestroy {
   }
 
   onTabIndexChange(index: number): void {
-    let view
-    switch (index) {
-      case 0:
-        view = 'map'
-        break
-      case 1:
-        view = 'table'
-        break
-      default:
-        view = 'chart'
-    }
+    const view = this.views[index - 1] ?? 'chart'
     this.selectedView$.next(view)
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'))
@@ -199,5 +266,8 @@ export class RecordDataPreviewComponent implements OnDestroy {
   }
   onSelectedLinkChange(link: DatasetOnlineResource) {
     this.selectedLink$.next(link)
+  }
+  onSelectedTMSStyleChange(index: number) {
+    this.selectedTMSStyle$.next(index)
   }
 }

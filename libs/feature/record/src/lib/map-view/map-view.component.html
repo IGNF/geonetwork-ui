@@ -8,6 +8,7 @@
       extraBtnClass="font-sans font-bold"
       [title]="'map.select.layer' | translate"
       [choices]="dropdownChoices$ | async"
+      [selected]="_selectedChoice"
       (selectValue)="selectLinkToDisplay($event)"
     ></gn-ui-dropdown-selector>
 
@@ -17,6 +18,7 @@
         extraBtnClass="font-sans font-bold"
         [title]="'map.select.style' | translate"
         [choices]="styleDropdownChoices$ | async"
+        [selected]="_styleFromConfig"
         (selectValue)="selectStyleToDisplay($event)"
       ></gn-ui-dropdown-selector>
     </ng-container>
@@ -85,7 +87,7 @@
         [hidden]="!showLegend || !legendExists"
       >
         <div class="flex justify-between items-center mb-2">
-          <div class="text-primary font-bold">Legend</div>
+          <div class="text-primary font-bold" translate>map.legend.title</div>
           <gn-ui-button
             type="light"
             (buttonClick)="toggleLegend()"
@@ -110,8 +112,9 @@
         type="outline"
         (buttonClick)="toggleLegend()"
         extraClass="absolute top-[1em] right-[1em] rounded p-1 text-xs bg-white"
+        translate
       >
-        Legend
+        map.legend.title
       </gn-ui-button>
 
       <gn-ui-loading-mask

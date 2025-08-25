@@ -16,7 +16,7 @@ This file uses the [TOML format](https://toml.io/en/), which is an easy-to-read 
 
 Some additional notes:
 
-- Languages in the configuration are specified using [two-letters ISO 639-1 codes](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) unless noted otherwise
+- Languages in the configuration should be specified using [two-letters ISO 639-1 codes](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes); 3-character codes might work but using them is not recommended
 - Tokens in URL templates are specified using the `${token_name}` syntax
 
 ### Sections
@@ -37,7 +37,7 @@ Some additional notes:
 
   This optional parameter defines the languages that will be provided in the UI language switcher. Available languages are listed [in this file](https://github.com/geonetwork/geonetwork-ui/blob/1533e02e24258814ef19f21e991a45e01fd06f36/libs/util/i18n/src/lib/i18n.constants.ts#L25).
 
-  Languages should be provided as an array, for instance:
+  Languages should be provided as ISO 639 codes in an array, for instance:
 
   ```toml
   languages = ['en', 'fr', 'de']
@@ -49,7 +49,7 @@ Some additional notes:
 
   This optional parameter lets you specify which language to use when searching in the catalog connected to GeoNetwork-UI. This might improve the search experience by showing results relevant to your users' language.
 
-  Use [ISO three-letter codes](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) to indicate the language used in the search (e.g. "fre" or "ger"). Alternatively, setting to "current" will use the current language of the User Interface.
+  Use [ISO 639 language codes](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) to indicate the language used in the search (e.g. `fr` or `de`). Alternatively, a value of `current` will use the current language of the User Interface.
 
   If not indicated, the search will be done across all localized values for each record, potentially showing more results that expected or unrelated results.
 
@@ -65,9 +65,9 @@ Some additional notes:
 
   The following three placeholders can be part of this URL:
 
-  - `${current_url}`: indicates where the current location should be injected in the constructed login URL
+  - `${current_url}`: replaced by the current browser URL
 
-  - `${lang2}`, `${lang3}`: indicates if and where the current language should be part of the login URL in 2- or 3-letters ISO format
+  - `${lang2}`, `${lang3}`: replaced by the ISO-639 code of the current language, respectively in 2- or 3-characters format
 
   Example for a platform relying on CAS:
 
@@ -91,7 +91,7 @@ Some additional notes:
 
 - `datahub_url` (optional)
 
-  (WIP)
+  deprecated - not used anymore
 
 #### `[theme]`
 
@@ -107,7 +107,7 @@ All parameters in this section are expressed using CSS formats; references:
 
   These colors constitute the building blocks of the visual theme of an application. Color scales will be derived from them automatically to offer relevant contrasts and engaging visuals.
 
-  Note that `main_color` is the all-purpose text color, usually very close to black. `background_color` is the general page background, usually very cloe to white.
+  Note that `main_color` is the all-purpose text color, usually very close to black. `background_color` is the general page background, usually very close to white.
 
 * `header_background` and `header_foreground_color` (optional)
 
@@ -143,13 +143,39 @@ All parameters in this section are expressed using CSS formats; references:
 
 Indicates whether the quick filter (by record kind dataset, service or reuse) below the search filters is displayed or not. Defaults to `true`.
 
+- `limit` (optional)
+
+Indicates the number of elements displayed per page (e.g., on DataHub news, search, and organization pages). A high value may lead to performance issues and a lower EcoIndex score. The default is 10; a value of 5 is recommended for better EcoIndex performance.
+
 - `filter_geometry_url` or `filter_geometry_data` (optional)
 
-Specify a GeoJSON object to be used as filter: all records contained inside the geometry will be **boosted on top**, all records which do not intersect with the geometry will be **shown with lower priority**.
+Specifies a GeoJSON geometry to be used as filter. The GeoJSON geometry can be specified either as URL or inline data.
 
-The GeoJSON geometry can be specified either as URL or inline data.
+The filter geometry does not actually exclude results from the search; instead, it simply "boosts" the relevancy of results in that geometry.
 
-Note: if the GeoJSON object contains multiple features, only the geometry of the first one will be kept!
+::: tip
+
+This parameter has no effect if results are not sorted by relevancy!
+
+:::
+
+The following logic is applied when a filter geometry is provided:
+
+| Location of the record relative to the filter geometry                | Relative boost |
+| --------------------------------------------------------------------- | -------------- |
+| **within the geometry** and **close to the geometry center**          | `+1`           |
+| **within the geometry** but **on the outskirt** of the geometry       | `+0.75`        |
+| **intersecting the geometry** and **on the outskirt** of the geometry | `+0.5`         |
+| **intersecting the geometry** but slightly further from the geometry  | `0`            |
+| not intersecting but **close to the geometry**                        | `-0.5`         |
+| **intersecting** but **located very far away**                        | `-0.75`        |
+| not intersecting and far away                                         | `-1`           |
+
+::: info
+
+If the GeoJSON object contains multiple features, only the geometry of the first one will be kept.
+
+:::
 
 - `advanced_filters` (optional)
 
@@ -200,10 +226,10 @@ advanced_filters = ['organization', 'inspireKeyword', 'keyword', 'topic']
 
 #### `[metadata-quality]`
 
-This section contains settings related to the Metadata Quality system.
+This section contains settings related to the [Metadata Quality](../guide/metadata-quality.md) system.
 
 ::: info How to enable the Metadata Quality system
-To show Metadata Quality scores on records and allow sorting, enabling the setting below is not enough. An ElasticSearch pipeline also has to be registered; please refer to [this section](../guide/deploy.md#enabling-improved-search-fields) for more information.
+To show Metadata Quality scores on records and allow sorting, enabling the setting below is not enough. An ElasticSearch pipeline also has to be registered; please refer to [this section](../guide/deploy.md#improved-search-fields) for more information.
 :::
 
 - `enabled` (optional)

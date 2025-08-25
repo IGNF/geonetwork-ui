@@ -6,6 +6,7 @@ import {
   getFileFormat,
   getFileFormatFromServiceOutput,
   getLayers,
+  getLinkId,
   getLinkLabel,
   getLinkPriority,
   mimeTypeToFormat,
@@ -279,6 +280,17 @@ describe('link utils', () => {
             })
           ).toEqual(format)
         })
+        it('should not return error when format is not in the queryParam ', () => {
+          expect(
+            getFileFormat({
+              name: 'test',
+              url: new URL(
+                `https://www.observatoire-des-territoires.gouv.fr/outils/cartographie-interactive/api/v1/functions/GC_API_download.php?lang=fr&type=stat&dataset=finances_ep_dette&indic=com_variation_encours_dette_ha_pct&nivgeo=com2024&filter=last&format=${extension}`
+              ),
+              type: 'download',
+            })
+          ).toEqual(format)
+        })
       }
     )
   })
@@ -446,6 +458,20 @@ describe('link utils', () => {
           type: 'download',
         })
       ).toEqual('Cities (geojson)')
+    })
+  })
+
+  describe('#getLinkId', () => {
+    it('returns an ID for any link', () => {
+      expect(
+        getLinkId({
+          description: 'A mapping service',
+          name: 'some_layer',
+          url: new URL('http://example.com/service'),
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        })
+      ).toEqual('A mapping service (WMS)-http://example.com/service')
     })
   })
 

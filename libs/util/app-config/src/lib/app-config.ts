@@ -102,6 +102,7 @@ export function loadAppConfig() {
           'web_component_embedder_url',
           'languages',
           'contact_email',
+          'reuse_form_url',
         ],
         warnings,
         errors
@@ -131,6 +132,7 @@ export function loadAppConfig() {
                 parsedGlobalSection.web_component_embedder_url,
               LANGUAGES: parsedGlobalSection.languages,
               CONTACT_EMAIL: parsedGlobalSection.contact_email,
+              REUSE_FORM_URL: parsedGlobalSection.reuse_form_url,
             } as GlobalConfig)
 
       const parsedLayersSections = parseMultiConfigSection(
@@ -229,6 +231,7 @@ export function loadAppConfig() {
           'filter_geometry_url',
           'search_preset',
           'advanced_filters',
+          'limit',
         ],
         warnings,
         errors
@@ -255,6 +258,7 @@ export function loadAppConfig() {
                 filters: param.filters,
               })),
               ADVANCED_FILTERS: parsedSearchSection.advanced_filters,
+              LIMIT: parsedSearchSection.limit,
             } as SearchConfig)
 
       const parsedMetadataQualitySection = parseConfigSection(
