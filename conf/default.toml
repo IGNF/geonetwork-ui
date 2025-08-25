@@ -135,7 +135,7 @@ enabled = true
 
 # Optional; Will remove WFS from map layers if its features exceed the indicated number.
 # Data preview chart and table will be hidden in this case.
-# max_feature_count = 5000
+max_feature_count = 5000
 
 # Optional; URL template enabling to open map layers in an external viewer; if set, displays a button next to the map's layer drop down
 # The template must include the following placeholders, which allow the datahub to inject the correct values when adding a layer to a viewer:
@@ -212,7 +212,10 @@ name = 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2'
 search.filters.title= "Affiner votre recherche"
 datahub.header.title.html="<div>Catalogue de données et de services</div>"
 datahub.header.datasets="Données et services"
-ogc.unreachable.unknown="Le flux n'est pas accessible ou est à accès restreint"
-wfs.unreachable.unknown="Le service n'est pas accessible ou est à accès restreint"
+ogc.unreachable.unknown="Le service associé à cette donnée est en accès restreint, veuillez contacter le producteur de la donnée pour en obtenir l'accès"
+wfs.unreachable.unknown="Le service associé à cette donnée est en accès restreint, veuillez contacter le producteur de la donnée pour en obtenir l'accès"
+dataset.error.forbidden="Le service associé à cette donnée est en accès restreint, veuillez contacter le producteur de la donnée pour en obtenir l'accès"
+dataset.error.restrictedAccess="Le service associé à cette donnée est en accès restreint, veuillez contacter le producteur de la donnée pour en obtenir l'accès"
 record.metadata.api="Téléchargements et flux"
 search.filters.recordKind="Type de ressource"
+downloads.format.unknown="Lien"
