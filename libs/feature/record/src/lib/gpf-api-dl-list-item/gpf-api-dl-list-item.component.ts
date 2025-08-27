@@ -13,7 +13,13 @@ import { CdkAccordionModule } from '@angular/cdk/accordion'
   styleUrls: ['./gpf-api-dl-list-item.component.css'],
   standalone: true,
 
-  imports: [CommonModule, TranslateDirective, TranslatePipe, NgIconsModule, CdkAccordionModule],
+  imports: [
+    CommonModule,
+    TranslateDirective,
+    TranslatePipe,
+    NgIconsModule,
+    CdkAccordionModule,
+  ],
   providers: [
     provideIcons({
       matCloudDownloadOutline,
@@ -26,7 +32,7 @@ export class GpfApiDlListItemComponent implements OnInit {
   @Input() format: string
   @Input() isFromWfs: boolean
 
-  constructor(protected http: HttpClient) { }
+  constructor(protected http: HttpClient) {}
 
   liste$: Observable<any>
   isOpen = false

@@ -54,17 +54,17 @@ gn-ui-autocomplete .gn-ui-text-input {
 }
 
 /* Datahub IGN adaptation */
-gn-ui-autocomplete>span {
+gn-ui-autocomplete > span {
   background-color: white !important;
 }
 
-gn-ui-internal-link-card>a,
-gn-ui-external-link-card>a {
+gn-ui-internal-link-card > a,
+gn-ui-external-link-card > a {
   background-image: none !important;
 }
 
-gn-ui-internal-link-card>[target="_blank"]::after,
-gn-ui-external-link-card>[target="_blank"]::after {
+gn-ui-internal-link-card > [target='_blank']::after,
+gn-ui-external-link-card > [target='_blank']::after {
   content: none;
 }
 
@@ -72,18 +72,29 @@ gn-ui-favorite-star {
   visibility: hidden;
 }
 
+.gn-ui-btn-outline {
+  border: 1px solid !important;
+  border-color: var(--color-gray-300) !important;
+}
+
+.gn-ui-btn-outline:hover {
+  border: 1px solid !important;
+  border-color: var(--color-primary-lighter);
+  color: var(--color-primary-darker);
+}
+
 #downloads,
 #user-feedbacks {
   display: none;
 }
 
-a>ng-icon[name="matOpenInNew"],
-a>ng-icon[name="iconoirOpenNewWindow"] {
+a > ng-icon[name='matOpenInNew'],
+a > ng-icon[name='iconoirOpenNewWindow'] {
   display: none;
 }
 
 .hover\:underline:hover,
-.markdown-body>p>a:hover {
+.markdown-body > p > a:hover {
   text-decoration-line: none !important;
 }
 

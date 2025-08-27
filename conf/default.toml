@@ -227,3 +227,4 @@ dataset.error.restrictedAccess="Le service associé à cette donnée est en acc�
 record.metadata.api="Téléchargements et flux"
 search.filters.recordKind="Type de ressource"
 downloads.format.unknown="Lien"
+share.tab.webComponent="Bloc de code à intégrer pour afficher un contenu interactif sur votre site"
