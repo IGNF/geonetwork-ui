@@ -7,12 +7,28 @@
         [metadata]="{}"
         [incomplete]="true"
       >
+      <gn-ui-metadata-info
+        class="sm:block"
+        *ngIf="(metadataViewFacade.isPresent$ | async) === false"
+        [metadata]="{}"
+        [incomplete]="true"
+      >
       </gn-ui-metadata-info>
       <div
         *ngIf="(metadataViewFacade.isPresent$ | async) === true"
         class="grid gap-8 grid-cols-1 sm:gap-6 sm:grid-cols-3"
       >
+      <div
+        *ngIf="(metadataViewFacade.isPresent$ | async) === true"
+        class="grid gap-8 grid-cols-1 sm:gap-6 sm:grid-cols-3"
+      >
         <div class="sm:col-span-2">
+          <gn-ui-metadata-info
+            class="sm:block"
+            [metadata]="metadataViewFacade.metadata$ | async"
+            [incomplete]="metadataViewFacade.isIncomplete$ | async"
+            (keyword)="onInfoKeywordClick($event)"
+          >
           <gn-ui-metadata-info
             class="sm:block"
             [metadata]="metadataViewFacade.metadata$ | async"
@@ -26,7 +42,15 @@
             (organizationClick)="onOrganizationClick($event)"
             [metadata]="metadataViewFacade.metadata$ | async"
           >
+          <gn-ui-metadata-contact
+            (organizationClick)="onOrganizationClick($event)"
+            [metadata]="metadataViewFacade.metadata$ | async"
+          >
           </gn-ui-metadata-contact>
+          <div
+            *ngIf="metadataQualityDisplay"
+            class="border border-gray-300 rounded-lg py-4 px-5"
+          >
           <div
             *ngIf="metadataQualityDisplay"
             class="border border-gray-300 rounded-lg py-4 px-5"
@@ -37,11 +61,21 @@
               [metadataQualityDisplay]="metadataQualityDisplay"
               [popoverDisplay]="true"
             ></gn-ui-metadata-quality>
+            <gn-ui-metadata-quality
+              [metadata]="metadataViewFacade.metadata$ | async"
+              [metadataQualityDisplay]="metadataQualityDisplay"
+              [popoverDisplay]="true"
+            ></gn-ui-metadata-quality>
           </div>
+          <div
+            *ngIf="
           <div
             *ngIf="
               (kind$ | async) === 'dataset' && sourceLabel$
                 | async as sourceLabel
+            "
+            class="border border-gray-300 rounded-lg py-4 px-5"
+          >
             "
             class="border border-gray-300 rounded-lg py-4 px-5"
           >
@@ -59,7 +93,7 @@
               class="mr-[5px] text-[1em]"
               name="matChatOutline"
             ></ng-icon>
-          </gn-ui-button>
+          </gn-ui-button>-->
           <gn-ui-button
             *ngIf="showReuseButton() | async"
             type="outline"
@@ -68,6 +102,10 @@
             (buttonClick)="navigateToReuseForm()"
           >
             <span translate>service.metadata.reuse</span>
+            <ng-icon
+              class="mr-[5px] text-[1em]"
+              name="iconoirAppWindow"
+            ></ng-icon>
             <ng-icon
               class="mr-[5px] text-[1em]"
               name="iconoirAppWindow"
@@ -86,9 +124,20 @@
     <datahub-record-data-preview
       [recordUuid]="metadataUuid$ | async"
     ></datahub-record-data-preview>
+  <section
+    id="data-preview"
+    class="mb-6"
+    *ngIf="(displayMap$ | async) || (displayData$ | async)"
+  >
+    <datahub-record-data-preview
+      [recordUuid]="metadataUuid$ | async"
+    ></datahub-record-data-preview>
   </section>
 
   <section id="capabilities" class="mb-16" *ngIf="displayCapabilities$ | async">
+    <gn-ui-service-capabilities
+      [apiLinks]="apiLinks$ | async"
+    ></gn-ui-service-capabilities>
     <gn-ui-service-capabilities
       [apiLinks]="apiLinks$ | async"
     ></gn-ui-service-capabilities>
@@ -97,9 +146,15 @@
   <section
     id="resources"
     *ngIf="
+  <section
+    id="resources"
+    *ngIf="
       (displayDownload$ | async) ||
       (displayOtherLinks | async) ||
       (displayApi$ | async)
+    "
+    class="overflow-x-hidden"
+  >
     "
     class="overflow-x-hidden"
   >
@@ -127,6 +182,10 @@
         data-test="dataset-has-no-link-block"
         [type]="errorTypes.DATASET_HAS_NO_LINK"
       ></gn-ui-error>
+      <gn-ui-error
+        data-test="dataset-has-no-link-block"
+        [type]="errorTypes.DATASET_HAS_NO_LINK"
+      ></gn-ui-error>
     </div>
   </ng-container>
 
@@ -138,8 +197,21 @@
     <datahub-record-feature-catalog
       [metadata]="metadata$ | async"
     ></datahub-record-feature-catalog>
+  <section
+    id="feature-catalog"
+    class="mb-6"
+    *ngIf="displayFeatureCatalog$ | async"
+  >
+    <datahub-record-feature-catalog
+      [metadata]="metadata$ | async"
+    ></datahub-record-feature-catalog>
   </section>
 
+  <section
+    id="linked-records"
+    *ngIf="displayLinked$ | async"
+    class="bg-primary-opacity-10 pb-3"
+  >
   <section
     id="linked-records"
     *ngIf="displayLinked$ | async"
@@ -168,6 +240,11 @@
           [titleIsSectionTitle]="true"
           [records]="metadataViewFacade.related$ | async"
         ></datahub-record-internal-links>
+        <datahub-record-internal-links
+          [title]="'record.metadata.related' | translate"
+          [titleIsSectionTitle]="true"
+          [records]="metadataViewFacade.related$ | async"
+        ></datahub-record-internal-links>
       </div>
     </div>
   </section>
@@ -186,4 +263,19 @@
     [type]="errorTypes.RECEIVED_ERROR"
     [error]="error.otherError"
   ></gn-ui-error>
+<div
+  class="mt-14 p-4 max-w-[600px] m-auto text-[13px]"
+  *ngIf="metadataViewFacade.error$ | async as error"
+>
+  <gn-ui-error
+    *ngIf="error.notFound"
+    [type]="errorTypes.RECORD_NOT_FOUND"
+    [recordId]="(metadataViewFacade.metadata$ | async).uniqueIdentifier"
+  ></gn-ui-error>
+  <gn-ui-error
+    *ngIf="error.otherError"
+    [type]="errorTypes.RECEIVED_ERROR"
+    [error]="error.otherError"
+  ></gn-ui-error>
 </div>
+

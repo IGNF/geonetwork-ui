@@ -8,6 +8,6 @@
   --gn-ui-button-padding: 4px;
 }
 
-::ng-deep .nav-hub-top>nav {
+::ng-deep .nav-hub-top > nav {
   bottom: unset !important;
 }
