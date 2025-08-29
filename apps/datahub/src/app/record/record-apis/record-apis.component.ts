@@ -107,6 +107,9 @@ export class RecordApisComponent implements OnInit {
   ngOnInit(): void {
     this.setStyle(undefined)
     this.selectedApiLink = undefined
+    setTimeout(() => {
+      this.updateView()
+    }, 1000)
   }
 
   updateView() {
