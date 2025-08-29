@@ -76,8 +76,10 @@ export class ApiCardComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    this.currentlyActive =
-      changes.currentLink.currentValue === this.link ? true : false
+    if (changes.currentLink) {
+      this.currentlyActive =
+        changes.currentLink.currentValue === this.link ? true : false
+    }
   }
 
   openRecordApiFormPanel() {
