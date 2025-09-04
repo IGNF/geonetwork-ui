@@ -53,7 +53,7 @@ interface WfsDownloadUrls {
   providedIn: 'root',
 })
 export class DataService {
-  constructor(private proxy: ProxyService) {}
+  constructor(private proxy: ProxyService) { }
 
   getWfsEndpoint(wfsUrl: string): Observable<WfsEndpoint> {
     return from(
@@ -109,26 +109,26 @@ export class DataService {
           ),
           geojson: endpoint.supportsJson(featureType.name)
             ? endpoint.getFeatureUrl(featureType.name, {
-                asJson: true,
-                outputCrs: 'EPSG:4326',
-              })
+              asJson: true,
+              outputCrs: 'EPSG:4326',
+            })
             : null,
           gml:
             featureType.outputFormats.find((f) =>
               f.toLowerCase().includes('gml')
             ) &&
-            (featureType.defaultCrs === 'EPSG:4326' ||
-              featureType.otherCrs?.includes('EPSG:4326'))
+              (featureType.defaultCrs === 'EPSG:4326' ||
+                featureType.otherCrs?.includes('EPSG:4326'))
               ? {
-                  featureUrl: endpoint.getFeatureUrl(featureType.name, {
-                    outputFormat: featureType.outputFormats.find((f) =>
-                      f.toLowerCase().includes('gml')
-                    ),
-                    outputCrs: 'EPSG:4326',
-                  }),
-                  namespace: featureType.name,
-                  wfsVersion: endpoint.getVersion(),
-                }
+                featureUrl: endpoint.getFeatureUrl(featureType.name, {
+                  outputFormat: featureType.outputFormats.find((f) =>
+                    f.toLowerCase().includes('gml')
+                  ),
+                  outputCrs: 'EPSG:4326',
+                }),
+                namespace: featureType.name,
+                wfsVersion: endpoint.getVersion(),
+              }
               : null,
         }
       })
@@ -253,7 +253,7 @@ export class DataService {
 
     // case 2: styles present; return each as a separate link
     const styleLinks = tileMapInfo.metadata
-      .filter((meta) => meta.href)
+      .filter((meta) => meta.href && meta.mimeType === 'application/json' && meta.type === 'Other')
       .map((meta) => {
         const fileName = meta.href.split('/').pop() || ''
         const linkName =
