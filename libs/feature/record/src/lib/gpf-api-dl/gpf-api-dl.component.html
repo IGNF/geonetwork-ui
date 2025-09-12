@@ -57,9 +57,9 @@
 
       <!-- Date filters -->
       <div class="flex flex-col">
-        <label for="editionDateFrom" class="font-medium"
-          >Édité depuis le :</label
-        >
+        <label for="editionDateFrom" class="font-medium">
+          {{ 'record.metadata.api.form.editionDateFrom' | translate }}
+        </label>
         <input
           id="editionDateFrom"
           type="date"
@@ -70,7 +70,9 @@
         />
       </div>
       <div class="flex flex-col">
-        <label for="editionDateTo" class="font-medium">Édité avant le :</label>
+        <label for="editionDateTo" class="font-medium">
+          {{ 'record.metadata.api.form.editionDateTo' | translate }}
+        </label>
         <input
           id="editionDateTo"
           type="date"
@@ -92,24 +94,33 @@
         'record.metadata.api.form.itemsDescription' | translate
       "
     >
-      record.metadata.api.form.items
+      {{ 'record.metadata.api.form.items' | translate }}
     </h3>
     <div
       class="overflow-auto max-h-80"
       [attr.title]="'record.metadata.api.form.itemsTooltip' | translate"
       [attr.aria-label]="'record.metadata.api.form.itemsTooltip' | translate"
     >
-      <div
-        *ngFor="let link of listFilteredProduct$ | async"
-        class="mb-2 sm:mb-3 p-2 border rounded hover:bg-gray-200 transition"
+      <ng-container
+        *ngIf="(listFilteredProduct$ | async)?.length > 0; else noData"
       >
-        <gn-ui-gpf-api-dl-list-item
-          [link]="link"
-          color="rgb(124 45 18)"
-          [format]="getLinkFormat(link)"
-          [isFromWfs]="true"
-        ></gn-ui-gpf-api-dl-list-item>
-      </div>
+        <div
+          *ngFor="let link of listFilteredProduct$ | async"
+          class="mb-2 sm:mb-3 p-2 border rounded hover:bg-gray-200 transition"
+        >
+          <gn-ui-gpf-api-dl-list-item
+            [link]="link"
+            color="rgb(124 45 18)"
+            [format]="getLinkFormat(link)"
+            [isFromWfs]="true"
+          ></gn-ui-gpf-api-dl-list-item>
+        </div>
+      </ng-container>
+      <ng-template #noData>
+        <div class="text-center text-gray-500 py-4">
+          {{ 'record.metadata.api.form.noData' | translate }}
+        </div>
+      </ng-template>
     </div>
   </div>
 
