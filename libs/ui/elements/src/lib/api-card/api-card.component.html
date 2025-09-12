@@ -41,7 +41,11 @@
     >
       <ng-icon
         class="pointer-events-none align-middle card-icon"
-        name="iconoirSettings"
+        [name]="
+          link.accessServiceProtocol === 'GPFDL'
+            ? 'iconoirDownload'
+            : 'iconoirSettings'
+        "
         [ngClass]="{
           'text-secondary opacity-100': currentlyActive,
         }"
