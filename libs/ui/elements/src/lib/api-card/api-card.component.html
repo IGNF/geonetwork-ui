@@ -40,12 +40,21 @@
       (click)="openRecordApiFormPanel()"
     >
       <ng-icon
+        *ngIf="link.accessServiceProtocol !== 'GPFDL'"
         class="pointer-events-none align-middle card-icon"
         name="iconoirSettings"
         [ngClass]="{
           'text-secondary opacity-100': currentlyActive,
         }"
-      ></ng-icon>
+      />
+      <ng-icon
+        *ngIf="link.accessServiceProtocol == 'GPFDL'"
+        class="pointer-events-none align-middle card-icon"
+        name="iconoirDownload"
+        [ngClass]="{
+          'text-secondary opacity-100': currentlyActive,
+        }"
+      />
     </button>
   </div>
 </ng-template>

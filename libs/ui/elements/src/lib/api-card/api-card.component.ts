@@ -14,7 +14,7 @@ import { CopyTextButtonComponent } from '@geonetwork-ui/ui/inputs'
 import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
 import { MatTooltipModule } from '@angular/material/tooltip'
 import { NgIcon, provideIcons } from '@ng-icons/core'
-import { iconoirSettings } from '@ng-icons/iconoir'
+import { iconoirSettings, iconoirDownload } from '@ng-icons/iconoir'
 
 type CardSize = 'L' | 'M' | 'S' | 'XS'
 
@@ -35,6 +35,7 @@ type CardSize = 'L' | 'M' | 'S' | 'XS'
   viewProviders: [
     provideIcons({
       iconoirSettings,
+      iconoirDownload,
     }),
   ],
 })
