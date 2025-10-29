@@ -117,10 +117,18 @@ export class RecordApisComponent implements OnInit {
   }
 
   openRecordApiForm(link: DatasetServiceDistribution) {
-    this.displayApiIgnForm =
-      link.accessServiceProtocol === 'GPFDL' ? true : false
-    this.selectedApiLink = link
-    this.setStyle(link)
+    if (this.selectedApiLink === link) {
+      this.selectedApiLink = undefined
+      this.setStyle(undefined)
+      return
+    } else {
+      this.closeRecordApiForm()
+      setTimeout(() => {
+        this.selectedApiLink = link
+        this.setStyle(link)
+      }, 1)
+      return
+    }
   }
 
   closeRecordApiForm() {
