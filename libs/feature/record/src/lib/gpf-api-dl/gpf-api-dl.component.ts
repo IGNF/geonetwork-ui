@@ -3,6 +3,9 @@ import {
   Component,
   Input,
   OnInit,
+  AfterViewInit,
+  ViewChild,
+  ElementRef,
 } from '@angular/core'
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
 import { BehaviorSubject, combineLatest, map, mergeMap, Observable } from 'rxjs'
@@ -63,7 +66,8 @@ export interface Field {
     GpfApiDlListItemComponent,
   ],
 })
-export class GpfApiDlComponent implements OnInit {
+export class GpfApiDlComponent implements OnInit, AfterViewInit {
+  @ViewChild('container') container: ElementRef<HTMLElement>
   isOpen = false
   collapsed = false
   initialLimit = 50
@@ -89,6 +93,14 @@ export class GpfApiDlComponent implements OnInit {
 
   @Input() set apiLink(value: DatasetServiceDistribution) {
     this.apiBaseUrl = value ? value.url.href : undefined
+    // tenter de focuser le conteneur quand l'input est (re)défini
+    Promise.resolve().then(() => {
+      try {
+        this.container?.nativeElement?.focus()
+      } catch {
+        /* silencieux */
+      }
+    })
   }
 
   ngOnInit(): void {
@@ -97,6 +109,17 @@ export class GpfApiDlComponent implements OnInit {
     this.bucketPromisesCrs = [{ value: '', label: 'CRS' }]
     this.defaultEditionDate = ['', '']
     this.getFields()
+  }
+
+  ngAfterViewInit(): void {
+    // focuser le conteneur une fois la vue initialisée
+    Promise.resolve().then(() => {
+      try {
+        this.container?.nativeElement?.focus()
+      } catch {
+        /* silencieux */
+      }
+    })
   }
 
   apiQueryUrl$ = combineLatest([
