@@ -60,7 +60,7 @@
     "@biesbjerg/ngx-translate-extract-marker": "~1.0.0",
     "@camptocamp/ogc-client": "1.2.1-dev.b1a75df",
     "@geospatial-sdk/core": "0.0.5-dev.37",
-    "@edugouvfr/ngx-dsfr": "^1.10.3",
+    "@edugouvfr/ngx-dsfr": "^1.16.2",
     "@geospatial-sdk/geocoding": "0.0.5-dev.37",
     "@geospatial-sdk/legend": "0.0.5-dev.37",
     "@geospatial-sdk/openlayers": "0.0.5-dev.37",

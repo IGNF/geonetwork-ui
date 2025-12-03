@@ -7,7 +7,7 @@
 # This URL (relative or absolute) must point to the API endpoint of a GeoNetwork4 instance
 geonetwork4_api_url = "https://data.geopf.fr/catalog"
 # deprecated - not used anymore
-datahub_url = "/catalogue"
+datahub_url = "/rechercher-une-donnee"
 # This should point to a proxy to avoid CORS errors on some requests (data preview, OGC capabilities etc.)
 # The actual URL will be appended after this path, e.g. : https://my.proxy/?url=http%3A%2F%2Fencoded.url%2Fows`
 # This is an optional parameter: leave empty to disable proxy usage
@@ -71,7 +71,7 @@ header_foreground_color = '#212029'
 # fonts_stylesheet_url = "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Permanent+Marker&display=swap"
 
 # Use it to set custom location for the favicon; by default, the path `/favicon.ico` will be used
-favicon = "/catalogue/assets/img/favicon.ico"
+favicon = "/rechercher-une-donnee/assets/img/favicon.ico"
 
 ### SEARCH SETTINGS
 
@@ -235,3 +235,4 @@ record.metadata.quality.contacts.success="Le contact est renseigné"
 record.metadata.quality.abstract.success="La description est renseignée"
 record.metadata.quality.abstract.failed="La description n'est pas renseignée"
 search.filters.organization="Producteur"
+results.records.hits.found="{hits, plural, =0{Aucun résultat.} one{1 résultat trouvé.} other{{hits} résultats.}}"

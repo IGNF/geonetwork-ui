@@ -128,11 +128,18 @@
           name="matAddOutline"
         ></ng-icon>
       </button>
-      <gn-ui-sort-by
+      <!-- Sort by component temporarily removed --->
+      <!--<gn-ui-sort-by
         class="overflow-hidden"
         *ngIf="(isMobile$ | async) === false || isOpen"
         [ngClass]="{ 'block text-white mb-1': isOpen }"
         [isQualitySortable]="isQualitySortable"
+      ></gn-ui-sort-by>-->
+      <gn-ui-sort-by
+        class="overflow-hidden"
+        *ngIf="(isMobile$ | async) === false || isOpen"
+        [ngClass]="{ 'block text-white mb-1': isOpen }"
+        [isQualitySortable]="false"
       ></gn-ui-sort-by>
     </div>
     <div class="flex justify-end">

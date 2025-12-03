@@ -3,8 +3,12 @@
   class="selection:bg-primary-lightest selection:text-primary-darker"
 >
   <dsfr-header
+    [beta]="'true'"
     [serviceTitle]="'cartes.gouv.fr'"
     [logoLink]="'https://cartes.gouv.fr'"
+    [operatorImagePath]="
+      'https://data.geopf.fr/annexes/ressources/header/cartes-gouv-logo.svg'
+    "
     [serviceTagline]="'Le service public des cartes et données du territoire'"
     [menu]="[
       {
@@ -21,7 +25,10 @@
           },
         ],
       },
-      { label: 'Catalogue', link: 'https://cartes.gouv.fr/catalogue' },
+      {
+        label: 'Catalogue',
+        link: 'https://cartes.gouv.fr/rechercher-une-donnee',
+      },
       { label: 'Cartes', link: 'https://cartes.gouv.fr/cartes' },
       { label: 'Actualités', link: 'https://cartes.gouv.fr/actualites' },
       {
@@ -37,21 +44,118 @@
       },
       { label: 'À propos', link: 'https://cartes.gouv.fr/a-propos' },
     ]"
-    [headerToolsLinks]="[
-      {
-        label: 'Accéder au Géoportail',
-        link: 'https://www.geoportail.gouv.fr/carte',
-        target: '_blank',
-        tooltipMessage: 'Accéder au Géoportail',
-      },
-      {
-        label: 'Mon compte',
-        icon: 'fr-btn--account',
-        link: 'https://cartes.gouv.fr/tableau-de-bord',
-      },
-    ]"
-    [beta]="true"
-  ></dsfr-header>
+  >
+    <ng-template #toolsLinksTemplate>
+      <li>
+        <dsfr-tool-link-menu
+          [outline]="false"
+          [labelMenu]="'Aide'"
+          [iconMenu]="'fr-icon-question-fill'"
+        >
+          <ng-template #linksTemplate>
+            <ul>
+              <dsfr-link
+                [link]="'https://cartes.gouv.fr/aide/fr/'"
+                [linkTarget]="'_blank'"
+                [label]="'Questions fréquentes'"
+                [icon]="'fr-icon-question-mark'"
+                [customClass]="'fr-nav__link'"
+                [iconPosition]="'left'"
+              ></dsfr-link>
+              <dsfr-link
+                [link]="'https://cartes.gouv.fr/aide/fr/guides-utilisateur/'"
+                [linkTarget]="'_blank'"
+                [label]="'Guide d\'utilisation'"
+                [icon]="'fr-icon-book-2-line'"
+                [customClass]="'fr-nav__link'"
+                [iconPosition]="'left'"
+              ></dsfr-link>
+              <dsfr-link
+                [link]="'https://cartes.gouv.fr/nous-ecrire'"
+                [linkTarget]="'_blank'"
+                [label]="'Nous contacter'"
+                [icon]="'fr-icon-mail-line'"
+                [customClass]="'fr-nav__link'"
+                [iconPosition]="'left'"
+              ></dsfr-link>
+            </ul>
+          </ng-template>
+        </dsfr-tool-link-menu>
+      </li>
+      <li>
+        <dsfr-tool-link-menu
+          [outline]="false"
+          [labelMenu]="'Services'"
+          [iconMenu]="'fr-icon-grid-fill'"
+        >
+          <ng-template #linksTemplate>
+            <ul>
+              <dsfr-link
+                [link]="'https://cartes.gouv.fr/cartes/'"
+                [label]="'Explorer les cartes'"
+                [icon]="'fr-icon-road-map-line'"
+                [customClass]="'fr-nav__link'"
+                [iconPosition]="'left'"
+              ></dsfr-link>
+              <dsfr-link
+                [link]="'https://cartes.gouv.fr/rechercher-une-donnee/search'"
+                [label]="'Rechercher une donnée'"
+                [icon]="'fr-icon-search-line'"
+                [customClass]="'fr-nav__link'"
+                [iconPosition]="'left'"
+              ></dsfr-link>
+              <dsfr-link
+                [link]="'https://cartes.gouv.fr/tableau-de-bord'"
+                [label]="'Publier une donnée'"
+                [icon]="'fr-icon-database-line'"
+                [customClass]="'fr-nav__link'"
+                [iconPosition]="'left'"
+              ></dsfr-link>
+              <!--<li><a class="fr-nav__link" href="https://cartes.gouv.fr/editeur/cartes"> <span
+                    class="fr-icon-brush-line fr-link--icon-left" aria-hidden="true"></span>
+                  Créer une carte &nbsp; <span
+                    class="fr-badge fr-badge--success fr-badge--no-icon fr-badge--sm">Bêta</span></a></li>-->
+              <li style="display: flex">
+                <a
+                  style="margin: 16px 24px"
+                  class="fr-btn fr-btn--tertiary"
+                  target="_blank"
+                  href="https://cartes.gouv.fr/"
+                  >Découvrir cartes.gouv</a
+                >
+              </li>
+            </ul>
+          </ng-template>
+        </dsfr-tool-link-menu>
+      </li>
+      <li>
+        <dsfr-tool-link-menu
+          [outline]="false"
+          [labelMenu]="'Mon espace'"
+          [iconMenu]="'fr-icon-account-circle-fill'"
+        >
+          <ng-template #linksTemplate>
+            <ul>
+              <dsfr-link
+                [link]="'https://cartes.gouv.fr/tableau-de-bord'"
+                [label]="'Tableau de bord'"
+                [icon]="'fr-icon-dashboard-3-line'"
+                [customClass]="'fr-nav__link'"
+                [iconPosition]="'left'"
+              ></dsfr-link>
+              <dsfr-link
+                [link]="'https://cartes.gouv.fr/mon-compte'"
+                [label]="'Paramètres du compte'"
+                [icon]="'fr-icon-user-line'"
+                [customClass]="'fr-nav__link'"
+                [iconPosition]="'left'"
+              ></dsfr-link>
+            </ul>
+          </ng-template>
+        </dsfr-tool-link-menu>
+      </li>
+    </ng-template>
+  </dsfr-header>
   <router-outlet></router-outlet>
   <dsfr-footer
     [presentation]="
@@ -98,13 +202,12 @@
         link: 'https://cartes.gouv.fr/donnees-personnelles',
       },
     ]"
-    [partnerMain]="[]"
+    [partnerMain]="{
+      imagePath: 'https://data.geopf.fr/annexes/ressources/footer/ign.png',
+      imageAlt: 'IGN',
+      link: 'https://www.ign.fr',
+    }"
     [partnersSub]="[
-      {
-        imagePath: 'https://data.geopf.fr/annexes/ressources/footer/ign.png',
-        imageAlt: 'IGN',
-        link: 'https://www.ign.fr',
-      },
       {
         imagePath: 'https://data.geopf.fr/annexes/ressources/footer/min_fp.jpg',
         imageAlt: 'MINISTÈRE DE LA TRANSFORMATION ET DE LA FONCTION PUBLIQUES',

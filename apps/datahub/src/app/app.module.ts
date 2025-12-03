@@ -98,8 +98,9 @@ import { ButtonComponent, CheckToggleComponent } from '@geonetwork-ui/ui/inputs'
 import { KeyFiguresComponent } from './home/news-page/key-figures/key-figures.component'
 
 import { MatIconModule } from '@angular/material/icon'
-import { DsfrHeaderModule } from '@edugouvfr/ngx-dsfr'
+import { DsfrHeaderModule, DsfrLinkComponent } from '@edugouvfr/ngx-dsfr'
 import { DsfrFooterModule } from '@edugouvfr/ngx-dsfr'
+import { DsfrToolLinkMenuComponent } from '@edugouvfr/ngx-dsfr'
 
 export const metaReducers: MetaReducer[] = !environment.production ? [] : []
 
@@ -161,10 +162,11 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     CheckToggleComponent,
     ButtonComponent,
     KeyFiguresComponent,
-
     MatIconModule,
     DsfrHeaderModule,
     DsfrFooterModule,
+    DsfrToolLinkMenuComponent,
+    DsfrLinkComponent,
   ],
   providers: [
     provideI18n(TRANSLATE_WITH_OVERRIDES_CONFIG),

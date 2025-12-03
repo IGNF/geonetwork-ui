@@ -2,7 +2,7 @@
 set -e
 
 CONFIG_DIRECTORY=/opt/
-APP_FILES_PATH=/opt/catalogue/
+APP_FILES_PATH=/opt/rechercher-une-donnee/
 CONFIG_FILE_PATH=assets/configuration/
 CONFIG_FILE_NAME=default.toml
 

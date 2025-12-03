@@ -70,7 +70,7 @@ jobs:
       - name: Npm install
         run: npm install
       - name: npx build
-        run: npx nx build datahub --base-href=/catalogue/ --skip-nx-cache
+        run: npx nx build datahub --base-href=/rechercher-une-donnee/ --skip-nx-cache
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
