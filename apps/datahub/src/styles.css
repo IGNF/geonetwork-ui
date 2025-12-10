@@ -106,3 +106,7 @@ a > ng-icon[name='iconoirOpenNewWindow'] {
 .clear-btn:hover {
   color: black;
 }
+
+.fr-badge--sm {
+  padding: 0 0.375rem 0 0 !important;
+}
