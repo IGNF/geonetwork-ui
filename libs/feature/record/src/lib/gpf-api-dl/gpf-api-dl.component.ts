@@ -15,6 +15,7 @@ import axios from 'axios'
 import { CommonModule } from '@angular/common'
 import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
 import { GpfApiDlListItemComponent } from '../gpf-api-dl-list-item/gpf-api-dl-list-item.component'
+import { log } from 'rdflib'
 
 export interface Label {
   label: string
@@ -97,8 +98,12 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     Promise.resolve().then(() => {
       try {
         this.container?.nativeElement?.focus()
+        this.container?.nativeElement?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        })
       } catch {
-        /* silencieux */
+        console.error('erreur de focus sur le conteneur GPF DL')
       }
     })
   }
@@ -116,6 +121,10 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     Promise.resolve().then(() => {
       try {
         this.container?.nativeElement?.focus()
+        this.container?.nativeElement?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
       } catch {
         /* silencieux */
       }
