@@ -30,7 +30,9 @@
                 [iconPosition]="'left'"
               ></dsfr-link>
               <dsfr-link
-                [link]="'https://cartes.gouv.fr/aide/fr/guides-utilisateur/'"
+                [link]="
+                  'https://cartes.gouv.fr/aide/fr/guides-utilisateur/rechercher-une-donnee/'
+                "
                 [linkTarget]="'_blank'"
                 [label]="'Guide d\'utilisation'"
                 [icon]="'fr-icon-book-2-line'"
@@ -58,7 +60,7 @@
           <ng-template #linksTemplate>
             <ul>
               <dsfr-link
-                [link]="'https://cartes.gouv.fr/cartes/'"
+                [link]="'https://cartes.gouv.fr/explorer-les-cartes/'"
                 [label]="'Explorer les cartes'"
                 [icon]="'fr-icon-road-map-line'"
                 [customClass]="'fr-nav__link'"
@@ -87,8 +89,8 @@
                   style="margin: 16px 24px"
                   class="fr-btn fr-btn--tertiary"
                   target="_blank"
-                  href="https://cartes.gouv.fr/"
-                  >Découvrir cartes.gouv</a
+                  href="https://cartes.gouv.fr/decouvrir"
+                  >Découvrir cartes.gouv.fr</a
                 >
               </li>
             </ul>
@@ -112,7 +114,7 @@
               ></dsfr-link>
               <dsfr-link
                 [link]="'https://cartes.gouv.fr/mon-compte'"
-                [label]="'Paramètres du compte'"
+                [label]="'Mon compte'"
                 [icon]="'fr-icon-user-line'"
                 [customClass]="'fr-nav__link'"
                 [iconPosition]="'left'"
