@@ -51,6 +51,12 @@ export class ExternalViewerButtonComponent {
       if (this.link.accessServiceProtocol === 'wfs') {
         return 'wfs'
       }
+      if (this.link.accessServiceProtocol === 'wmts') {
+        return 'wmts'
+      }
+      /*if (this.link.accessServiceProtocol === 'maplibre-style') {
+        return 'tms'
+      }*/
     } else if (
       this.link.type === 'download' &&
       getFileFormat(this.link) === 'geojson'
@@ -81,6 +87,43 @@ export class ExternalViewerButtonComponent {
         `${encodeURIComponent(this.link.url.toString())}`
       )
       .replace('${service_type}', `${this.supportedLinkLayerType}`)
+    window.open(url, this.openinNewTab ? '_blank' : '_self').focus()
+  }
+
+  openInIgnExternalViewer() {
+    var url: string
+    const templateUrl = this.urlTemplate
+    const layerName = this.link.name
+      ? this.link.name
+      : this.translateService.instant('externalviewer.dataset.unnamed')
+
+    //@ts-ignore
+    if (this.link.accessServiceProtocol == 'tms') {
+      url = templateUrl
+        .replace('${layer_name}', `${layerName}`)
+        .replace(
+          '${service_url}',
+          `${encodeURIComponent(this.link.url.toString())}`
+        )
+        .replace(
+          '${service_type}',
+          `${this.supportedLinkLayerType.toUpperCase()}`
+        )
+        .replace('${geop_type}', `GPP`)
+    } else {
+      url = templateUrl
+        .replace('${layer_name}', `${layerName}`)
+        .replace(
+          '${service_url}',
+          `${encodeURIComponent(this.link.url.toString())}`
+        )
+        .replace(
+          '${service_type}',
+          `${this.supportedLinkLayerType.toUpperCase()}`
+        )
+        .replace('${geop_type}', `OGC`)
+    }
+
     window.open(url, this.openinNewTab ? '_blank' : '_self').focus()
   }
 }

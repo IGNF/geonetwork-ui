@@ -155,10 +155,10 @@ max_feature_count = 5000
 # external_viewer_url_template = 'https://dev.geo2france.fr/mapfishapp/?owsurl=${service_url}&layername=${layer_name}&owstype=${service_type}Layer'
 # mapstore template
 # external_viewer_url_template = 'https://dev.geo2france.fr/mapstore/#/?actions=[{"type":"CATALOG:ADD_LAYERS_FROM_CATALOGS","layers":["${layer_name}"],"sources":[{"url":"${service_url}","type":"${service_type}"}]}]'
-# external_viewer_url_template = 'https://qlf-cartes.ign.fr/cartes/?l=${layer_name}$GEOPORTAIL:OGC:${service_type}(1;1;1;0)&w=&permalink=no'
+external_viewer_url_template = 'https://qlf-cartes.ign.fr/explorer-les-cartes/?l=${layer_name}$GEOPORTAIL:${geop_type}:${service_type}(1;1;1;0)&permalink=no'
 
 # Optional; if true, opens external viewer in new tab (default false)
-# external_viewer_open_new_tab = true
+external_viewer_open_new_tab = true
 
 # Optional; Will not tile WMS. False by default.
 # do_not_tile_wms = false
