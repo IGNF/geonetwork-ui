@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .card-shadow {
+    @apply shadow-xl hover:shadow-xl-hover transition-shadow;
+  }
+
+  .btn-default {
+    @apply bg-blue-600 text-white flex gap-3 items-center px-9 py-3 rounded-[50px] hover:scale-[1.02] transition-transform;
+  }
+
+  .badge-btn {
+    @apply flex items-center justify-center px-4 py-1 text-white rounded backdrop-blur;
+  }
+
+  .card-icon {
+    @apply text-primary opacity-25 group-hover:text-secondary group-hover:opacity-100 transition-colors transition-opacity;
+  }
+}
+
+html {
+  --mdc-typography-font-family: var(--font-family-main);
+}

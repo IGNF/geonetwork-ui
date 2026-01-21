@@ -1,0 +1,84 @@
+<header class="h-full px-5" [style.background]="backgroundCss">
+  <div
+    class="container-lg h-full mx-auto flex flex-col-reverse justify-between sm:flex-col sm:justify-end"
+  >
+    <div
+      class="py-8 relative z-40 mb-[184px] sm:mb-0"
+      [ngClass]="{ 'pointer-events-none': expandRatio < 0.2 }"
+      [style.transform]="'translate(0, ' + (1 - expandRatio) * 242 + 'px)'"
+    >
+      <div
+        data-cy="dh-title"
+        class="font-title text-[30px] absolute w-full sm:text-[48px] sm:leading-[58px]"
+        style="bottom: 100%"
+        [style.opacity]="expandRatio"
+        [innerHTML]="'datahub.header.title.html' | translate"
+      ></div>
+      <gn-ui-fuzzy-search
+        class="text-[18px] pointer-events-auto"
+        (itemSelected)="onFuzzySearchSelection($event)"
+        [autoFocus]="true"
+      ></gn-ui-fuzzy-search>
+      <div class="flex h-0 py-5 gap-3" [style.opacity]="-0.6 + expandRatio * 2">
+        <datahub-header-badge-button
+          [routerLink]="ROUTE_SEARCH"
+          *ngIf="isAuthenticated$ | async"
+          icon="star"
+          label="datahub.header.myfavorites"
+          [toggled]="searchFacade.favoritesOnly$ | async"
+          (action)="listFavorites($event)"
+        ></datahub-header-badge-button>
+        <div>
+          <button
+            type="button"
+            class="badge-btn bg-primary-opacity-50 hover-bg-primary-opacity-100"
+            (click)="clearSearchAndSort(SORT_BY_PARAMS.CREATE_DATE)"
+          >
+            <span translate="">datahub.header.lastRecords</span>
+          </button>
+        </div>
+        <div>
+          <button
+            type="button"
+            class="badge-btn bg-primary-opacity-50 hover-bg-primary-opacity-100"
+            (click)="clearSearchAndSort(SORT_BY_PARAMS.POPULARITY)"
+          >
+            <span translate="">datahub.header.popularRecords</span>
+          </button>
+        </div>
+        <div *ngFor="let preset of searchConfig?.SEARCH_PRESET">
+          <div>
+            <button
+              type="button"
+              class="badge-btn bg-primary-opacity-50 hover-bg-primary-opacity-100"
+              (click)="clearSearchAndFilterAndSort(preset)"
+            >
+              <span translate="">{{ preset['name'] }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--
+    <div class="flex">
+      <datahub-header-badge-button
+        icon="star"
+        label="datahub.header.myfavorites"
+      ></datahub-header-badge-button>
+      <datahub-header-badge-button
+        class="mx-3"
+        label="datahub.header.connex"
+      ></datahub-header-badge-button>
+    </div>
+-->
+    <div [style.opacity]="-0.6 + expandRatio * 5">
+      <datahub-navigation-menu
+        class="tabs flex justify-between font-medium -mx-5 sm:mx-0 sm:mt-32 inset-x-0 bottom-0 z-50"
+      ></datahub-navigation-menu>
+    </div>
+  </div>
+  <gn-ui-language-switcher
+    *ngIf="showLanguageSwitcher"
+    class="language-switcher absolute top-2.5 left-2.5 text-[13px]"
+  ></gn-ui-language-switcher>
+</header>
