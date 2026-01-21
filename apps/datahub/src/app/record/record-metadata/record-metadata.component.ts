@@ -2,11 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  Inject,
-  InjectionToken,
   Input,
-  Optional,
   ViewChild,
+  inject,
 } from '@angular/core'
 import { SourcesService } from '@geonetwork-ui/feature/catalog'
 import { SearchService } from '@geonetwork-ui/feature/search'
@@ -19,7 +17,7 @@ import {
   MetadataQualityComponent,
   ServiceCapabilitiesComponent,
 } from '@geonetwork-ui/ui/elements'
-import { combineLatest, Observable, of } from 'rxjs'
+import { combineLatest, Observable } from 'rxjs'
 import { filter, map, mergeMap, startWith } from 'rxjs/operators'
 import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
 import {
@@ -39,7 +37,7 @@ import {
   REUSE_FORM_URL,
 } from '../record-data-preview/record-data-preview.component'
 import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
-import { NgIcon, provideIcons } from '@ng-icons/core'
+import { NgIcon, provideIcons, provideNgIconsConfig } from '@ng-icons/core'
 import { matChatOutline } from '@ng-icons/material-icons/outline'
 import { iconoirAppWindow } from '@ng-icons/iconoir'
 import { RecordFeatureCatalogComponent } from '../record-feature-catalog/record-feature-catalog.component'
@@ -47,7 +45,7 @@ import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
 import { RecordLinkedRecordsComponent } from '../record-linked-records/record-linked-records.component'
 import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
 import { UserModel } from '@geonetwork-ui/common/domain/model/user'
-import { type ValidatorMapperKeys } from '@geonetwork-ui/util/shared'
+import { MetadataDoiComponent } from '@geonetwork-ui/ui/elements'
 
 @Component({
   selector: 'datahub-record-metadata',
@@ -76,10 +74,23 @@ import { type ValidatorMapperKeys } from '@geonetwork-ui/util/shared'
     RecordLinkedRecordsComponent,
     TranslateDirective,
     TranslatePipe,
+    MetadataDoiComponent,
   ],
-  viewProviders: [provideIcons({ matChatOutline, iconoirAppWindow })],
+  viewProviders: [
+    provideIcons({ matChatOutline, iconoirAppWindow }),
+    provideNgIconsConfig({
+      size: '1.5em',
+    }),
+  ],
 })
 export class RecordMetadataComponent {
+  metadataViewFacade = inject(MdViewFacade)
+  private searchService = inject(SearchService)
+  private sourceService = inject(SourcesService)
+  private orgsService = inject(OrganizationsServiceInterface)
+  private readonly platformServiceInterface = inject(PlatformServiceInterface)
+  reuseFormUrl = inject(REUSE_FORM_URL, { optional: true })
+
   @Input() metadataQualityDisplay: boolean
   @ViewChild('userFeedbacks') userFeedbacks: ElementRef<HTMLElement>
 
@@ -94,6 +105,10 @@ export class RecordMetadataComponent {
     },
     service: {
       capabilities: (links) => links?.length > 0,
+    },
+    reuse: {
+      download: (links) => links?.length > 0,
+      api: (links) => links?.length > 0,
     },
   }
   activeUser$: Observable<UserModel>
@@ -160,7 +175,11 @@ export class RecordMetadataComponent {
     )
   )
 
-  displayOtherLinks = this.metadataViewFacade.otherLinks$.pipe(
+  displayStac$ = this.metadataViewFacade.stacLinks$.pipe(
+    map((stacLinks) => stacLinks?.length > 0)
+  )
+
+  displayOtherLinks$ = this.metadataViewFacade.otherLinks$.pipe(
     map((links) => links?.length > 0)
   )
   displayRelated$ = this.metadataViewFacade.related$.pipe(
@@ -189,7 +208,7 @@ export class RecordMetadataComponent {
     this.metadataViewFacade.isMetadataLoading$,
     this.displayDownload$,
     this.displayApi$,
-    this.displayOtherLinks,
+    this.displayOtherLinks$,
   ]).pipe(
     map(
       ([isMetadataLoading, displayDownload, displayApi, displayOtherLinks]) =>
@@ -216,19 +235,16 @@ export class RecordMetadataComponent {
     mergeMap((uuid) => this.sourceService.getSourceLabel(uuid))
   )
 
+  feedbacksAllowed$ = this.platformServiceInterface.getFeedbacksAllowed()
+
   errorTypes = ErrorType
 
-  constructor(
-    public metadataViewFacade: MdViewFacade,
-    private searchService: SearchService,
-    private sourceService: SourcesService,
-    private orgsService: OrganizationsServiceInterface,
-    private readonly platformServiceInterface: PlatformServiceInterface,
-    @Inject(REUSE_FORM_URL)
-    @Optional()
-    public reuseFormUrl: string
-  ) {
+  constructor() {
     this.activeUser$ = this.platformServiceInterface.getMe()
+  }
+
+  get isAuthDisabled(): boolean {
+    return !this.platformServiceInterface.supportsAuthentication()
   }
 
   onInfoKeywordClick(keyword: Keyword) {

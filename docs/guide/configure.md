@@ -194,12 +194,20 @@ advanced_filters = ['organization', 'inspireKeyword', 'keyword', 'topic']
 
 - `[[search_preset]]` (multiple, optional)
 
-  Search presets are shown in a prominent way to the user and can be used to showcase certain records in the catalog or offer shortcuts to frequent search criteria.
+  Search presets are shown in a prominent way in badges to the user and can be used to showcase certain records in the catalog or offer shortcuts to frequent search criteria.
 
   Every search preset is composed of:
 
   - a name for the preset, which can be a translation key (mandatory)
-  - a sort criteria: either `createDate`, `userSavedCount` or `_score` (prepend with `-` for descending sort) (optional)
+  - a sort criteria (prepend the field name with - to do a descending sort):
+
+    - `-revisionDateForResource,-publicationDateForResource,-creationDateForResource` (resource dates)
+    - `-userSavedcount`
+    - `-qualityScore`
+    - `-_score`
+
+      Note: Other fields of the records can be used as a sort criteria, but the sort drop-down will not display their entries.
+
   - a set of filters, each of them being a key-value pair where the key is a [known search field](../guide/search-fields.md) and the value is an array of strings (optional)
   - additionally, `filters.q` can be used to specify a full text search query
 
@@ -217,7 +225,7 @@ advanced_filters = ['organization', 'inspireKeyword', 'keyword', 'topic']
   filters.publicationYear = ['2023', '2022']
   filters.isSpatial = ['yes']
   filters.license = ['unknown']
-  sort = 'createDate'
+  sort = '-revisionDateForResource,-publicationDateForResource,-creationDateForResource'
 
   [[search_preset]]
   name = 'otherFilter'
@@ -381,3 +389,9 @@ If the translation key `application-banner` is available (not empty), the Geonet
 - `application-banner` (optional)
 
   To configure your banner content, go to the Geonetwork backoffice > Settings > Languages & translations page, and add a new translation key `application-banner`. To remove/deactivate the banner, you need to remove the translation key in the Geonetwork backoffice.
+
+#### Page titles
+
+By default the datahub creates a page title for each page following the pattern `{pageTitle} | Datahub`. This pattern can be overridden by adding a translation key `datahub-page-title-pattern` in geonetwork with a new pattern as value, eg. `MyDatahubApp - {pageTitle}`. Be sure to provide values for all languages you need.
+
+The `pageTitle` within this pattern may be a metadata record title, an organisation title or a gn-ui translation key for one of the datahub pages (`datahub.pageTitle.home`, `datahub.pageTitle.organizations`, `datahub.pageTitle.recordSearch`). These can thus be overridden within the `default.toml` configuration like any other translation key.

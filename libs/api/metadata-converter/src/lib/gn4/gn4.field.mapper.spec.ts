@@ -79,6 +79,7 @@ describe('Gn4FieldMapper', () => {
           'service',
           'service',
           'service',
+          'service',
         ])
       })
     })
@@ -297,6 +298,178 @@ describe('Gn4FieldMapper', () => {
           extras: {
             sourcesIdentifiers: ['source-001', 'source-002'],
           },
+        })
+      })
+      describe('resourceType mapper - should return a function that correctly maps the field', () => {
+        it('resourceType - should return reuse for resourceType map', () => {
+          const fieldName = 'resourceType'
+          const mappingFn = service.getMappingFn(fieldName)
+          const output = {}
+          const source = {
+            resourceType: ['map'],
+          }
+          const result = mappingFn(output, source)
+          expect(result).toEqual({
+            kind: 'reuse',
+            reuseType: 'map',
+          })
+        })
+        it('resourceType - should return dataset for resourceType document', () => {
+          const fieldName = 'resourceType'
+          const mappingFn = service.getMappingFn(fieldName)
+          const output = {}
+          const source = {
+            resourceType: ['document'],
+          }
+          const result = mappingFn(output, source)
+          expect(result).toEqual({
+            kind: 'dataset',
+          })
+        })
+        it('resourceType - should return reuse for resourceType document with cl_presentationForm mapDigital', () => {
+          const fieldName = 'resourceType'
+          const mappingFn = service.getMappingFn(fieldName)
+          const output = {}
+          const source = {
+            resourceType: ['document'],
+            cl_presentationForm: [{}, { key: 'mapDigital' }],
+          }
+          const result = mappingFn(output, source)
+          expect(result).toEqual({
+            kind: 'reuse',
+            reuseType: 'map',
+          })
+        })
+        it('resourceType - should return dataset for resourceType dataset', () => {
+          const fieldName = 'resourceType'
+          const mappingFn = service.getMappingFn(fieldName)
+          const output = {}
+          const source = {
+            resourceType: ['dataset'],
+          }
+          const result = mappingFn(output, source)
+          expect(result).toEqual({
+            kind: 'dataset',
+          })
+        })
+        it('resourceType - should return reuse for resourceType dataset with cl_presentationForm mapDigital', () => {
+          const fieldName = 'resourceType'
+          const mappingFn = service.getMappingFn(fieldName)
+          const output = {}
+          const source = {
+            resourceType: ['dataset'],
+            cl_presentationForm: [{ key: 'mapDigital' }],
+          }
+          const result = mappingFn(output, source)
+          expect(result).toEqual({
+            kind: 'reuse',
+            reuseType: 'map',
+          })
+        })
+        it('resourceType - should return dataset for resourceType document with unknown cl_presentationForm', () => {
+          const fieldName = 'resourceType'
+          const mappingFn = service.getMappingFn(fieldName)
+          const output = {}
+          const source = {
+            resourceType: ['document'],
+            cl_presentationForm: ['unknownType'],
+          }
+          const result = mappingFn(output, source)
+          expect(result).toEqual({
+            kind: 'dataset',
+          })
+        })
+        it('resourceType - should return dataset for random resourceType', () => {
+          const fieldName = 'resourceType'
+          const mappingFn = service.getMappingFn(fieldName)
+          const output = {}
+          const source = {
+            resourceType: ['foo'],
+          }
+          const result = mappingFn(output, source)
+          expect(result).toEqual({
+            kind: 'dataset',
+          })
+        })
+      })
+    })
+    describe('resourceIdentifier mapper', () => {
+      it('should map all resource identifiers with code, codeSpace, and url', () => {
+        const fieldName = 'resourceIdentifier'
+        const mappingFn = service.getMappingFn(fieldName)
+        const output = {}
+        const source = {
+          resourceIdentifier: [
+            {
+              code: '10.1234/example.doi',
+              codeSpace: 'doi.org',
+              link: 'https://doi.org/10.1234/example.doi',
+            },
+            {
+              code: 'ISBN-123-456',
+              codeSpace: 'ISBN',
+              link: 'https://isbn.org/123-456',
+            },
+          ],
+        }
+        const result = mappingFn(output, source)
+        expect(result).toEqual({
+          resourceIdentifiers: [
+            {
+              code: '10.1234/example.doi',
+              codeSpace: 'doi.org',
+              url: 'https://doi.org/10.1234/example.doi',
+            },
+            {
+              code: 'ISBN-123-456',
+              codeSpace: 'ISBN',
+              url: 'https://isbn.org/123-456',
+            },
+          ],
+        })
+      })
+
+      it('should map identifier without codeSpace', () => {
+        const fieldName = 'resourceIdentifier'
+        const mappingFn = service.getMappingFn(fieldName)
+        const output = {}
+        const source = {
+          resourceIdentifier: [
+            {
+              code: 'simple-identifier',
+            },
+          ],
+        }
+        const result = mappingFn(output, source)
+        expect(result).toEqual({
+          resourceIdentifiers: [
+            {
+              code: 'simple-identifier',
+            },
+          ],
+        })
+      })
+
+      it('should map identifier without link', () => {
+        const fieldName = 'resourceIdentifier'
+        const mappingFn = service.getMappingFn(fieldName)
+        const output = {}
+        const source = {
+          resourceIdentifier: [
+            {
+              code: '10.1234/example.doi',
+              codeSpace: 'doi.org',
+            },
+          ],
+        }
+        const result = mappingFn(output, source)
+        expect(result).toEqual({
+          resourceIdentifiers: [
+            {
+              code: '10.1234/example.doi',
+              codeSpace: 'doi.org',
+            },
+          ],
         })
       })
     })

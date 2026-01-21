@@ -1300,7 +1300,7 @@ export function createOnlineResource(onlineResource: ServiceOnlineResource) {
 }
 
 export function appendDatasetOnlineResources(
-  record: DatasetRecord,
+  record: DatasetRecord | ReuseRecord,
   rootEl: XmlElement
 ) {
   appendChildren(
@@ -1319,7 +1319,7 @@ export function appendDatasetOnlineResources(
 }
 
 export function appendServiceOnlineResources(
-  record: ServiceRecord | ReuseRecord,
+  record: ServiceRecord,
   rootEl: XmlElement
 ) {
   appendChildren(...record.onlineResources.map(createOnlineResource))(rootEl)
@@ -1331,7 +1331,7 @@ export function writeOnlineResources(
 ) {
   removeOnlineResources()(rootEl)
 
-  if (record.kind === 'dataset') {
+  if (record.kind === 'dataset' || record.kind === 'reuse') {
     appendDatasetOnlineResources(record, rootEl)
     return
   }
@@ -1502,14 +1502,16 @@ export function writeResourceIdentifier(
   record: DatasetRecord,
   rootEl: XmlElement
 ) {
+  const firstIdentifier = record.resourceIdentifiers?.[0]?.code
+
   pipe(
     findOrCreateIdentification(),
     findNestedChildOrCreate('gmd:citation', 'gmd:CI_Citation'),
     removeChildrenByName('gmd:identifier'),
-    record.resourceIdentifier
+    firstIdentifier
       ? pipe(
           createNestedChild('gmd:identifier', 'gmd:MD_Identifier', 'gmd:code'),
-          writeCharacterString(record.resourceIdentifier)
+          writeCharacterString(firstIdentifier)
         )
       : noop
   )(rootEl)

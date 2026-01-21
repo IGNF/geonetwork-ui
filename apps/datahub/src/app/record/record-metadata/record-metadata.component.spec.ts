@@ -11,7 +11,6 @@ import {
   MetadataInfoComponent,
 } from '@geonetwork-ui/ui/elements'
 import { BehaviorSubject, of } from 'rxjs'
-import { take } from 'rxjs/operators'
 import { RecordMetadataComponent } from './record-metadata.component'
 import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
 import { datasetRecordsFixture } from '@geonetwork-ui/common/fixtures'
@@ -37,8 +36,16 @@ class MdViewFacadeMock {
   metadata$ = new BehaviorSubject(SAMPLE_RECORD)
   downloadLinks$ = new BehaviorSubject([])
   apiLinks$ = new BehaviorSubject([])
+  mapApiLinks$ = new BehaviorSubject([])
+  dataLinks$ = new BehaviorSubject([])
+  geoDataLinks$ = new BehaviorSubject([])
+  geoDataLinksWithGeometry$ = new BehaviorSubject([])
   otherLinks$ = new BehaviorSubject([])
+  stacLinks$ = new BehaviorSubject([])
   related$ = new BehaviorSubject(null)
+  sources$ = new BehaviorSubject([])
+  sourceOf$ = new BehaviorSubject([])
+  featureCatalog$ = new BehaviorSubject(null)
   error$ = new BehaviorSubject(null)
   isMetadataLoading$ = new BehaviorSubject(false)
 }
@@ -61,6 +68,8 @@ class OrganisationsServiceMock {
 
 class PlatformServiceMock {
   getMe = jest.fn(() => of(null))
+  getFeedbacksAllowed = jest.fn(() => of(true))
+  supportsAuthentication = jest.fn(() => true)
 }
 
 describe('RecordMetadataComponent', () => {
@@ -220,7 +229,7 @@ describe('RecordMetadataComponent', () => {
         expect(downloadsComponent).toBeTruthy()
       })
     })
-    describe('when DOWNLOAD link and kind is other than dataset', () => {
+    describe('when DOWNLOAD link and kind is service', () => {
       beforeEach(() => {
         facade.metadata$.next({ ...SAMPLE_RECORD, ...{ kind: 'service' } })
         facade.downloadLinks$.next(['link'])
@@ -231,6 +240,19 @@ describe('RecordMetadataComponent', () => {
       })
       it('download component does not render', () => {
         expect(downloadsComponent).toBeFalsy()
+      })
+    })
+    describe('when DOWNLOAD link and kind is reuse', () => {
+      beforeEach(() => {
+        facade.metadata$.next({ ...SAMPLE_RECORD, ...{ kind: 'reuse' } })
+        facade.downloadLinks$.next(['link'])
+        fixture.detectChanges()
+        downloadsComponent = fixture.debugElement.query(
+          By.directive(RecordDownloadsComponent)
+        )
+      })
+      it('download component renders', () => {
+        expect(downloadsComponent).toBeTruthy()
       })
     })
   })
@@ -286,9 +308,9 @@ describe('RecordMetadataComponent', () => {
         expect(apiComponent).toBeTruthy()
       })
     })
-    describe('when API link and kind is other than dataset', () => {
+    describe('when API link and kind is service', () => {
       beforeEach(() => {
-        facade.metadata$.next({ ...SAMPLE_RECORD, ...{ kind: 'reuse' } })
+        facade.metadata$.next({ ...SAMPLE_RECORD, ...{ kind: 'service' } })
         facade.apiLinks$.next(['link'])
         fixture.detectChanges()
         apiComponent = fixture.debugElement.query(
@@ -297,6 +319,19 @@ describe('RecordMetadataComponent', () => {
       })
       it('API component does not render', () => {
         expect(apiComponent).toBeFalsy()
+      })
+    })
+    describe('when API link and kind is reuse', () => {
+      beforeEach(() => {
+        facade.metadata$.next({ ...SAMPLE_RECORD, ...{ kind: 'reuse' } })
+        facade.apiLinks$.next(['link'])
+        fixture.detectChanges()
+        apiComponent = fixture.debugElement.query(
+          By.directive(RecordApisComponent)
+        )
+      })
+      it('API component renders', () => {
+        expect(apiComponent).toBeTruthy()
       })
     })
   })
@@ -477,6 +512,24 @@ describe('RecordMetadataComponent', () => {
           expect(visible).toBe(true)
         })
       })
+    })
+  })
+
+  describe('auth disable functionality', () => {
+    it('should hide question button when auth is disabled', () => {
+      jest
+        .spyOn(platformService, 'supportsAuthentication')
+        .mockReturnValue(false)
+
+      expect(component.isAuthDisabled).toBe(true)
+    })
+
+    it('should show question button when auth is enabled', () => {
+      jest
+        .spyOn(platformService, 'supportsAuthentication')
+        .mockReturnValue(true)
+
+      expect(component.isAuthDisabled).toBe(false)
     })
   })
 })

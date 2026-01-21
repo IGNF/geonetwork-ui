@@ -1,10 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  Inject,
   InjectionToken,
   Input,
-  Optional,
+  inject,
 } from '@angular/core'
 import { Configuration } from '@geonetwork-ui/data-access/gn4'
 import { BehaviorSubject, combineLatest, map } from 'rxjs'
@@ -12,7 +11,7 @@ import { MdViewFacade } from '../state'
 import { CopyTextButtonComponent } from '@geonetwork-ui/ui/inputs'
 import { CommonModule } from '@angular/common'
 import { TranslatePipe } from '@ngx-translate/core'
-import { GEONETWORK_UI_TAG_NAME } from '@geonetwork-ui/util/shared'
+import { GEONETWORK_UI_TAG_NAME, PROXY_PATH } from '@geonetwork-ui/util/shared'
 
 export const WEB_COMPONENT_EMBEDDER_URL = new InjectionToken<string>(
   'webComponentEmbedderUrl'
@@ -27,6 +26,13 @@ export const WEB_COMPONENT_EMBEDDER_URL = new InjectionToken<string>(
   imports: [CommonModule, CopyTextButtonComponent, TranslatePipe],
 })
 export class DataViewPermalinkComponent {
+  private config = inject<Configuration>(Configuration)
+  private proxyPath = inject(PROXY_PATH, { optional: true })
+  protected wcEmbedderBaseUrl = inject(WEB_COMPONENT_EMBEDDER_URL, {
+    optional: true,
+  })
+  private facade = inject(MdViewFacade)
+
   viewType$ = new BehaviorSubject<string>('map')
   @Input()
   set viewType(value: string) {
@@ -60,6 +66,9 @@ export class DataViewPermalinkComponent {
         url.searchParams.append('e', `gn-dataset-view-map`)
       }
       url.searchParams.append('a', `api-url=${this.config.basePath}`)
+      if (this.proxyPath) {
+        url.searchParams.append('a', `proxy-path=${this.proxyPath}`)
+      }
       url.searchParams.append('a', `dataset-id=${metadata.uniqueIdentifier}`)
       url.searchParams.append('a', `primary-color=#0f4395`)
       url.searchParams.append('a', `secondary-color=#8bc832`)
@@ -68,12 +77,4 @@ export class DataViewPermalinkComponent {
       return url.toString()
     })
   )
-
-  constructor(
-    @Inject(Configuration) private config: Configuration,
-    @Optional()
-    @Inject(WEB_COMPONENT_EMBEDDER_URL)
-    protected wcEmbedderBaseUrl: string,
-    private facade: MdViewFacade
-  ) {}
 }

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, Input, OnInit, inject } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { TranslateDirective } from '@ngx-translate/core'
 import {
@@ -24,8 +24,8 @@ import { ConnectedPosition, OverlayModule } from '@angular/cdk/overlay'
   ],
 })
 export class RecordFeatureCatalogComponent implements OnInit {
-  @Input() metadata: CatalogRecord
-  featureCatalog$: Observable<DatasetFeatureCatalog>
+  readonly metadataViewFacade = inject(MdViewFacade)
+
   filteredFeatureCatalog: DatasetFeatureCatalog
 
   protected overlayPositions: ConnectedPosition[] = [
@@ -36,8 +36,6 @@ export class RecordFeatureCatalogComponent implements OnInit {
       overlayY: 'top',
     },
   ]
-
-  constructor(public readonly metadataViewFacade: MdViewFacade) {}
 
   ngOnInit(): void {
     this.metadataViewFacade.featureCatalog$.subscribe((catalog) => {

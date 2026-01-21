@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common'
 import {
   Component,
   EventEmitter,
@@ -6,11 +7,20 @@ import {
   SimpleChanges,
   Output,
 } from '@angular/core'
-import { Choice } from '@geonetwork-ui/ui/inputs'
+import { KindBadgeComponent } from '@geonetwork-ui/ui/elements'
+import { Choice, InlineFilterComponent } from '@geonetwork-ui/ui/inputs'
+import { TranslatePipe } from '@ngx-translate/core'
 
 @Component({
   selector: 'gn-ui-results-hits-search-kind',
   templateUrl: './results-hits-search-kind.component.html',
+  standalone: true,
+  imports: [
+    CommonModule,
+    InlineFilterComponent,
+    KindBadgeComponent,
+    TranslatePipe,
+  ],
 })
 export class ResultsHitsSearchKindComponent implements OnChanges {
   @Input() selected: string[] = []
@@ -38,7 +48,11 @@ export class ResultsHitsSearchKindComponent implements OnChanges {
   }
 
   onSelectedValues(values: string[]) {
-    const selectedValues = values.includes('all') ? [] : values
+    const selectedValues = values.includes('all')
+      ? []
+      : values.length > 1
+        ? [values[values.length - 1]]
+        : values
 
     this.selectionChanged.emit(selectedValues)
   }

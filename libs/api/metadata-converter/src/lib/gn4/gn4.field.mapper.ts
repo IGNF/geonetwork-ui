@@ -14,7 +14,7 @@ import {
   toDate,
 } from './atomic-operations'
 import { MetadataUrlService } from './metadata-url.service'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { getStatusFromStatusCode } from '../iso19139/utils/status.mapper'
 import { getUpdateFrequencyFromFrequencyCode } from '../iso19139/utils/update-frequency.mapper'
 import {
@@ -26,7 +26,11 @@ import {
 } from '@geonetwork-ui/common/domain/model/record'
 import { matchProtocol } from '../common/distribution.mapper'
 import { Thesaurus } from './types'
-import { getResourceType, getReuseType } from '../common/resource-types'
+import {
+  getResourceType,
+  getReusePresentationForm,
+  getReuseType,
+} from '../common/resource-types'
 import { TranslateService } from '@ngx-translate/core'
 import { toLang2, toLang3 } from '@geonetwork-ui/util/i18n'
 
@@ -41,10 +45,8 @@ type EsFieldMapperFn = (
   providedIn: 'root',
 })
 export class Gn4FieldMapper {
-  constructor(
-    private metadataUrlService: MetadataUrlService,
-    private translateService: TranslateService
-  ) {}
+  private metadataUrlService = inject(MetadataUrlService)
+  private translateService = inject(TranslateService)
 
   private get getLocalizedIndexKey() {
     return `lang${toLang3(this.translateService.currentLang)}`
@@ -216,7 +218,7 @@ export class Gn4FieldMapper {
       ...output,
       contactsForResource: [
         ...('contactsForResource' in output &&
-        Array.isArray(output.contactsForResource)
+          Array.isArray(output.contactsForResource)
           ? output.contactsForResource
           : []),
         ...getAsArray(selectField(source, 'contactForResource')).map(
@@ -365,11 +367,11 @@ export class Gn4FieldMapper {
 
       return sourcesIdentifiers && sourcesIdentifiers.length > 0
         ? this.addExtra(
-            {
-              sourcesIdentifiers,
-            },
-            output
-          )
+          {
+            sourcesIdentifiers,
+          },
+          output
+        )
         : output
     },
     isPublishedToAll: (output, source) =>
@@ -402,8 +404,12 @@ export class Gn4FieldMapper {
       ),
     resourceType: (output, source) => {
       const resourceType = getFirstValue(selectField(source, 'resourceType'))
-      const kind = getResourceType(resourceType)
-      const reuseType = getReuseType(resourceType)
+      const presentationForms = getAsArray(
+        selectField(source, 'cl_presentationForm')
+      ).map((presentationForm) => presentationForm.key) as string[]
+      const type = getReusePresentationForm(presentationForms) || resourceType
+      const kind = getResourceType(type)
+      const reuseType = getReuseType(type)
       return {
         ...output,
         kind,
@@ -449,6 +455,32 @@ export class Gn4FieldMapper {
             ...(end !== null ? { end: toDate(end) } : null),
           }
         }),
+      }
+    },
+    resourceIdentifier: (output, source) => {
+      const identifiers = getAsArray(selectField(source, 'resourceIdentifier'))
+
+      if (!identifiers.length) return output
+
+      const mappedIdentifiers = identifiers
+        .map((id) => {
+          const code = selectField<string>(id, 'code')
+          const codeSpace = selectField<string>(id, 'codeSpace')
+          const link = selectField<string>(id, 'link')
+
+          return {
+            code,
+            ...(codeSpace && { codeSpace }),
+            ...(link && { url: link }),
+          }
+        })
+        .filter((id) => id !== null)
+
+      if (!mappedIdentifiers.length) return output
+
+      return {
+        ...output,
+        resourceIdentifiers: mappedIdentifiers,
       }
     },
   }
@@ -512,6 +544,8 @@ export class Gn4FieldMapper {
       /^OGC:WMTS/.test(protocol) ||
       /TMS/i.test(protocol) ||
       /ogc\W*api\W*features/i.test(protocol) ||
+      /^DB:POSTGIS/i.test(protocol) ||
+      /stac\W*items/i.test(protocol) ||
       (/^WWW:DOWNLOAD-/.test(protocol) && /data.geopf.fr/.test(url)) ||
       /gml/.test(protocol) // TO DO : change with the good protocol when decided
     ) {

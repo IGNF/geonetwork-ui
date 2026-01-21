@@ -714,7 +714,12 @@ describe('ElasticsearchService', () => {
       it('returns the search payload', () => {
         const payload = service.buildAutocompletePayload('blarg')
         expect(payload).toEqual({
-          _source: ['resourceTitleObject', 'uuid', 'resourceType'],
+          _source: [
+            'resourceTitleObject',
+            'uuid',
+            'resourceType',
+            'cl_presentationForm',
+          ],
 
           query: {
             bool: {
@@ -789,7 +794,6 @@ describe('ElasticsearchService', () => {
           'resourceAbstractObject',
           'overview',
           'logo',
-          'codelist_status_text',
           'link',
           'linkProtocol',
           'contactForResource*.organisation*',
@@ -798,6 +802,7 @@ describe('ElasticsearchService', () => {
           'userSavedCount',
           'cl_topic',
           'cl_maintenanceAndUpdateFrequency',
+          'cl_presentationForm',
           'MD_LegalConstraints*Object',
           'qualityScore',
           'allKeywords',

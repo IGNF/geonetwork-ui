@@ -1,8 +1,14 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core'
 import { RouterFacade } from '@geonetwork-ui/feature/router'
 import {
   FeatureSearchModule,
   FIELDS_BRIEF,
+  ResultsListContainerComponent,
   SearchFacade,
 } from '@geonetwork-ui/feature/search'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
@@ -13,14 +19,12 @@ import { getOptionalSearchConfig } from '@geonetwork-ui/util/app-config'
   templateUrl: './last-created.component.html',
   styleUrls: ['./last-created.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FeatureSearchModule],
+  imports: [FeatureSearchModule, ResultsListContainerComponent],
   standalone: true,
 })
 export class LastCreatedComponent implements OnInit {
-  constructor(
-    private searchFacade: SearchFacade,
-    private routerFacade: RouterFacade
-  ) {}
+  private searchFacade = inject(SearchFacade)
+  private routerFacade = inject(RouterFacade)
 
   ngOnInit() {
     this.searchFacade

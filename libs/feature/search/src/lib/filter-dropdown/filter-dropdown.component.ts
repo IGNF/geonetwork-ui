@@ -3,8 +3,13 @@ import {
   Component,
   Input,
   OnInit,
+  inject,
 } from '@angular/core'
-import { Choice } from '@geonetwork-ui/ui/inputs'
+import {
+  Choice,
+  DateRangeDropdownComponent,
+  DropdownMultiselectComponent,
+} from '@geonetwork-ui/ui/inputs'
 import { Observable, of, switchMap } from 'rxjs'
 import { catchError, filter, map, startWith } from 'rxjs/operators'
 import { SearchFacade } from '../state/search.facade'
@@ -16,14 +21,25 @@ import {
   FieldValue,
 } from '../utils/service/fields'
 import { DateRange } from '@geonetwork-ui/api/repository'
+import { CommonModule } from '@angular/common'
 
 @Component({
   selector: 'gn-ui-filter-dropdown',
   templateUrl: './filter-dropdown.component.html',
   styleUrls: ['./filter-dropdown.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [
+    CommonModule,
+    DateRangeDropdownComponent,
+    DropdownMultiselectComponent,
+  ],
 })
 export class FilterDropdownComponent implements OnInit {
+  private searchFacade = inject(SearchFacade)
+  private searchService = inject(SearchService)
+  private fieldsService = inject(FieldsService)
+
   @Input() fieldName: string
   @Input() title: string
 
@@ -49,12 +65,6 @@ export class FilterDropdownComponent implements OnInit {
       .buildFiltersFromFieldValues({ [this.fieldName]: values as FieldValue[] })
       .subscribe((filters) => this.searchService.updateFilters(filters))
   }
-
-  constructor(
-    private searchFacade: SearchFacade,
-    private searchService: SearchService,
-    private fieldsService: FieldsService
-  ) {}
 
   ngOnInit() {
     this.fieldType = this.fieldsService.getFieldType(this.fieldName)

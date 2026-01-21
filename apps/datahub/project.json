@@ -57,13 +57,26 @@
         ],
         "scripts": ["./node_modules/@gouvfr/dsfr/dist/dsfr/dsfr.module.js"],
         "allowedCommonJsDependencies": [
-          "duration-relativetimeformat",
-          "papaparse",
-          "xlsx",
-          "chroma-js",
           "@rgrove/parse-xml",
+          "semver",
+          "geojson-validation",
+          "basiclightbox",
+          "duration-relativetimeformat",
+          "alasql",
+          "papaparse",
+          "lodash.throttle",
+          "lru-cache",
           "@messageformat/core",
-          "rbush"
+          "buffer",
+          "queue-microtask",
+          "readable-stream",
+          "pbf",
+          "rbush",
+          "@babel/runtime/regenerator",
+          "cross-fetch",
+          "@frogcat/ttl2jsonld",
+          "solid-namespace",
+          "@xmldom/xmldom"
         ]
       },
       "configurations": {
@@ -110,7 +123,8 @@
           "buildTarget": "datahub:build:development"
         }
       },
-      "defaultConfiguration": "development"
+      "defaultConfiguration": "development",
+      "continuous": true
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
@@ -132,7 +146,8 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/apps/datahub"],
       "options": {
-        "jestConfig": "apps/datahub/jest.config.ts"
+        "jestConfig": "apps/datahub/jest.config.ts",
+        "tsConfig": "apps/datahub/tsconfig.spec.json"
       }
     },
     "docker-build": {

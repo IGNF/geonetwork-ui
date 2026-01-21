@@ -1,41 +1,32 @@
-import { Injectable } from '@angular/core'
+import { HttpClient, HttpEventType } from '@angular/common/http'
+import { Injectable, InjectionToken, inject } from '@angular/core'
 import {
-  catchError,
-  filter,
-  map,
-  mergeMap,
-  shareReplay,
-  tap,
-} from 'rxjs/operators'
-import {
-  MeApiService,
-  RecordsApiService,
-  RegistriesApiService,
-  SiteApiService,
-  ToolsApiService,
-  UserfeedbackApiService,
-  UsersApiService,
-} from '@geonetwork-ui/data-access/gn4'
-import {
-  PlatformServiceInterface,
-  UploadEvent,
-} from '@geonetwork-ui/common/domain/platform.service.interface'
-import { UserModel } from '@geonetwork-ui/common/domain/model/user/user.model'
+  KeywordApiResponse,
+  ThesaurusApiResponse,
+} from '@geonetwork-ui/api/metadata-converter'
 import {
   CatalogRecord,
   Keyword,
   Organization,
   UserFeedback,
 } from '@geonetwork-ui/common/domain/model/record'
-import { Gn4PlatformMapper } from './gn4-platform.mapper'
-import { ltr } from 'semver'
-import { HttpClient, HttpEventType } from '@angular/common/http'
-import {
-  KeywordApiResponse,
-  ThesaurusApiResponse,
-} from '@geonetwork-ui/api/metadata-converter'
 import { KeywordType } from '@geonetwork-ui/common/domain/model/thesaurus'
+import { UserModel } from '@geonetwork-ui/common/domain/model/user/user.model'
+import {
+  PlatformServiceInterface,
+  UploadEvent,
+} from '@geonetwork-ui/common/domain/platform.service.interface'
+import {
+  MeApiService,
+  RecordsApiService,
+  RegistriesApiService,
+  ToolsApiService,
+  UserfeedbackApiService,
+  UsersApiService,
+} from '@geonetwork-ui/data-access/gn4'
+import { toLang3 } from '@geonetwork-ui/util/i18n'
 import { noDuplicateFileName } from '@geonetwork-ui/util/shared'
+import { TranslateService } from '@ngx-translate/core'
 import {
   combineLatest,
   forkJoin,
@@ -44,15 +35,39 @@ import {
   switchMap,
   throwError,
 } from 'rxjs'
-import { TranslateService } from '@ngx-translate/core'
-import { toLang3 } from '@geonetwork-ui/util/i18n'
+import {
+  catchError,
+  filter,
+  map,
+  mergeMap,
+  shareReplay,
+  tap,
+} from 'rxjs/operators'
+import { ltr } from 'semver'
+import { Gn4SettingsService } from '../settings/gn4-settings.service'
+import { Gn4PlatformMapper } from './gn4-platform.mapper'
 
 const minApiVersion = '4.2.2'
 
+export const DISABLE_AUTH = new InjectionToken<boolean>('gnDisableAuth', {
+  factory: () => false,
+})
+
 @Injectable()
 export class Gn4PlatformService implements PlatformServiceInterface {
+  private meApi = inject(MeApiService)
+  private usersApi = inject(UsersApiService)
+  private mapper = inject(Gn4PlatformMapper)
+  private toolsApiService = inject(ToolsApiService)
+  private registriesApiService = inject(RegistriesApiService)
+  private translateService = inject(TranslateService)
+  private userfeedbackApiService = inject(UserfeedbackApiService)
+  private httpClient = inject(HttpClient)
+  private recordsApiService = inject(RecordsApiService)
+  private settingsService = inject(Gn4SettingsService)
+  private disableAuth = inject(DISABLE_AUTH, { optional: true })
+
   private readonly type = 'GeoNetwork'
-  private readonly me$: Observable<UserModel>
   private readonly users$: Observable<UserModel[]>
   private readonly isUserAnonymous$: Observable<boolean>
   private readonly gnParseVersion = '4.2.5'
@@ -67,29 +82,13 @@ export class Gn4PlatformService implements PlatformServiceInterface {
       shareReplay(1)
     )
 
-  private settings$ = of(true).pipe(
-    switchMap(() => this.siteApiService.getSiteOrPortalDescription()),
-    shareReplay(1)
-  )
-
-  private readonly apiVersion$ = this.settings$.pipe(
-    map((info) => info['system/platform/version'] as string),
-    tap((version) => {
-      if (ltr(version, minApiVersion)) {
-        throw new Error(
-          `Gn4 API version is not compatible.\nMinimum: ${minApiVersion}\nYour version: ${version}`
-        )
-      }
-    }),
-    shareReplay(1)
-  )
-
-  private readonly allowEditHarvestedMd$ = this.settings$.pipe(
-    map((info) => {
-      return info['system/harvester/enableEditing'] as boolean
-    }),
-    shareReplay(1)
-  )
+  private me$ = this.disableAuth
+    ? of(null)
+    : of(true).pipe(
+        switchMap(() => this.meApi.getMe()),
+        switchMap((apiUser) => this.mapper.userFromMeApi(apiUser)),
+        shareReplay({ bufferSize: 1, refCount: true })
+      )
 
   /**
    * A map of already loaded thesauri (groups of keywords); the key is a URI
@@ -101,23 +100,7 @@ export class Gn4PlatformService implements PlatformServiceInterface {
     return toLang3(this.translateService.currentLang)
   }
 
-  constructor(
-    private siteApiService: SiteApiService,
-    private meApi: MeApiService,
-    private usersApi: UsersApiService,
-    private mapper: Gn4PlatformMapper,
-    private toolsApiService: ToolsApiService,
-    private registriesApiService: RegistriesApiService,
-    private translateService: TranslateService,
-    private userfeedbackApiService: UserfeedbackApiService,
-    private httpClient: HttpClient,
-    private recordsApiService: RecordsApiService
-  ) {
-    this.me$ = this.meApi.getMe().pipe(
-      switchMap((apiUser) => this.mapper.userFromMeApi(apiUser)),
-      shareReplay({ bufferSize: 1, refCount: true })
-    )
-
+  constructor() {
     this.isUserAnonymous$ = this.me$.pipe(
       map((user) => !user || !('id' in user))
     )
@@ -128,16 +111,28 @@ export class Gn4PlatformService implements PlatformServiceInterface {
     )
   }
 
+  getFeedbacksAllowed(): Observable<boolean> {
+    return this.settingsService.allowFeedbacks$
+  }
+
+  getAllowEditHarvestedMd(): Observable<boolean> {
+    return this.settingsService.allowEditHarvested$
+  }
+
   getType(): string {
     return this.type
   }
 
   getApiVersion(): Observable<string> {
-    return this.apiVersion$
-  }
-
-  getAllowEditHarvestedMd(): Observable<boolean> {
-    return this.allowEditHarvestedMd$
+    return this.settingsService.apiVersion$.pipe(
+      tap((version) => {
+        if (ltr(version, minApiVersion)) {
+          throw new Error(
+            `Gn4 API version is not compatible.\nMinimum: ${minApiVersion}\nYour version: ${version}`
+          )
+        }
+      })
+    )
   }
 
   getMe(): Observable<UserModel> {
@@ -443,5 +438,9 @@ export class Gn4PlatformService implements PlatformServiceInterface {
         }
       })
     )
+  }
+
+  supportsAuthentication() {
+    return !this.disableAuth
   }
 }

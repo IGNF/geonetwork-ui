@@ -5,6 +5,7 @@ import {
   OnInit,
   QueryList,
   ViewChildren,
+  inject,
 } from '@angular/core'
 import {
   FeatureSearchModule,
@@ -12,6 +13,7 @@ import {
   FilterDropdownComponent,
   SearchFacade,
   SearchService,
+  SortByComponent,
 } from '@geonetwork-ui/feature/search'
 import { getOptionalSearchConfig } from '@geonetwork-ui/util/app-config'
 import { Observable, switchMap } from 'rxjs'
@@ -47,6 +49,8 @@ import { getIsMobile } from '@geonetwork-ui/util/shared'
     CheckToggleComponent,
     TranslatePipe,
     TranslateDirective,
+    FilterDropdownComponent,
+    SortByComponent,
   ],
   providers: [
     provideIcons({
@@ -61,6 +65,11 @@ import { getIsMobile } from '@geonetwork-ui/util/shared'
   ],
 })
 export class SearchFiltersComponent implements OnInit {
+  searchFacade = inject(SearchFacade)
+  private searchService = inject(SearchService)
+  private fieldsService = inject(FieldsService)
+  private platformService = inject(PlatformServiceInterface)
+
   @ViewChildren(FilterDropdownComponent)
   filters: QueryList<FilterDropdownComponent>
   searchConfig: { fieldName: string; title: string }[]
@@ -81,15 +90,25 @@ export class SearchFiltersComponent implements OnInit {
 
   isMobile$ = getIsMobile()
 
-  constructor(
-    public searchFacade: SearchFacade,
-    private searchService: SearchService,
-    private fieldsService: FieldsService,
-    private platformService: PlatformServiceInterface
-  ) {}
+  showAuthRelatedFeatures = this.platformService.supportsAuthentication()
+
+  get shouldShowMyRecordsToggle(): boolean {
+    return this.showAuthRelatedFeatures && !!this.userId && this.isOpen
+  }
+
+  get shouldShowOtherRecordsButton(): Observable<boolean> {
+    return this.myRecordsFilterEnabled$.pipe(
+      map(
+        (enabled) =>
+          this.showAuthRelatedFeatures && !this.userId && enabled && this.isOpen
+      )
+    )
+  }
 
   ngOnInit(): void {
-    this.platformService.getMe().subscribe((user) => (this.userId = user?.id))
+    if (this.platformService.supportsAuthentication()) {
+      this.platformService.getMe().subscribe((user) => (this.userId = user?.id))
+    }
     this.searchConfig = (
       getOptionalSearchConfig().ADVANCED_FILTERS || [
         'organization',

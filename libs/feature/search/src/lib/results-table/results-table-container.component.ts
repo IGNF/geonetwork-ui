@@ -4,6 +4,7 @@ import {
   Input,
   OnDestroy,
   Output,
+  inject,
 } from '@angular/core'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { SearchFacade } from '../state/search.facade'
@@ -24,7 +25,14 @@ import { TranslateService } from '@ngx-translate/core'
   imports: [CommonModule, ResultsTableComponent],
 })
 export class ResultsTableContainerComponent implements OnDestroy {
-  @Input() isDuplicating: false
+  protected searchFacade = inject(SearchFacade)
+  private searchService = inject(SearchService)
+  private selectionService = inject(SelectionService)
+  private recordsRepository = inject(RecordsRepositoryInterface)
+  private notificationsService = inject(NotificationsService)
+  private translateService = inject(TranslateService)
+
+  @Input() isDuplicating = false
 
   @Output() recordClick = new EventEmitter<CatalogRecord>()
   @Output() duplicateRecord = new EventEmitter<CatalogRecord>()
@@ -48,15 +56,6 @@ export class ResultsTableContainerComponent implements OnDestroy {
   canEdit = (record: CatalogRecord): Observable<boolean> => {
     return this.recordsRepository.canEditIndexedRecord(record)
   }
-
-  constructor(
-    protected searchFacade: SearchFacade,
-    private searchService: SearchService,
-    private selectionService: SelectionService,
-    private recordsRepository: RecordsRepositoryInterface,
-    private notificationsService: NotificationsService,
-    private translateService: TranslateService
-  ) {}
 
   handleRecordClick(item: unknown) {
     this.recordClick.emit(item as CatalogRecord)

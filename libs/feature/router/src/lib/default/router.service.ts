@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import {
   ROUTER_ROUTE_DATASET,
   ROUTER_ROUTE_ORGANIZATION,
@@ -8,15 +8,17 @@ import {
 } from '.'
 import { Router, Routes } from '@angular/router'
 import { ROUTER_CONFIG, RouterConfigModel } from './router.config'
+import {
+  SortByEnum,
+  SortByField,
+} from '@geonetwork-ui/common/domain/model/search'
 
 @Injectable({
   providedIn: 'root',
 })
 export class RouterService {
-  constructor(
-    @Inject(ROUTER_CONFIG) protected routerConfig: RouterConfigModel,
-    private router: Router
-  ) {}
+  protected routerConfig = inject<RouterConfigModel>(ROUTER_CONFIG)
+  private router = inject(Router)
 
   initRoutes() {
     this.router.resetConfig(this.buildRoutes())
@@ -57,5 +59,9 @@ export class RouterService {
 
   getOrganizationPageRoute(): string {
     return ROUTER_ROUTE_ORGANIZATION
+  }
+
+  getDefaultSort(): SortByField {
+    return SortByEnum.RESOURCE_DATES
   }
 }

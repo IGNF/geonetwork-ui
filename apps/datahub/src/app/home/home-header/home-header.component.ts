@@ -1,4 +1,9 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  inject,
+} from '@angular/core'
 import { marker } from '@biesbjerg/ngx-translate-extract-marker'
 import {
   ROUTER_ROUTE_SEARCH,
@@ -23,7 +28,7 @@ import {
 } from '@geonetwork-ui/common/domain/model/search'
 import { map } from 'rxjs/operators'
 import { ROUTER_ROUTE_NEWS } from '../../router/constants'
-import { lastValueFrom } from 'rxjs'
+import { lastValueFrom, of } from 'rxjs'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { sortByFromString } from '@geonetwork-ui/util/shared'
 import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
@@ -68,6 +73,12 @@ marker('datahub.header.popularRecords')
   ],
 })
 export class HomeHeaderComponent {
+  routerFacade = inject(RouterFacade)
+  searchFacade = inject(SearchFacade)
+  private searchService = inject(SearchService)
+  private platformService = inject(PlatformServiceInterface)
+  private fieldsService = inject(FieldsService)
+
   @Input() expandRatio: number
 
   backgroundCss =
@@ -82,14 +93,6 @@ export class HomeHeaderComponent {
   bannerKey = 'application-banner'
   translatedBannerMessage$ = this.platformService.translateKey(this.bannerKey)
 
-  constructor(
-    public routerFacade: RouterFacade,
-    public searchFacade: SearchFacade,
-    private searchService: SearchService,
-    private platformService: PlatformServiceInterface,
-    private fieldsService: FieldsService
-  ) {}
-
   displaySortBadges$ = this.routerFacade.currentRoute$.pipe(
     map(
       (route) =>
@@ -101,6 +104,10 @@ export class HomeHeaderComponent {
   isAuthenticated$ = this.platformService
     .isAnonymous()
     .pipe(map((isAnonymous) => !isAnonymous))
+
+  showFavoritesButton$ = this.platformService.supportsAuthentication()
+    ? this.isAuthenticated$
+    : of(false)
 
   onFuzzySearchSelection(record: CatalogRecord) {
     this.routerFacade.goToMetadata(record)

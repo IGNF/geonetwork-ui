@@ -1,14 +1,20 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core'
 import { MyRecordsComponent } from './my-records.component'
-import { FeatureSearchModule } from '@geonetwork-ui/feature/search'
-import { CommonModule } from '@angular/common'
+import {
+  FeatureSearchModule,
+  SearchStateContainerDirective,
+} from '@geonetwork-ui/feature/search'
 
 @Component({
   selector: 'md-editor-my-records-state-wrapper',
   templateUrl: './my-records-state-wrapper.component.html',
   styles: [],
   standalone: true,
-  imports: [CommonModule, FeatureSearchModule, MyRecordsComponent],
+  imports: [
+    FeatureSearchModule,
+    MyRecordsComponent,
+    SearchStateContainerDirective,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MyRecordsStateWrapperComponent {}

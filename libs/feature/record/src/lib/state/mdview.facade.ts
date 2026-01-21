@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { select, Store } from '@ngrx/store'
 import {
   catchError,
@@ -20,7 +20,7 @@ import {
 } from '@geonetwork-ui/common/domain/model/record'
 import { AvatarServiceInterface } from '@geonetwork-ui/api/repository'
 import { OgcApiRecord } from '@camptocamp/ogc-client'
-import { from, of, Observable } from 'rxjs'
+import { from, of } from 'rxjs'
 import { DataService } from '@geonetwork-ui/feature/dataviz'
 
 @Injectable()
@@ -31,12 +31,10 @@ import { DataService } from '@geonetwork-ui/feature/dataviz'
  * To clear the current record use the `close()` method.
  */
 export class MdViewFacade {
-  constructor(
-    private store: Store,
-    public linkClassifier: LinkClassifierService,
-    private avatarService: AvatarServiceInterface,
-    public dataService: DataService
-  ) {}
+  private store = inject(Store)
+  linkClassifier = inject(LinkClassifierService)
+  private avatarService = inject(AvatarServiceInterface)
+  dataService = inject(DataService)
 
   isPresent$ = this.store.pipe(
     select(MdViewSelectors.getMetadataUuid),
@@ -89,6 +87,25 @@ export class MdViewFacade {
     shareReplay(1)
   )
 
+  resourceDoi$ = this.metadata$.pipe(
+    map((record) => {
+      if (!record?.resourceIdentifiers?.length) return null
+      const doiIdentifier = record.resourceIdentifiers.find(
+        (id) =>
+          id.codeSpace?.toLowerCase().includes('doi.org') ||
+          id.code.startsWith('10.')
+      )
+
+      if (!doiIdentifier) return null
+
+      return {
+        code: doiIdentifier.code,
+        url: doiIdentifier.url ? doiIdentifier.url : null,
+      }
+    }),
+    shareReplay(1)
+  )
+
   apiLinks$ = this.allLinks$.pipe(
     map((links) =>
       links.filter((link) => this.linkClassifier.hasUsage(link, LinkUsage.API))
@@ -100,6 +117,16 @@ export class MdViewFacade {
     map((links) =>
       links.filter((link) =>
         this.linkClassifier.hasUsage(link, LinkUsage.MAP_API)
+      )
+    ),
+    shareReplay(1)
+  )
+
+  stacLinks$ = this.allLinks$.pipe(
+    map((links) =>
+      links.filter(
+        (link) =>
+          link.type === 'service' && link.accessServiceProtocol === 'stac'
       )
     ),
     shareReplay(1)
@@ -139,8 +166,10 @@ export class MdViewFacade {
               return from(
                 this.dataService.getItemsFromOgcApi(link.url.href)
               ).pipe(
-                map((collectionRecords: OgcApiRecord) => {
-                  return collectionRecords && collectionRecords.geometry
+                map((collectionRecords: OgcApiRecord[]) => {
+                  return collectionRecords &&
+                    collectionRecords[0] &&
+                    collectionRecords[0].geometry
                     ? link
                     : null
                 }),

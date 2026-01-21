@@ -1,5 +1,10 @@
 import { CommonModule } from '@angular/common'
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core'
 import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
 import { DashboardMenuComponent } from '../dashboard-menu/dashboard-menu.component'
 import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
@@ -13,7 +18,7 @@ import { combineLatest, Observable } from 'rxjs'
 import { Organization } from '@geonetwork-ui/common/domain/model/record'
 import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
 import { RouterLink } from '@angular/router'
-import { NgIcon, provideIcons } from '@ng-icons/core'
+import { NgIcon, provideIcons, provideNgIconsConfig } from '@ng-icons/core'
 import { iconoirSystemShut } from '@ng-icons/iconoir'
 import { FeatureSearchModule } from '@geonetwork-ui/feature/search'
 
@@ -38,22 +43,23 @@ import { FeatureSearchModule } from '@geonetwork-ui/feature/search'
     provideIcons({
       iconoirSystemShut,
     }),
+    provideNgIconsConfig({
+      size: '1.5em',
+    }),
   ],
 })
 export class SidebarComponent implements OnInit {
+  platformService = inject(PlatformServiceInterface)
+  private avatarService = inject(AvatarServiceInterface)
+  organisationsService = inject(OrganizationsServiceInterface)
+  private authService = inject(AuthService)
+
   public placeholder$ = this.avatarService.getPlaceholder()
   organisations$: Observable<Organization[]>
 
   get settingsUrl() {
     return this.authService.settingsUrl
   }
-
-  constructor(
-    public platformService: PlatformServiceInterface,
-    private avatarService: AvatarServiceInterface,
-    public organisationsService: OrganizationsServiceInterface,
-    private authService: AuthService
-  ) {}
 
   ngOnInit(): void {
     this.organisations$ = combineLatest(

@@ -20,12 +20,18 @@ import {
   ModelBlock,
   ModelItem,
 } from '../facets.model'
+import { FacetItemComponent } from '../facet-item/facet-item.component'
+
+import { FormsModule } from '@angular/forms'
+import { TranslateModule, TranslatePipe } from '@ngx-translate/core'
 
 @Component({
   selector: 'gn-ui-facet-block',
   templateUrl: './facet-block.component.html',
   styleUrls: ['./facet-block.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [FacetItemComponent, FormsModule, TranslateModule, TranslatePipe],
 })
 export class FacetBlockComponent
   implements OnInit, AfterViewInit, OnDestroy, OnChanges
@@ -124,15 +130,4 @@ export class FacetBlockComponent
       this.hasItems = this.countItems() > 0
     }
   }
-}
-
-@Component({ selector: 'gn-ui-facet-block', template: '' })
-export class FacetBlockStubComponent implements Partial<FacetBlockComponent> {
-  @Input() title: string
-  @Input() model: ModelBlock
-  @Input() selectedPaths: string[][]
-
-  @Output() filterChange = new EventEmitter<string>()
-  @Output() itemSelected = new EventEmitter<string[]>()
-  @Output() itemUnselected = new EventEmitter<string[]>()
 }

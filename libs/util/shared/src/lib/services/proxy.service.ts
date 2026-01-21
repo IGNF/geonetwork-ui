@@ -1,4 +1,4 @@
-import { Inject, Injectable, InjectionToken, Optional } from '@angular/core'
+import { Injectable, InjectionToken, Injector, inject } from '@angular/core'
 import { Location } from '@angular/common'
 
 export const PROXY_PATH = new InjectionToken<string>('proxyPath')
@@ -7,10 +7,12 @@ export const PROXY_PATH = new InjectionToken<string>('proxyPath')
   providedIn: 'root',
 })
 export class ProxyService {
-  constructor(
-    @Optional() @Inject(PROXY_PATH) private proxyPath: string,
-    private location: Location
-  ) {}
+  private injector = inject(Injector)
+  private location = inject(Location)
+
+  private get proxyPath(): string | null {
+    return this.injector.get(PROXY_PATH, null)
+  }
 
   /**
    * Transforms the URL to go through a proxy specified with the PROXY_PATH

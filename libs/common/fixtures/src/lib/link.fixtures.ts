@@ -87,6 +87,13 @@ export const aSetOfLinksFixture = () => ({
       type: 'download',
       url: new URL('https://my.server/files/abc.XLSX'),
     }) as DatasetDownloadDistribution,
+  dataXml: () =>
+    ({
+      name: 'abc.xml',
+      description: 'Data in XML format',
+      type: 'download',
+      url: new URL('https://my.server/files/abc.xml'),
+    }) as DatasetDownloadDistribution,
   dataJson: () =>
     ({
       name: 'abc.json',
@@ -259,4 +266,23 @@ export const aSetOfLinksFixture = () => ({
       accessServiceProtocol: 'wms',
       type: 'endpoint',
     }) as ServiceEndpoint,
+  postgisLink: () =>
+    ({
+      name: 'France_Regions',
+      description:
+        'Boundaries for the administrative regions of metropolitan France.',
+      url: new URL('http://geo.local:5432/france_demo'),
+      type: 'service',
+      accessServiceProtocol: 'postgis',
+    }) as DatasetServiceDistribution,
+  stacLink: () =>
+    ({
+      name: 'Lidar HD point cloud (COPC)',
+      description: 'Lidar HD classified point clouds from IGN',
+      url: new URL(
+        'https://stacapi-cdos.apps.okd.crocc.meso.umontpellier.fr/collections/lidarhd/items'
+      ),
+      type: 'service',
+      accessServiceProtocol: 'stac',
+    }) as DatasetServiceDistribution,
 })

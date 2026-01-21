@@ -11,12 +11,14 @@ import {
 import { Paginable } from '../paginable.interface'
 import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
 
+import { TranslateDirective } from '@ngx-translate/core'
+
 @Component({
   selector: 'gn-ui-previous-next-buttons',
   templateUrl: './previous-next-buttons.component.html',
   styleUrls: ['./previous-next-buttons.component.css'],
   standalone: true,
-  imports: [ButtonComponent, NgIconComponent],
+  imports: [ButtonComponent, NgIconComponent, TranslateDirective],
   providers: [
     provideIcons({ matArrowBackIos, matArrowForwardIos }),
     provideNgIconsConfig({
@@ -26,4 +28,5 @@ import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
 })
 export class PreviousNextButtonsComponent {
   @Input() listComponent: Paginable
+  @Input() displayLabels = false
 }

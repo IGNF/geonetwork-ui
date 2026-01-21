@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core'
+import { TranslateDirective } from '@ngx-translate/core'
 import { RecordPreviewComponent } from '../record-preview/record-preview.component'
 
 @Component({
@@ -6,5 +7,7 @@ import { RecordPreviewComponent } from '../record-preview/record-preview.compone
   templateUrl: './record-preview-text.component.html',
   styleUrls: ['./record-preview-text.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [TranslateDirective],
 })
 export class RecordPreviewTextComponent extends RecordPreviewComponent {}

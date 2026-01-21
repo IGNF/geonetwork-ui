@@ -1,8 +1,8 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  Inject,
   Input,
+  inject,
 } from '@angular/core'
 import { Configuration } from '@geonetwork-ui/data-access/gn4'
 import { MdViewFacade } from '../state'
@@ -10,7 +10,7 @@ import { BehaviorSubject, combineLatest, map } from 'rxjs'
 import { CopyTextButtonComponent } from '@geonetwork-ui/ui/inputs'
 import { CommonModule } from '@angular/common'
 import { TranslatePipe } from '@ngx-translate/core'
-import { GEONETWORK_UI_TAG_NAME } from '@geonetwork-ui/util/shared'
+import { GEONETWORK_UI_TAG_NAME, PROXY_PATH } from '@geonetwork-ui/util/shared'
 
 @Component({
   selector: 'gn-ui-data-view-web-component',
@@ -21,6 +21,10 @@ import { GEONETWORK_UI_TAG_NAME } from '@geonetwork-ui/util/shared'
   imports: [CommonModule, CopyTextButtonComponent, TranslatePipe],
 })
 export class DataViewWebComponentComponent {
+  private config = inject<Configuration>(Configuration)
+  private proxyPath = inject(PROXY_PATH, { optional: true })
+  private facade = inject(MdViewFacade)
+
   viewType$ = new BehaviorSubject<string>('map')
   @Input()
   set viewType(value: string) {
@@ -42,7 +46,12 @@ export class DataViewWebComponentComponent {
           api-url="${new URL(
             this.config.basePath,
             window.location.origin
-          ).toString()}"
+          ).toString()}"${
+            this.proxyPath
+              ? `
+          proxy-path="${this.proxyPath}"`
+              : ''
+          }
           dataset-id="${metadata.uniqueIdentifier}"
           aggregation="${aggregation}"
           x-property="${xProperty}"
@@ -65,7 +74,12 @@ export class DataViewWebComponentComponent {
           api-url="${new URL(
             this.config.basePath,
             window.location.origin
-          ).toString()}"
+          ).toString()}"${
+            this.proxyPath
+              ? `
+          proxy-path="${this.proxyPath}"`
+              : ''
+          }
           dataset-id="${metadata.uniqueIdentifier}"
           primary-color="#0f4395"
           secondary-color="#8bc832"
@@ -82,7 +96,12 @@ export class DataViewWebComponentComponent {
         api-url="${new URL(
           this.config.basePath,
           window.location.origin
-        ).toString()}"
+        ).toString()}"${
+          this.proxyPath
+            ? `
+        proxy-path="${this.proxyPath}"`
+            : ''
+        }
         dataset-id="${metadata.uniqueIdentifier}"
         primary-color="#0f4395"
         secondary-color="#8bc832"
@@ -94,9 +113,4 @@ export class DataViewWebComponentComponent {
       }
     })
   )
-
-  constructor(
-    @Inject(Configuration) private config: Configuration,
-    private facade: MdViewFacade
-  ) {}
 }

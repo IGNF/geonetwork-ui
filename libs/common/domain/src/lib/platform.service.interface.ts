@@ -24,6 +24,7 @@ export abstract class PlatformServiceInterface {
   abstract getType(): string
   abstract getApiVersion(): Observable<string>
 
+  abstract supportsAuthentication(): boolean
   abstract getMe(): Observable<UserModel>
   abstract isAnonymous(): Observable<boolean>
   abstract getUsers(): Observable<UserModel[]>
@@ -44,6 +45,7 @@ export abstract class PlatformServiceInterface {
     thesaurusId: string
   ): Observable<Keyword[]>
 
+  abstract getFeedbacksAllowed(): Observable<boolean>
   abstract getUserFeedbacks(recordUuid: string): Observable<UserFeedback[]>
   abstract postUserFeedbacks(recordUuid: UserFeedback): Observable<void>
 

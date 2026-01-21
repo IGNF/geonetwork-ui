@@ -1,15 +1,16 @@
-import { Directive, Host, Input, OnInit } from '@angular/core'
+import { Directive, Input, OnInit, inject } from '@angular/core'
 import { SearchService } from '../../utils/service/search.service'
 import { SearchFacade } from '../search.facade'
 
 @Directive({
   selector: '[gnUiSearchStateContainer]',
   providers: [SearchFacade, SearchService],
+  standalone: true,
 })
 export class SearchStateContainerDirective implements OnInit {
-  @Input('gnUiSearchStateContainer') searchId: string
+  private facade = inject(SearchFacade, { host: true })
 
-  constructor(@Host() private facade: SearchFacade) {}
+  @Input('gnUiSearchStateContainer') searchId: string
 
   ngOnInit(): void {
     this.facade.init(this.searchId)

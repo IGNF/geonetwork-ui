@@ -126,5 +126,19 @@ describe('LinkClassifierService', () => {
         ).toEqual([LinkUsage.GEODATA])
       })
     })
+    describe('for a PostGIS link', () => {
+      it('returns UNKNOWN usage (appears in other links)', () => {
+        expect(
+          service.getUsagesForLink(aSetOfLinksFixture().postgisLink())
+        ).toEqual([LinkUsage.UNKNOWN])
+      })
+    })
+    describe('for a STAC link', () => {
+      it('returns API and STAC usage', () => {
+        expect(
+          service.getUsagesForLink(aSetOfLinksFixture().stacLink())
+        ).toEqual([LinkUsage.API, LinkUsage.STAC])
+      })
+    })
   })
 })

@@ -7,6 +7,7 @@ import {
   Input,
   Output,
   ViewChild,
+  inject,
 } from '@angular/core'
 import { MapUtilsService } from '@geonetwork-ui/feature/map'
 import { getLinkId, getLinkLabel } from '@geonetwork-ui/util/shared'
@@ -27,7 +28,6 @@ import {
   map,
   shareReplay,
   switchMap,
-  take,
   tap,
 } from 'rxjs/operators'
 import { MdViewFacade } from '../state/mdview.facade'
@@ -49,7 +49,11 @@ import {
   prioritizePageScroll,
 } from '@geonetwork-ui/ui/map'
 import { Feature } from 'geojson'
-import { NgIconComponent, provideIcons } from '@ng-icons/core'
+import {
+  NgIconComponent,
+  provideIcons,
+  provideNgIconsConfig,
+} from '@ng-icons/core'
 import { matClose } from '@ng-icons/material-icons/baseline'
 import { CommonModule } from '@angular/common'
 import {
@@ -94,9 +98,20 @@ marker('map.select.style')
     ButtonComponent,
     MapLegendComponent,
   ],
-  viewProviders: [provideIcons({ matClose })],
+  viewProviders: [
+    provideIcons({ matClose }),
+    provideNgIconsConfig({
+      size: '1.5em',
+    }),
+  ],
 })
 export class MapViewComponent implements AfterViewInit {
+  private mdViewFacade = inject(MdViewFacade)
+  private mapUtils = inject(MapUtilsService)
+  private dataService = inject(DataService)
+  private changeRef = inject(ChangeDetectorRef)
+  private translateService = inject(TranslateService)
+
   @Input() set exceedsLimit(value: boolean) {
     this.excludeWfs$.next(value)
   }
@@ -105,11 +120,16 @@ export class MapViewComponent implements AfterViewInit {
   _styleFromConfig = null
 
   linkMap: Map<string, DatasetOnlineResource> = new Map()
+  // FIXME the map view component should not need a selectedView
   @Input() set selectedView(value: string) {
     this.selectedView$.next(value)
   }
-  @Input() set datavizConfig(value: any) {
-    if (value.view === 'map') {
+  @Input() set datavizConfig(value: {
+    view?: string
+    styleTMSIndex?: number
+    source?: DatasetOnlineResource
+  }) {
+    if (value && value.view === 'map') {
       this.selectedView$.next(value.view)
       if (value.styleTMSIndex) {
         this._styleFromConfig = value.styleTMSIndex
@@ -334,14 +354,6 @@ export class MapViewComponent implements AfterViewInit {
     }),
     shareReplay(1)
   )
-
-  constructor(
-    private mdViewFacade: MdViewFacade,
-    private mapUtils: MapUtilsService,
-    private dataService: DataService,
-    private changeRef: ChangeDetectorRef,
-    private translateService: TranslateService
-  ) {}
 
   async ngAfterViewInit() {
     const map = await this.mapContainer.openlayersMap

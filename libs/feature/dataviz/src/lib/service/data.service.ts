@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { marker } from '@biesbjerg/ngx-translate-extract-marker'
 import {
   OgcApiCollectionInfo,
@@ -7,6 +7,9 @@ import {
   WfsEndpoint,
   WfsVersion,
   TmsEndpoint,
+  StacEndpoint,
+  GetCollectionItemsOptions,
+  StacItemsDocument,
 } from '@camptocamp/ogc-client'
 import {
   BaseReader,
@@ -53,7 +56,7 @@ interface WfsDownloadUrls {
   providedIn: 'root',
 })
 export class DataService {
-  constructor(private proxy: ProxyService) {}
+  private proxy = inject(ProxyService)
 
   getWfsEndpoint(wfsUrl: string): Observable<WfsEndpoint> {
     return from(
@@ -97,16 +100,27 @@ export class DataService {
         if (!featureType) {
           throw new Error('wfs.featuretype.notfound')
         }
+
+        const wfsVersion = endpoint.getVersion()
+        const addSrsName = wfsVersion === '1.1.0' || wfsVersion === '2.0.0'
+        const defaultCrs = featureType.defaultCrs
+
+        const shouldAddOutputCrs = addSrsName && defaultCrs
+
         return {
-          all: featureType.outputFormats.reduce(
-            (prev, curr) => ({
+          all: featureType.outputFormats.reduce((prev, curr) => {
+            const isJsonFormat = curr.toLowerCase().includes('json')
+            return {
               ...prev,
               [curr]: endpoint.getFeatureUrl(featureType.name, {
                 outputFormat: curr,
+                ...(shouldAddOutputCrs &&
+                  !isJsonFormat && {
+                    outputCrs: defaultCrs,
+                  }),
               }),
-            }),
-            {}
-          ),
+            }
+          }, {}),
           geojson: endpoint.supportsJson(featureType.name)
             ? endpoint.getFeatureUrl(featureType.name, {
                 asJson: true,
@@ -211,23 +225,34 @@ export class DataService {
 
   async getDownloadUrlsFromOgcApi(url: string): Promise<OgcApiCollectionInfo> {
     const endpoint = new OgcApiEndpoint(url)
-    return await endpoint.allCollections
+    return await endpoint.featureCollections
       .then((collections) => {
-        return endpoint.getCollectionInfo(collections[0].name)
+        return endpoint.getCollectionInfo(collections[0])
       })
       .catch((error) => {
         throw new Error(`ogc.unreachable.unknown`)
       })
   }
 
-  async getItemsFromOgcApi(url: string): Promise<OgcApiRecord> {
+  async getItemsFromOgcApi(url: string): Promise<OgcApiRecord[]> {
     const endpoint = new OgcApiEndpoint(url)
     return await endpoint.featureCollections
       .then((collections) => {
         return collections.length
-          ? endpoint.getCollectionItem(collections[0], '1')
+          ? endpoint.getCollectionItems(collections[0])
           : null
       })
+      .catch(() => {
+        throw new Error(`ogc.unreachable.unknown`)
+      })
+  }
+
+  async getItemsFromStacApi(
+    url: string,
+    options: GetCollectionItemsOptions
+  ): Promise<StacItemsDocument> {
+    return await StacEndpoint.getItemsFromUrl(url, options)
+      .then((response) => response)
       .catch(() => {
         throw new Error(`ogc.unreachable.unknown`)
       })

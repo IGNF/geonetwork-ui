@@ -4,6 +4,7 @@ import {
   Input,
   OnDestroy,
   OnInit,
+  inject,
 } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import {
@@ -19,7 +20,6 @@ import {
   MarkdownParserComponent,
   ThumbnailComponent,
 } from '@geonetwork-ui/ui/elements'
-import { UiSearchModule } from '@geonetwork-ui/ui/search'
 import { SearchFacade } from '@geonetwork-ui/feature/search'
 import {
   BehaviorSubject,
@@ -36,7 +36,7 @@ import { SpinningLoaderComponent } from '@geonetwork-ui/ui/widgets'
 import { map, startWith } from 'rxjs/operators'
 import { RecordInternalLinksComponent } from '../../record/record-internal-links/record-internal-links.component'
 import { FigureComponent } from '@geonetwork-ui/ui/dataviz'
-import { provideIcons } from '@ng-icons/core'
+import { provideIcons, provideNgIconsConfig } from '@ng-icons/core'
 import { tablerFolderOpen } from '@ng-icons/tabler-icons'
 
 @Component({
@@ -49,7 +49,6 @@ import { tablerFolderOpen } from '@ng-icons/tabler-icons'
     CommonModule,
     TranslateDirective,
     LetDirective,
-    UiSearchModule,
     MaxLinesComponent,
     RouterLink,
     ErrorComponent,
@@ -64,9 +63,15 @@ import { tablerFolderOpen } from '@ng-icons/tabler-icons'
     provideIcons({
       tablerFolderOpen,
     }),
+    provideNgIconsConfig({
+      size: '1.5em',
+    }),
   ],
 })
 export class OrganizationDetailsComponent implements OnInit, OnDestroy {
+  private searchFacade = inject(SearchFacade)
+  private organizationsService = inject(OrganizationsServiceInterface)
+
   protected readonly ErrorType = ErrorType
   protected readonly ROUTER_ROUTE_SEARCH = ROUTER_ROUTE_SEARCH
 
@@ -101,11 +106,6 @@ export class OrganizationDetailsComponent implements OnInit, OnDestroy {
       startWith([])
     )
 
-  constructor(
-    private searchFacade: SearchFacade,
-    private organizationsService: OrganizationsServiceInterface
-  ) {}
-
   ngOnInit(): void {
     this.searchFacade.setPageSize(12)
     this.isSearchFacadeLoading$ = this.searchFacade.isLoading$.pipe(
@@ -118,4 +118,8 @@ export class OrganizationDetailsComponent implements OnInit, OnDestroy {
   }
 
   protected readonly errorTypes = ErrorType
+
+  sanitizeOrgName(name: string): string {
+    return name ? name.replace(/,/g, '%2C') : name
+  }
 }

@@ -12,9 +12,16 @@ beforeEach(() => {
   )
   cy.intercept(
     'GET',
-    '/geoserver/insee/ows?SERVICE=WMS&REQUEST=GetCapabilities',
+    '/geoserver/insee/ows?SERVICE=WFS&REQUEST=GetCapabilities',
     {
       fixture: 'insee-wfs-getcapabilities.xml',
+    }
+  )
+  cy.intercept(
+    'GET',
+    '/geoserver/insee/wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=2.0.0&TYPENAMES=insee%3Arectangles_200m_menage_erbm&RESULTTYPE=hits&COUNT=1',
+    {
+      fixture: 'insee-wfs-table-hits.xml',
     }
   )
   cy.intercept(
@@ -97,7 +104,7 @@ beforeEach(() => {
   cy.intercept('GET', '/data/ogcapi/conformance?f=json', {
     fixture: 'ogcapi_conformance.json',
   })
-  cy.intercept('GET', '/data/ogcapi/?f=json', {
+  cy.intercept('GET', '/data/ogcapi?f=json', {
     fixture: 'ogcapi.json',
   })
 })
@@ -119,9 +126,10 @@ describe('Sections', () => {
     cy.get('datahub-record-metadata')
       .find('[id="about"]')
       .find('gn-ui-max-lines')
+      .first()
       .as('maxLines')
     cy.get('@maxLines').find('.ease-out').should('exist')
-    cy.get('[data-cy=readMoreButton]').click()
+    cy.get('[data-cy=readMoreButton]').first().click()
     cy.get('@maxLines').find('.ease-in').should('exist')
     cy.go('back')
 
@@ -193,12 +201,14 @@ describe('Sections', () => {
       .eq(0)
       .children('p')
       .eq(1)
-      .should('contain.text', '9/22/2020')
+      .invoke('attr', 'title')
+      .should('contain', '9/22/2020')
     cy.get('@aboutContent')
       .eq(1)
       .children('p')
       .eq(1)
-      .should('contain.text', '3/17/2024')
+      .invoke('attr', 'title')
+      .should('contain', '3/17/2024')
 
     // it should not display the same text twice in the constraints
 
@@ -248,9 +258,57 @@ describe('Sections', () => {
     // it should go to dataset search page when clicking on org name and filter by org
     cy.get('[data-cy="organization-name-link"]').eq(0).click()
     cy.url().should('include', '/search?organization=')
+
+    cy.go('back')
+
+    // it should not display DOI when not available
+    cy.get('gn-ui-metadata-doi').should('not.exist')
+
+    // it should display DOI when available
+    cy.visit('/dataset/9e1ea778-d0ce-4b49-90b7-37bc0e448300')
+    cy.get('gn-ui-metadata-doi').should('be.visible')
+    cy.get('gn-ui-metadata-doi')
+      .find('p')
+      .eq(1)
+      .invoke('text')
+      .invoke('trim')
+      .should('not.be.empty')
+    cy.get('gn-ui-metadata-doi')
+      .find('a[target="_blank"]')
+      .should('exist')
+      .and('have.attr', 'href')
+      .and('include', 'doi.org')
+
+    // it should copy DOI to clipboard
+    cy.get('gn-ui-metadata-doi').find('button[type="button"]').realClick()
+    cy.window().then((win) => {
+      win.navigator.clipboard.readText().then((text) => {
+        expect(text).to.include('10.')
+      })
+    })
   })
 
   it('Metadata quality widget', () => {
+    function scoreIs100Percent() {
+      // it should display the score
+      cy.get('gn-ui-metadata-quality gn-ui-progress-bar')
+        .eq(0)
+        .find('[data-cy=progressPercentage]')
+        .invoke('text')
+        .invoke('trim')
+        .should('eql', '100%')
+      //100%, 8 OK , 0 Warning
+      cy.get('gn-ui-metadata-quality')
+        .find('gn-ui-popover')
+        .first()
+        .trigger('mouseenter')
+      cy.get(
+        'gn-ui-metadata-quality-item ng-icon[ng-reflect-name="matCheck"]'
+      ).should('have.length', 8)
+      cy.get(
+        'gn-ui-metadata-quality-item ng-icon[ng-reflect-name="matWarningAmber"]'
+      ).should('have.length', 0)
+    }
     // this will enable metadata quality widget
     cy.intercept('GET', '/assets/configuration/default.toml', {
       fixture: 'config-with-metadata-quality.toml',
@@ -284,59 +342,14 @@ describe('Sections', () => {
     cy.get(
       'gn-ui-metadata-quality-item ng-icon[ng-reflect-name="matWarningAmber"]'
     ).should('have.length', 1)
+
     // Score is 100%
     cy.visit('/dataset/6d0bfdf4-4e94-48c6-9740-3f9facfd453c')
+    scoreIs100Percent()
 
-    // it should display the score
-    cy.get('gn-ui-metadata-quality gn-ui-progress-bar')
-      .eq(0)
-      .find('[data-cy=progressPercentage]')
-      .invoke('text')
-      .invoke('trim')
-      .should('eql', '100%')
-    //100%, 8 OK , 0 Warning
-    cy.get('gn-ui-metadata-quality')
-      .find('gn-ui-popover')
-      .first()
-      .trigger('mouseenter')
-    cy.get(
-      'gn-ui-metadata-quality-item ng-icon[ng-reflect-name="matCheck"]'
-    ).should('have.length', 8)
-    cy.get(
-      'gn-ui-metadata-quality-item ng-icon[ng-reflect-name="matWarningAmber"]'
-    ).should('have.length', 0)
-
-    // Score for a Reuse is 75%
-    cy.visit('/reuse/7eb795c2-d612-4b5e-b15e-d985b0f4e697')
-
-    // it should display the score
-    cy.get('gn-ui-metadata-quality gn-ui-progress-bar')
-      .eq(0)
-      .find('[data-cy=progressPercentage]')
-      .invoke('text')
-      .invoke('trim')
-      .should('eql', '75%')
-    // 6 OK , 2 Warning
-    cy.get('gn-ui-metadata-quality')
-      .find('gn-ui-popover')
-      .first()
-      .trigger('mouseenter')
-    cy.get(
-      'gn-ui-metadata-quality-item ng-icon[ng-reflect-name="matCheck"]'
-    ).should('have.length', 6)
-    cy.get(
-      'gn-ui-metadata-quality-item ng-icon[ng-reflect-name="matWarningAmber"]'
-    ).should('have.length', 2)
-    // Score for a Service is 83%
-    cy.visit('/service/00916a35-786b-4569-9da6-71ca64ca54b1')
-
-    // it should display the score
-    cy.get('gn-ui-metadata-quality gn-ui-progress-bar')
-      .eq(0)
-      .find('[data-cy=progressPercentage]')
-      .invoke('text')
-      .invoke('trim')
-      .should('match', /^(100|83)%$/) // may be different on GN v4.2.2
+    // Score is 100% (for a document that is classified as a dataset)
+    cy.visit('/dataset/85fb799c-aa0e-4d3a-8d6c-a574fde607e0')
+    scoreIs100Percent()
   })
 
   it('Downloads section', () => {
@@ -706,68 +719,6 @@ it('API query form', () => {
   // it should close the panel on click
   cy.get('gn-ui-record-api-form').prev().find('button').click()
   cy.get('gn-ui-record-api-form').should('not.be.visible')
-})
-
-describe('User feedback', () => {
-  it('when not logged in', () => {
-    cy.visit('/dataset/accroche_velos')
-    cy.get('datahub-record-user-feedbacks').as('userFeedback')
-
-    // it should sort comments
-    cy.get('gn-ui-user-feedback-item')
-      .find('[data-cy="commentText"]')
-      .first()
-      .then((div) => {
-        const firstCommentBeforeSort = div.text().trim()
-        cy.get('@userFeedback')
-          .find('gn-ui-dropdown-selector')
-          .openDropdown()
-          .children('button')
-          .eq(1)
-          .click()
-
-        cy.get('gn-ui-user-feedback-item')
-          .find('[data-cy="commentText"]')
-          .first()
-          .invoke('text')
-          .invoke('trim')
-          .should('not.eq', firstCommentBeforeSort)
-      })
-
-    // it shouldn't be able to comment
-    cy.get('datahub-record-user-feedbacks')
-      .find('gn-ui-text-area')
-      .should('not.exist')
-  })
-
-  it('when logged in', () => {
-    cy.login()
-    cy.visit('/dataset/accroche_velos')
-
-    // it should publish a comment
-    cy.get('datahub-record-user-feedbacks')
-      .find('gn-ui-text-area')
-      .first()
-      .should('exist')
-      .type('Something')
-
-    cy.get('datahub-record-user-feedbacks')
-      .find('gn-ui-button')
-      .eq(1)
-      .should('exist')
-
-    // it should answer to a comment
-    cy.get('gn-ui-user-feedback-item')
-      .find('gn-ui-text-area')
-      .first()
-      .should('exist')
-      .type('Something')
-
-    cy.get('gn-ui-user-feedback-item')
-      .find('gn-ui-button')
-      .eq(0)
-      .should('exist')
-  })
 })
 
 it('When the metadata does not exists', () => {

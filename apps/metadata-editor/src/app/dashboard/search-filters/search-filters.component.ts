@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core'
-import { CommonModule } from '@angular/common'
+
 import { TranslatePipe } from '@ngx-translate/core'
 import {
   NgIconComponent,
@@ -9,6 +9,7 @@ import {
 import { iconoirFilterAlt } from '@ng-icons/iconoir'
 import {
   FeatureSearchModule,
+  FilterDropdownComponent,
   SearchFiltersSummaryComponent,
 } from '@geonetwork-ui/feature/search'
 
@@ -16,11 +17,11 @@ import {
   selector: 'md-editor-search-filters',
   standalone: true,
   imports: [
-    CommonModule,
     TranslatePipe,
     FeatureSearchModule,
     NgIconComponent,
     SearchFiltersSummaryComponent,
+    FilterDropdownComponent,
   ],
   providers: [
     provideIcons({

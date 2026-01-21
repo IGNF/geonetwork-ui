@@ -4,8 +4,9 @@ import {
   SortByField,
 } from '@geonetwork-ui/common/domain/model/search'
 import { BehaviorSubject, of } from 'rxjs'
-import { RouterFacade } from '../state'
+import { RouterFacade } from '../state/router.facade'
 import { RouterSearchService } from './router-search.service'
+import { TestBed } from '@angular/core/testing'
 
 let state = {}
 class SearchFacadeMock {
@@ -51,10 +52,19 @@ describe('RouterSearchService', () => {
 
   beforeEach(() => {
     state = { OrgForResource: { mel: true } }
-    routerFacade = new RouterFacadeMock() as any
-    searchFacade = new SearchFacadeMock() as any
-    fieldsService = new FieldsServiceMock() as any
-    service = new RouterSearchService(searchFacade, routerFacade, fieldsService)
+    routerFacade = new RouterFacadeMock() as unknown as RouterFacade
+    searchFacade = new SearchFacadeMock() as unknown as SearchFacade
+    fieldsService = new FieldsServiceMock() as unknown as FieldsService
+
+    TestBed.configureTestingModule({
+      providers: [
+        RouterSearchService,
+        { provide: RouterFacade, useValue: routerFacade },
+        { provide: SearchFacade, useValue: searchFacade },
+        { provide: FieldsService, useValue: fieldsService },
+      ],
+    })
+    service = TestBed.inject(RouterSearchService)
   })
 
   it('should be created', () => {
@@ -85,12 +95,13 @@ describe('RouterSearchService', () => {
           Org: true,
         },
       }
-      const sort = SortByEnum.CREATE_DATE
+      const sort = SortByEnum.RESOURCE_DATES
       service.setSortAndFilters(filters, sort)
       expect(routerFacade.setSearch).toHaveBeenCalledWith({
         q: ['any'],
         publisher: ['Org'],
-        _sort: '-createDate',
+        _sort:
+          '-revisionDateForResource,-publicationDateForResource,-creationDateForResource',
       })
     })
   })

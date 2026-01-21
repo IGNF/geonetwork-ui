@@ -32,7 +32,6 @@
       "@geonetwork-ui/common/fixtures": ["libs/common/fixtures/src/index.ts"],
       "@geonetwork-ui/data-access/gn4": ["libs/data-access/gn4/src/index.ts"],
       "@geonetwork-ui/data-fetcher": ["libs/util/data-fetcher/src/index.ts"],
-      "@geonetwork-ui/feature/auth": ["libs/feature/auth/src/index.ts"],
       "@geonetwork-ui/feature/catalog": ["libs/feature/catalog/src/index.ts"],
       "@geonetwork-ui/feature/dataviz": ["libs/feature/dataviz/src/index.ts"],
       "@geonetwork-ui/feature/editor": ["libs/feature/editor/src/index.ts"],
@@ -56,6 +55,9 @@
       "@geonetwork-ui/ui/widgets": ["libs/ui/widgets/src/index.ts"],
       "@geonetwork-ui/util/app-config": ["libs/util/app-config/src/index.ts"],
       "@geonetwork-ui/util/i18n": ["libs/util/i18n/src/index.ts"],
+      "@geonetwork-ui/util/i18n/date-locales": [
+        "libs/util/i18n/src/lib/date-locales.ts"
+      ],
       "@geonetwork-ui/util/i18n/language-codes": [
         "libs/util/i18n/src/lib/language-codes.ts"
       ],

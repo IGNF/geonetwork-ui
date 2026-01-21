@@ -108,9 +108,15 @@ export interface Keyword {
   translations?: KeywordTranslations
 }
 
-export interface INSPIRE_theme {
+export interface INSPIRE_topic {
   value: string
   label: string
+}
+
+export interface ResourceIdentifier {
+  code: string
+  codeSpace?: string
+  url?: string
 }
 
 export interface BaseRecord {
@@ -135,7 +141,8 @@ export interface BaseRecord {
   updateFrequency?: UpdateFrequency
 
   // information related to the resource (dataset, service)
-  resourceIdentifier?: string
+
+  resourceIdentifiers?: Array<ResourceIdentifier>
   contactsForResource: Array<Individual>
   resourceCreated?: Date
   resourcePublished?: Date
@@ -163,6 +170,8 @@ export type ServiceProtocol =
   | 'GPFDL'
   | 'tms'
   | 'maplibre-style'
+  | 'postgis'
+  | 'stac'
   | 'other'
 
 marker('record.metadata.api.accessServiceProtocol.wms')
@@ -174,6 +183,8 @@ marker('record.metadata.api.accessServiceProtocol.ogcFeatures')
 marker('record.metadata.api.accessServiceProtocol.GPFDL')
 marker('record.metadata.api.accessServiceProtocol.tms')
 marker('record.metadata.api.accessServiceProtocol.maplibre-style')
+marker('record.metadata.api.accessServiceProtocol.postgis')
+marker('record.metadata.api.accessServiceProtocol.stac')
 marker('record.metadata.api.accessServiceProtocol.other')
 
 export type OnlineResourceType = 'service' | 'download' | 'link' | 'endpoint'
@@ -274,7 +285,7 @@ export interface ServiceRecord extends BaseRecord {
 export interface ReuseRecord extends BaseRecord {
   kind: 'reuse'
   lineage: string // Explanation of the origin of this record (e.g: how, why)"
-  onlineResources: Array<OnlineLinkResource>
+  onlineResources: Array<DatasetOnlineResource>
   reuseType: ReuseType
   spatialExtents: Array<DatasetSpatialExtent>
   temporalExtents: Array<DatasetTemporalExtent>

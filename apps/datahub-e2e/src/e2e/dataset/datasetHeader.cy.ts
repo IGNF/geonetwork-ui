@@ -67,6 +67,11 @@ describe('dataset: header', () => {
     cy.get('datahub-record-page')
       .find('datahub-navigation-bar')
       .should('not.be.visible')
+
+    // call wait to yield control to browser and let pending operations complete
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(0)
+
     cy.scrollTo(0, 1000)
 
     // it should display the back button (in navigation bar and hide in header)
@@ -141,11 +146,11 @@ describe('dataset: header', () => {
     cy.get('datahub-record-page')
       .find('datahub-navigation-bar')
       .should('not.be.visible')
-    cy.get('#data-preview').scrollIntoView()
+    cy.get('#resources').scrollIntoView()
 
-    //it should display only the (active) data-preview section anchor
+    //it should display only the (active) resources section anchor and hide the mobile menu
     cy.get('datahub-navigation-bar')
-      .find('[data-cy="data-preview-mobile-title"]')
+      .find('[data-cy="resources-mobile-title"]')
       .should('be.visible')
     cy.get('datahub-navigation-bar')
       .find('[data-cy="resources-mobile-menu"]')

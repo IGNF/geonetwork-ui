@@ -1,9 +1,14 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  inject,
+} from '@angular/core'
 import { matLocationSearchingOutline } from '@ng-icons/material-icons/outline'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { CommonModule } from '@angular/common'
 import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
-import { NgIcon, provideIcons } from '@ng-icons/core'
+import { NgIcon, provideIcons, provideNgIconsConfig } from '@ng-icons/core'
 import {
   getIsMobile,
   LinkClassifierService,
@@ -21,9 +26,14 @@ import {
     provideIcons({
       matLocationSearchingOutline,
     }),
+    provideNgIconsConfig({
+      size: '1.5em',
+    }),
   ],
 })
 export class GeoDataBadgeComponent {
+  linkClassifier = inject(LinkClassifierService)
+
   @Input() showLabel = true
   @Input() styling = 'default'
   @Input() record: CatalogRecord
@@ -55,6 +65,4 @@ export class GeoDataBadgeComponent {
         return 'flex shrink-0 items-center'
     }
   }
-
-  constructor(public linkClassifier: LinkClassifierService) {}
 }

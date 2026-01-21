@@ -5,8 +5,9 @@ import {
   Input,
   OnDestroy,
   OnInit,
+  inject,
 } from '@angular/core'
-import { catchError, filter, switchMap, takeUntil } from 'rxjs/operators'
+import { catchError, filter, switchMap, takeUntil, map } from 'rxjs/operators'
 import { BehaviorSubject, combineLatest, Observable, of, Subject } from 'rxjs'
 import {
   UserFeedback,
@@ -31,6 +32,7 @@ import { SpinningLoaderComponent } from '@geonetwork-ui/ui/widgets'
 import { NgIcon, provideIcons } from '@ng-icons/core'
 import {
   matAccountBoxOutline,
+  matEditOffOutline,
   matEditOutline,
   matSendOutline,
 } from '@ng-icons/material-icons/outline'
@@ -61,6 +63,7 @@ type UserFeedbackSortingFunction = (
   ],
   viewProviders: [
     provideIcons({
+      matEditOffOutline,
       matEditOutline,
       matSendOutline,
       matAccountBoxOutline,
@@ -68,6 +71,13 @@ type UserFeedbackSortingFunction = (
   ],
 })
 export class RecordUserFeedbacksComponent implements OnInit, OnDestroy {
+  private readonly translate = inject(TranslateService)
+  private readonly authService = inject(AuthService)
+  private readonly metadataViewFacade = inject(MdViewFacade)
+  private readonly cdr = inject(ChangeDetectorRef)
+  private readonly mapper = inject(Gn4PlatformMapper)
+  private readonly platformServiceInterface = inject(PlatformServiceInterface)
+
   @Input() organisationName$: Observable<string>
   @Input() metadataUuid: string
 
@@ -85,6 +95,10 @@ export class RecordUserFeedbacksComponent implements OnInit, OnDestroy {
   isActiveUserMetadaEditor = false
 
   loginUrl = this.authService.loginUrl
+
+  get showAuthUI(): boolean {
+    return this.platformServiceInterface.supportsAuthentication()
+  }
 
   sortingStrategyList: Array<DropdownChoice> = [
     {
@@ -108,14 +122,7 @@ export class RecordUserFeedbacksComponent implements OnInit, OnDestroy {
   isAllUserFeedbackLoading = false
   isAddUserFeedbackLoading = false
 
-  constructor(
-    private readonly translate: TranslateService,
-    private readonly authService: AuthService,
-    private readonly metadataViewFacade: MdViewFacade,
-    private readonly cdr: ChangeDetectorRef,
-    private readonly mapper: Gn4PlatformMapper,
-    private readonly platformServiceInterface: PlatformServiceInterface
-  ) {
+  constructor() {
     this.activeUser$ = this.platformServiceInterface.getMe()
   }
 

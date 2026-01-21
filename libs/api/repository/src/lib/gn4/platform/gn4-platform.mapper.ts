@@ -4,7 +4,7 @@ import {
   UserFeedbackDTOApiModel,
 } from '@geonetwork-ui/data-access/gn4'
 import { UserModel } from '@geonetwork-ui/common/domain/model/user/user.model'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { AvatarServiceInterface } from '../auth'
 import { map } from 'rxjs/operators'
 import { Observable, of } from 'rxjs'
@@ -21,7 +21,7 @@ import { KeywordType } from '@geonetwork-ui/common/domain/model/thesaurus'
 
 @Injectable()
 export class Gn4PlatformMapper {
-  constructor(private avatarService: AvatarServiceInterface) {}
+  private avatarService = inject(AvatarServiceInterface)
 
   userFromMeApi(apiUser: MeResponseApiModel): Observable<UserModel | null> {
     if (!apiUser) return of(null)
@@ -43,18 +43,26 @@ export class Gn4PlatformMapper {
   userFromApi(apiUser: UserApiModel): UserModel {
     if (!apiUser) return null
     const {
-      enabled,
+      addresses,
       emailAddresses,
-      organization,
+      enabled,
+      id,
       kind,
       lastLoginDate,
+      security,
+      primaryAddress,
+      authorities,
       accountNonExpired,
       accountNonLocked,
-      id,
       credentialsNonExpired,
       ...user
     } = apiUser
-    return { ...apiUser, id: id.toString() } as UserModel
+
+    return {
+      ...user,
+      id: id.toString(),
+      email: emailAddresses ? emailAddresses[0] || '' : '',
+    } as UserModel
   }
 
   keywordsFromApi(

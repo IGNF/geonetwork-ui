@@ -4,6 +4,7 @@ import {
   EventEmitter,
   Input,
   Output,
+  inject,
 } from '@angular/core'
 import {
   CatalogRecord,
@@ -26,8 +27,8 @@ import { matOpenInNew } from '@ng-icons/material-icons/baseline'
 import { matMailOutline } from '@ng-icons/material-icons/outline'
 import { ThumbnailComponent } from '../thumbnail/thumbnail.component'
 import { GnUiLinkifyDirective } from './linkify.directive'
+import { GnUiHumanizeDateDirective } from '@geonetwork-ui/util/shared'
 
-import { CommonModule } from '@angular/common'
 import { SpatialExtentComponent } from '@geonetwork-ui/ui/map'
 
 @Component({
@@ -37,7 +38,6 @@ import { SpatialExtentComponent } from '@geonetwork-ui/ui/map'
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    CommonModule,
     TranslateDirective,
     TranslatePipe,
     MarkdownParserComponent,
@@ -49,6 +49,7 @@ import { SpatialExtentComponent } from '@geonetwork-ui/ui/map'
     CopyTextButtonComponent,
     NgIcon,
     GnUiLinkifyDirective,
+    GnUiHumanizeDateDirective,
     SpatialExtentComponent,
   ],
   viewProviders: [
@@ -59,12 +60,12 @@ import { SpatialExtentComponent } from '@geonetwork-ui/ui/map'
   ],
 })
 export class MetadataInfoComponent {
+  private dateService = inject(DateService)
+
   @Input() metadata: Partial<CatalogRecord>
   @Input() incomplete: boolean
   @Output() keyword = new EventEmitter<Keyword>()
   updatedTimes: number
-
-  constructor(private dateService: DateService) {}
 
   get hasUsage() {
     return (
@@ -148,19 +149,11 @@ export class MetadataInfoComponent {
     this.keyword.emit(keyword)
   }
 
-  formatDate(date: Date): string {
-    return this.dateService.formatDate(date)
-  }
-
-  formatDateTime(date: Date): string {
-    return this.dateService.formatDateTime(date)
-  }
-
   get ignLandingPage() {
     return new URL(
       this.metadata.landingPage.origin +
-        '/csw?REQUEST=GetRecordById&SERVICE=CSW&VERSION=2.0.2&OUTPUTSCHEMA=http://standards.iso.org/iso/19115/-3/mdb/2.0&elementSetName=full&ID=' +
-        this.metadata.uniqueIdentifier
+      '/csw?REQUEST=GetRecordById&SERVICE=CSW&VERSION=2.0.2&OUTPUTSCHEMA=http://standards.iso.org/iso/19115/-3/mdb/2.0&elementSetName=full&ID=' +
+      this.metadata.uniqueIdentifier
     )
   }
 }

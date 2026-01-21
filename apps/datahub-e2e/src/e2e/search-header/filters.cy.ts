@@ -22,7 +22,10 @@ describe('filters and sorts', () => {
     cy.get('gn-ui-sort-by gn-ui-dropdown-selector')
       .getActiveDropdownOption()
       .invoke('attr', 'data-cy-value')
-      .should('equal', 'desc,createDate')
+      .should(
+        'equal',
+        'desc,revisionDateForResource,desc,publicationDateForResource,desc,creationDateForResource'
+      )
     cy.screenshot({ capture: 'viewport' })
   })
 
@@ -47,11 +50,11 @@ describe('filters and sorts', () => {
         cy.get('@inlineFilter-service').should('not.be.checked')
         cy.get('@inlineFilter-reuse').should('not.be.checked')
         cy.url().should('not.contain', 'recordKind=')
-        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '28 ')
+        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '32 ')
       })
     })
 
-    describe('When filtering on recordKinds', () => {
+    describe('When filtering on recordKinds from the UI', () => {
       it('should select the value, update the url, and update the search results', () => {
         cy.get('@inlineFilter-dataset').check({ force: true })
         cy.get('@inlineFilter-all').should('not.be.checked')
@@ -59,15 +62,23 @@ describe('filters and sorts', () => {
         cy.get('@inlineFilter-service').should('not.be.checked')
         cy.get('@inlineFilter-reuse').should('not.be.checked')
         cy.url().should('contain', 'recordKind=dataset')
-        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '17 ')
+        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '19 ')
 
         cy.get('@inlineFilter-service').check({ force: true })
         cy.get('@inlineFilter-all').should('not.be.checked')
-        cy.get('@inlineFilter-dataset').should('be.checked')
+        cy.get('@inlineFilter-dataset').should('not.be.checked')
         cy.get('@inlineFilter-service').should('be.checked')
         cy.get('@inlineFilter-reuse').should('not.be.checked')
-        cy.url().should('contain', 'recordKind=dataset,service')
-        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '27 ')
+        cy.url().should('contain', 'recordKind=service')
+        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '10 ')
+
+        cy.get('@inlineFilter-reuse').check({ force: true })
+        cy.get('@inlineFilter-all').should('not.be.checked')
+        cy.get('@inlineFilter-dataset').should('not.be.checked')
+        cy.get('@inlineFilter-service').should('not.be.checked')
+        cy.get('@inlineFilter-reuse').should('be.checked')
+        cy.url().should('contain', 'recordKind=reuse')
+        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '3 ')
 
         cy.get('@inlineFilter-all').check({ force: true })
         cy.get('@inlineFilter-all').should('be.checked')
@@ -75,11 +86,11 @@ describe('filters and sorts', () => {
         cy.get('@inlineFilter-service').should('not.be.checked')
         cy.get('@inlineFilter-reuse').should('not.be.checked')
         cy.url().should('not.contain', 'recordKind=')
-        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '28 ')
+        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '32 ')
       })
     })
 
-    describe('When toggling on recordKinds', () => {
+    describe('When toggling on recordKinds from the UI', () => {
       it('should select and then deselect the value', () => {
         cy.get('@inlineFilter-dataset').check({ force: true })
         cy.get('@inlineFilter-all').should('not.be.checked')
@@ -93,6 +104,38 @@ describe('filters and sorts', () => {
         cy.get('@inlineFilter-service').should('not.be.checked')
         cy.get('@inlineFilter-reuse').should('not.be.checked')
         cy.url().should('not.contain', 'recordKind=')
+      })
+    })
+
+    describe('When filtering on recordKinds from the URL query params', () => {
+      it('should select the values and update the search results', () => {
+        cy.visit('/search?recordKind=dataset')
+        cy.get('@inlineFilter-all').should('not.be.checked')
+        cy.get('@inlineFilter-dataset').should('be.checked')
+        cy.get('@inlineFilter-service').should('not.be.checked')
+        cy.get('@inlineFilter-reuse').should('not.be.checked')
+        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '19 ')
+
+        cy.visit('/search?recordKind=service')
+        cy.get('@inlineFilter-all').should('not.be.checked')
+        cy.get('@inlineFilter-dataset').should('not.be.checked')
+        cy.get('@inlineFilter-service').should('be.checked')
+        cy.get('@inlineFilter-reuse').should('not.be.checked')
+        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '10 ')
+
+        cy.visit('/search?recordKind=reuse')
+        cy.get('@inlineFilter-all').should('not.be.checked')
+        cy.get('@inlineFilter-dataset').should('not.be.checked')
+        cy.get('@inlineFilter-service').should('not.be.checked')
+        cy.get('@inlineFilter-reuse').should('be.checked')
+        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '3 ')
+
+        cy.visit('/search?recordKind=dataset,service')
+        cy.get('@inlineFilter-all').should('not.be.checked')
+        cy.get('@inlineFilter-dataset').should('be.checked')
+        cy.get('@inlineFilter-service').should('be.checked')
+        cy.get('@inlineFilter-reuse').should('not.be.checked')
+        cy.get('[data-cy="resultsHitsFound"]').should('contain.text', '29 ')
       })
     })
   })

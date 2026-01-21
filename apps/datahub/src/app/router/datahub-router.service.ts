@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { Router, Routes } from '@angular/router'
 import {
   ROUTER_ROUTE_DATASET,
@@ -18,12 +18,21 @@ import {
   ROUTER_ROUTE_ORGANIZATIONS,
 } from './constants'
 import { OrganizationPageComponent } from '../organization/organization-page/organization-page.component'
+import {
+  SortByEnum,
+  SortByField,
+} from '@geonetwork-ui/common/domain/model/search'
+import { marker } from '@biesbjerg/ngx-translate-extract-marker'
+
+marker('datahub.pageTitle.home')
+marker('datahub.pageTitle.recordSearch')
+marker('datahub.pageTitle.organizations')
 
 @Injectable({
   providedIn: 'root',
 })
 export class DatahubRouterService {
-  constructor(private router: Router) {}
+  private router = inject(Router)
 
   initRoutes() {
     this.router.resetConfig(this.buildRoutes())
@@ -35,9 +44,11 @@ export class DatahubRouterService {
         path: ROUTER_ROUTE_HOME,
         redirectTo: ``,
         pathMatch: 'prefix',
+        title: 'datahub.pageTitle.home',
       },
       {
         path: '',
+        title: 'datahub.pageTitle.home',
         component: HomePageComponent,
         data: {
           shouldDetach: true,
@@ -54,6 +65,7 @@ export class DatahubRouterService {
             data: {
               shouldDetach: true,
             },
+            title: 'datahub.pageTitle.home',
           },*/
           {
             path: ROUTER_ROUTE_SEARCH,
@@ -61,6 +73,7 @@ export class DatahubRouterService {
             data: {
               shouldDetach: true,
             },
+            title: 'datahub.pageTitle.recordSearch',
           },
           {
             path: ROUTER_ROUTE_ORGANIZATIONS,
@@ -68,20 +81,24 @@ export class DatahubRouterService {
             data: {
               shouldDetach: true,
             },
+            title: 'datahub.pageTitle.organizations',
           },
         ],
       },
       {
         path: `${ROUTER_ROUTE_DATASET}/:metadataUuid`,
         component: RecordPageComponent,
+        title: 'entityTitle',
       },
       {
         path: `${ROUTER_ROUTE_SERVICE}/:metadataUuid`,
         component: RecordPageComponent,
+        title: 'entityTitle',
       },
       {
         path: `${ROUTER_ROUTE_REUSE}/:metadataUuid`,
         component: RecordPageComponent,
+        title: 'entityTitle',
       },
       {
         path: `${ROUTER_ROUTE_ORGANIZATION}/:name`,
@@ -89,6 +106,7 @@ export class DatahubRouterService {
         data: {
           shouldDetach: true,
         },
+        title: 'entityTitle',
       },
       { path: '**', redirectTo: '', pathMatch: 'full' },
     ]
@@ -100,5 +118,9 @@ export class DatahubRouterService {
 
   getOrganizationPageRoute(): string {
     return ROUTER_ROUTE_ORGANIZATION
+  }
+
+  getDefaultSort(): SortByField {
+    return SortByEnum.RESOURCE_DATES
   }
 }

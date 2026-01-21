@@ -1,4 +1,4 @@
-import { Directive, Host, Input, OnInit } from '@angular/core'
+import { Directive, Input, OnInit, inject } from '@angular/core'
 import { SearchFacade, SearchService } from '@geonetwork-ui/feature/search'
 import { RouterSearchService } from '../services/router-search.service'
 
@@ -11,11 +11,12 @@ import { RouterSearchService } from '../services/router-search.service'
       useClass: RouterSearchService,
     },
   ],
+  standalone: true,
 })
 export class SearchRouterContainerDirective implements OnInit {
-  @Input('gnUiSearchRouterContainer') searchId: string
+  private facade = inject(SearchFacade, { host: true })
 
-  constructor(@Host() private facade: SearchFacade) {}
+  @Input('gnUiSearchRouterContainer') searchId: string
 
   ngOnInit(): void {
     this.facade.init(this.searchId)

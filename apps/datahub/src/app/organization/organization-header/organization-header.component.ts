@@ -1,22 +1,27 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core'
-import { getGlobalConfig, getThemeConfig } from '@geonetwork-ui/util/app-config'
-import { TranslateDirective } from '@ngx-translate/core'
-import { Organization } from '@geonetwork-ui/common/domain/model/record'
-import { CommonModule, Location } from '@angular/common'
-import { ErrorType } from '@geonetwork-ui/ui/elements'
+import { Location } from '@angular/common'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  inject,
+} from '@angular/core'
 import { Router } from '@angular/router'
+import { Organization } from '@geonetwork-ui/common/domain/model/record'
+import { LanguageSwitcherComponent } from '@geonetwork-ui/ui/catalog'
+import { ErrorType } from '@geonetwork-ui/ui/elements'
+import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
+import { getGlobalConfig, getThemeConfig } from '@geonetwork-ui/util/app-config'
 import {
   NgIconComponent,
   provideIcons,
   provideNgIconsConfig,
 } from '@ng-icons/core'
+import { matArrowBack } from '@ng-icons/material-icons/baseline'
 import {
   matFolderOutline,
   matOpenInNewOutline,
 } from '@ng-icons/material-icons/outline'
-import { LanguageSwitcherComponent } from '@geonetwork-ui/ui/catalog'
-import { matArrowBack } from '@ng-icons/material-icons/baseline'
-import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
+import { TranslateDirective } from '@ngx-translate/core'
 
 @Component({
   selector: 'datahub-organization-header',
@@ -26,7 +31,6 @@ import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
   standalone: true,
   imports: [
     TranslateDirective,
-    CommonModule,
     NgIconComponent,
     LanguageSwitcherComponent,
     ButtonComponent,
@@ -39,6 +43,9 @@ import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
   ],
 })
 export class OrganizationHeaderComponent {
+  private router = inject(Router)
+  private location = inject(Location)
+
   @Input() organization?: Organization
 
   backgroundCss =
@@ -47,13 +54,8 @@ export class OrganizationHeaderComponent {
   foregroundColor = getThemeConfig().HEADER_FOREGROUND_COLOR || '#ffffff'
   showLanguageSwitcher = getGlobalConfig().LANGUAGES?.length > 0
 
-  constructor(
-    private location: Location,
-    private router: Router
-  ) {}
-
   back() {
-    this.organization
+    this.router.lastSuccessfulNavigation.previousNavigation
       ? this.location.back()
       : this.router.navigateByUrl('/organisations')
   }

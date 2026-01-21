@@ -5,6 +5,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core'
 @Component({
   selector: 'gn-ui-inline-filter',
   template: '',
+  standalone: true,
 })
 class MockInlineFilterComponent {
   @Input() choices: any[] = []
@@ -18,7 +19,7 @@ describe('ResultsHitsSearchKindComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ResultsHitsSearchKindComponent, MockInlineFilterComponent],
+      imports: [MockInlineFilterComponent],
     }).compileComponents()
   })
 
@@ -51,10 +52,24 @@ describe('ResultsHitsSearchKindComponent', () => {
     expect(spy).toHaveBeenCalledWith([])
   })
 
-  it('should emit the selected values when "all" is not selected', () => {
+  it('should emit the last selected values when "all" is not selected and several choices are selected', () => {
     const spy = jest.spyOn(component.selectionChanged, 'emit')
     component.onSelectedValues(['dataset', 'service'])
 
-    expect(spy).toHaveBeenCalledWith(['dataset', 'service'])
+    expect(spy).toHaveBeenCalledWith(['service'])
+  })
+
+  it('should emit the selected values when "all" is not selected and one choice is selected', () => {
+    const spy = jest.spyOn(component.selectionChanged, 'emit')
+    component.onSelectedValues(['dataset'])
+
+    expect(spy).toHaveBeenCalledWith(['dataset'])
+  })
+
+  it('should emit an empty array when no choice is selected', () => {
+    const spy = jest.spyOn(component.selectionChanged, 'emit')
+    component.onSelectedValues([])
+
+    expect(spy).toHaveBeenCalledWith([])
   })
 })

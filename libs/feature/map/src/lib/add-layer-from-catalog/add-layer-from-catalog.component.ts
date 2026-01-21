@@ -1,8 +1,14 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core'
 import {
   FeatureSearchModule,
   FIELDS_BRIEF,
   FuzzySearchComponent,
+  ResultsListContainerComponent,
   SearchFacade,
   SearchService,
 } from '@geonetwork-ui/feature/search'
@@ -33,10 +39,14 @@ import { AddLayerRecordPreviewComponent } from './add-layer-record-preview/add-l
       },
     },
   ],
-  imports: [FeatureSearchModule, FuzzySearchComponent],
+  imports: [
+    FeatureSearchModule,
+    FuzzySearchComponent,
+    ResultsListContainerComponent,
+  ],
 })
 export class AddLayerFromCatalogComponent implements OnInit {
-  constructor(private searchFacade: SearchFacade) {}
+  private searchFacade = inject(SearchFacade)
 
   ngOnInit() {
     this.searchFacade.init('map-add-layer')

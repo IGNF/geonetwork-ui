@@ -1,21 +1,21 @@
 import {
   Component,
   EventEmitter,
-  Inject,
   Input,
   OnInit,
-  Optional,
   Output,
+  inject,
 } from '@angular/core'
 import { combineLatest, Observable, tap } from 'rxjs'
 import { filter, map } from 'rxjs/operators'
 import { SearchFacade } from '../state/search.facade'
 import { SearchError } from '../state/reducer'
-import { ErrorType } from '@geonetwork-ui/ui/elements'
+import { ErrorComponent, ErrorType } from '@geonetwork-ui/ui/elements'
 import {
   RESULTS_LAYOUT_CONFIG,
   ResultsLayoutConfigItem,
   ResultsLayoutConfigModel,
+  ResultsListComponent,
 } from '@geonetwork-ui/ui/search'
 import {
   RECORD_DATASET_URL_TOKEN,
@@ -23,6 +23,14 @@ import {
   RECORD_REUSE_URL_TOKEN,
 } from '../record-url.token'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
+import {
+  ButtonComponent,
+  ViewportIntersectorComponent,
+} from '@geonetwork-ui/ui/inputs'
+import { SpinningLoaderComponent } from '@geonetwork-ui/ui/widgets'
+import { FavoriteStarComponent } from '../favorites/favorite-star/favorite-star.component'
+import { CommonModule } from '@angular/common'
+import { TranslateDirective } from '@ngx-translate/core'
 
 export type ResultsListShowMoreStrategy = 'auto' | 'button' | 'none'
 
@@ -30,8 +38,33 @@ export type ResultsListShowMoreStrategy = 'auto' | 'button' | 'none'
   selector: 'gn-ui-results-list-container',
   templateUrl: './results-list.container.component.html',
   styleUrls: ['./results-list.container.component.css'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    ResultsListComponent,
+    ButtonComponent,
+    ViewportIntersectorComponent,
+    SpinningLoaderComponent,
+    ErrorComponent,
+    FavoriteStarComponent,
+    TranslateDirective,
+  ],
 })
 export class ResultsListContainerComponent implements OnInit {
+  facade = inject(SearchFacade)
+  private resultsLayoutConfig = inject<ResultsLayoutConfigModel>(
+    RESULTS_LAYOUT_CONFIG
+  )
+  private recordDatasetUrlTemplate = inject(RECORD_DATASET_URL_TOKEN, {
+    optional: true,
+  })
+  private recordServiceUrlTemplate = inject(RECORD_SERVICE_URL_TOKEN, {
+    optional: true,
+  })
+  private recordReuseUrlTemplate = inject(RECORD_REUSE_URL_TOKEN, {
+    optional: true,
+  })
+
   @Input() metadataQualityDisplay: boolean
   @Input() layout: string
   @Input() showMore: ResultsListShowMoreStrategy = 'auto'
@@ -47,21 +80,6 @@ export class ResultsListContainerComponent implements OnInit {
 
   errorTypes = ErrorType
   recordUrlGetter = this.getRecordUrl.bind(this)
-
-  constructor(
-    public facade: SearchFacade,
-    @Inject(RESULTS_LAYOUT_CONFIG)
-    private resultsLayoutConfig: ResultsLayoutConfigModel,
-    @Optional()
-    @Inject(RECORD_DATASET_URL_TOKEN)
-    private recordDatasetUrlTemplate: string,
-    @Optional()
-    @Inject(RECORD_SERVICE_URL_TOKEN)
-    private recordServiceUrlTemplate: string,
-    @Optional()
-    @Inject(RECORD_REUSE_URL_TOKEN)
-    private recordReuseUrlTemplate: string
-  ) {}
 
   ngOnInit(): void {
     this.layoutConfig$ = this.facade.layout$.pipe(

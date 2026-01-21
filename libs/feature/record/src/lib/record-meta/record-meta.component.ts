@@ -4,6 +4,7 @@ import {
   Input,
   OnChanges,
   OnDestroy,
+  inject,
 } from '@angular/core'
 import { Meta } from '@angular/platform-browser'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
@@ -13,11 +14,12 @@ import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
   template: '',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
+  imports: [],
 })
 export class RecordMetaComponent implements OnDestroy, OnChanges {
-  @Input() metadata: CatalogRecord
+  private meta = inject(Meta)
 
-  constructor(private meta: Meta) {}
+  @Input() metadata: CatalogRecord
 
   ngOnChanges() {
     if (this.metadata?.title) {

@@ -69,11 +69,11 @@
         (valueChange)="valueChange.emit($event)"
       ></gn-ui-form-field-overviews>
     </ng-container>
-    <ng-container *ngSwitchCase="'resourceIdentifier'">
+    <ng-container *ngSwitchCase="'resourceIdentifiers'">
       <gn-ui-form-field-simple
         [type]="'text'"
-        [value]="valueAsString"
-        (valueChange)="valueChange.emit($event)"
+        [value]="valueAsResourceIdentifierCode"
+        (valueChange)="handleResourceIdentifierChange($event)"
       ></gn-ui-form-field-simple>
     </ng-container>
     <ng-container *ngSwitchCase="'resourceCreated'">
@@ -110,10 +110,10 @@
       ></gn-ui-form-field-keywords>
     </ng-container>
     <ng-container *ngSwitchCase="'topics'">
-      <gn-ui-form-field-inspire-theme
-        [value]="valueAsInspireTheme"
+      <gn-ui-form-field-topics
+        [value]="valueAsTopics"
         (valueChange)="valueChange.emit($event)"
-      ></gn-ui-form-field-inspire-theme>
+      ></gn-ui-form-field-topics>
     </ng-container>
     <ng-container *ngSwitchCase="'licenses'">
       <gn-ui-form-field-license

@@ -39,6 +39,10 @@ export class LinkClassifierService {
             return [LinkUsage.API, LinkUsage.DOWNLOAD, LinkUsage.GEODATA]
           case 'GPFDL':
             return [LinkUsage.API]
+          case 'postgis':
+            return [LinkUsage.UNKNOWN]
+          case 'stac':
+            return [LinkUsage.API]
           default:
             return [LinkUsage.UNKNOWN]
         }

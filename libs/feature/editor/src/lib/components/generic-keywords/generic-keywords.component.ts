@@ -1,10 +1,10 @@
-import { CommonModule } from '@angular/common'
 import {
   ChangeDetectionStrategy,
   Component,
   EventEmitter,
   Input,
   Output,
+  inject,
 } from '@angular/core'
 import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
 import { AutocompleteComponent, BadgeComponent } from '@geonetwork-ui/ui/inputs'
@@ -12,7 +12,11 @@ import { map } from 'rxjs'
 import { Keyword } from '@geonetwork-ui/common/domain/model/record'
 import { KeywordType } from '@geonetwork-ui/common/domain/model/thesaurus'
 import { TranslatePipe } from '@ngx-translate/core'
-import { NgIconComponent, provideIcons } from '@ng-icons/core'
+import {
+  NgIconComponent,
+  provideIcons,
+  provideNgIconsConfig,
+} from '@ng-icons/core'
 import { matWarningAmberOutline } from '@ng-icons/material-icons/outline'
 
 type AutocompleteItem = { title: string; value: Keyword }
@@ -24,7 +28,6 @@ type AutocompleteItem = { title: string; value: Keyword }
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    CommonModule,
     AutocompleteComponent,
     NgIconComponent,
     BadgeComponent,
@@ -34,9 +37,14 @@ type AutocompleteItem = { title: string; value: Keyword }
     provideIcons({
       matWarningAmberOutline,
     }),
+    provideNgIconsConfig({
+      size: '1.5em',
+    }),
   ],
 })
 export class GenericKeywordsComponent {
+  private platformService = inject(PlatformServiceInterface)
+
   @Input() keywords: Keyword[]
   @Input() keywordTypes: KeywordType[]
   @Input() placeholder: string
@@ -58,8 +66,6 @@ export class GenericKeywordsComponent {
       )
     )
   }
-
-  constructor(private platformService: PlatformServiceInterface) {}
 
   handleItemSelection(item: AutocompleteItem) {
     this.addKeyword(item.value)

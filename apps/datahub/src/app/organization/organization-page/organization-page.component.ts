@@ -1,14 +1,23 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core'
 import { RouterFacade } from '@geonetwork-ui/feature/router'
-import { CommonModule } from '@angular/common'
+
 import { OrganizationHeaderComponent } from '../organization-header/organization-header.component'
 import { OrganizationDetailsComponent } from '../organization-details/organization-details.component'
 import { combineLatest, Observable, of, switchMap } from 'rxjs'
-import { filter } from 'rxjs/operators'
+import { filter, tap } from 'rxjs/operators'
 import { Organization } from '@geonetwork-ui/common/domain/model/record'
 import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
 import { LetDirective } from '@ngrx/component'
-import { FeatureSearchModule } from '@geonetwork-ui/feature/search'
+import {
+  FeatureSearchModule,
+  SearchStateContainerDirective,
+} from '@geonetwork-ui/feature/search'
+import { TitleService } from '../../router/datahub-title.service'
 
 @Component({
   selector: 'datahub-organization-page',
@@ -17,20 +26,19 @@ import { FeatureSearchModule } from '@geonetwork-ui/feature/search'
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    CommonModule,
     OrganizationHeaderComponent,
     OrganizationDetailsComponent,
     LetDirective,
     FeatureSearchModule,
+    SearchStateContainerDirective,
   ],
 })
 export class OrganizationPageComponent implements OnInit {
-  organization$: Observable<Organization>
+  private router = inject(RouterFacade)
+  private orgService = inject(OrganizationsServiceInterface)
+  private titleService = inject(TitleService)
 
-  constructor(
-    private router: RouterFacade,
-    private orgService: OrganizationsServiceInterface
-  ) {}
+  organization$: Observable<Organization>
 
   ngOnInit(): void {
     this.organization$ = combineLatest([
@@ -41,9 +49,14 @@ export class OrganizationPageComponent implements OnInit {
       switchMap(([pathParams, organizations]) => {
         const organization = organizations.find(
           (organization) =>
-            organization.name.replace('/', '') === pathParams['name']
+            organization.name.replaceAll('/', '') === pathParams['name']
         )
         return of(organization)
+      }),
+      tap((organization) => {
+        if (organization) {
+          this.titleService.setTitle(organization.name)
+        }
       })
     )
   }

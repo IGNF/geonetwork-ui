@@ -5,19 +5,11 @@ import { OrganizationPageComponent } from './organization-page.component'
 import { of } from 'rxjs'
 import { someOrganizationsFixture } from '@geonetwork-ui/common/fixtures'
 import { RouterFacade } from '@geonetwork-ui/feature/router'
-import { Params } from '@angular/router'
-import { MockBuilder } from 'ng-mocks'
+import { MockBuilder, MockProvider } from 'ng-mocks'
 import { provideI18n } from '@geonetwork-ui/util/i18n'
+import { TitleService } from '../../router/datahub-title.service'
 
 const expectedOrganization = someOrganizationsFixture()[0]
-
-class RouterFacadeMock {
-  pathParams$ = of({ name: someOrganizationsFixture()[0].name } as Params)
-}
-
-class OrganizationsServiceInterfaceMock {
-  organisations$ = of(someOrganizationsFixture())
-}
 
 describe('OrganizationPageComponent', () => {
   let component: OrganizationPageComponent
@@ -29,14 +21,9 @@ describe('OrganizationPageComponent', () => {
     await TestBed.configureTestingModule({
       providers: [
         provideI18n(),
-        {
-          provide: RouterFacade,
-          useClass: RouterFacadeMock,
-        },
-        {
-          provide: OrganizationsServiceInterface,
-          useClass: OrganizationsServiceInterfaceMock,
-        },
+        MockProvider(OrganizationsServiceInterface),
+        MockProvider(RouterFacade),
+        MockProvider(TitleService),
       ],
     })
       .overrideComponent(OrganizationPageComponent, {
@@ -80,6 +67,39 @@ describe('OrganizationPageComponent', () => {
 
       component.organization$.subscribe((org) => {
         expect(org).toEqual(orgWithSlash)
+      })
+    })
+
+    it('should match orgs with multiple slash', () => {
+      const orgWithSlash = {
+        ...expectedOrganization,
+        name: 'org/with/multiples/slash',
+      }
+
+      const orgService = TestBed.inject(OrganizationsServiceInterface) as any
+      orgService.organisations$ = of([orgWithSlash])
+
+      const router = TestBed.inject(RouterFacade) as any
+      router.pathParams$ = of({ name: 'orgwithmultiplesslash' })
+
+      component.ngOnInit()
+
+      component.organization$.subscribe((org) => {
+        expect(org).toEqual(orgWithSlash)
+      })
+    })
+    it('should set the page title', () => {
+      const titleService = TestBed.inject(TitleService)
+      const orgService = TestBed.inject(OrganizationsServiceInterface) as any
+      orgService.organisations$ = of([expectedOrganization])
+
+      jest.spyOn(titleService, 'setTitle')
+      component.ngOnInit()
+
+      component.organization$.subscribe(() => {
+        expect(titleService.setTitle).toHaveBeenCalledWith(
+          expectedOrganization.name
+        )
       })
     })
   })

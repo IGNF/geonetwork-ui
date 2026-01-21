@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core'
 import { marker } from '@biesbjerg/ngx-translate-extract-marker'
 import {
   ROUTER_ROUTE_SEARCH,
@@ -12,13 +12,7 @@ import {
 import { getThemeConfig } from '@geonetwork-ui/util/app-config'
 import { CommonModule } from '@angular/common'
 import { RouterLink } from '@angular/router'
-import {
-  NgIconComponent,
-  provideIcons,
-  provideNgIconsConfig,
-} from '@ng-icons/core'
-import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
-import { matMenuOutline } from '@ng-icons/material-icons/outline'
+import { TranslateDirective } from '@ngx-translate/core'
 import { getIsMobile } from '@geonetwork-ui/util/shared'
 
 marker('datahub.header.news')
@@ -30,23 +24,11 @@ marker('datahub.header.organizations')
   templateUrl: './navigation-menu.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink,
-    NgIconComponent,
-    TranslatePipe,
-    TranslateDirective,
-  ],
-  providers: [
-    provideNgIconsConfig({
-      size: '1.5em',
-    }),
-    provideIcons({
-      matMenuOutline,
-    }),
-  ],
+  imports: [CommonModule, RouterLink, TranslateDirective],
 })
 export class NavigationMenuComponent {
+  private routerFacade = inject(RouterFacade)
+
   foregroundColor = getThemeConfig().HEADER_FOREGROUND_COLOR || '#ffffff'
   displayMobileMenu = false
   tabLinks = [
@@ -75,8 +57,6 @@ export class NavigationMenuComponent {
   )
 
   isMobile$ = getIsMobile()
-
-  constructor(private routerFacade: RouterFacade) {}
 
   toggleMobileMenu() {
     this.displayMobileMenu = !this.displayMobileMenu

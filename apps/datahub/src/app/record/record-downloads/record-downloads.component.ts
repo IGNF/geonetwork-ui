@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core'
 import { DataService } from '@geonetwork-ui/feature/dataviz'
 import { getFileFormat, getLinkPriority } from '@geonetwork-ui/util/shared'
-import { combineLatest, of } from 'rxjs'
+import { forkJoin, of } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import {
   DatasetOnlineResource,
@@ -20,10 +20,8 @@ import { DownloadsListComponent } from '@geonetwork-ui/ui/elements'
   imports: [CommonModule, DownloadsListComponent],
 })
 export class RecordDownloadsComponent {
-  constructor(
-    public facade: MdViewFacade,
-    private dataService: DataService
-  ) {}
+  facade = inject(MdViewFacade)
+  private dataService = inject(DataService)
 
   error: string = null
 
@@ -60,7 +58,7 @@ export class RecordDownloadsComponent {
 
       this.error = null
 
-      return combineLatest([
+      return forkJoin([
         ...(wfsLinks.length > 0
           ? wfsLinks.map((link) =>
               this.dataService
@@ -68,7 +66,7 @@ export class RecordDownloadsComponent {
                 .pipe(
                   catchError((e) => {
                     this.error = e.message
-                    return [of([] as DatasetOnlineResource[])]
+                    return of([] as DatasetOnlineResource[])
                   })
                 )
             )
