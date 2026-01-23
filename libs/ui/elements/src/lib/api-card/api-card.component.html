@@ -1,39 +1,61 @@
-<div class="group flex justify-between rounded filter overflow-hidden card-shadow" [ngClass]="cardClass">
+<div
+  class="group flex justify-between rounded filter overflow-hidden card-shadow"
+  [ngClass]="cardClass"
+>
   @if (size !== 'S') {
-  <div class="flex-1 min-w-0">
-    <ng-container *ngTemplateOutlet="content"></ng-container>
-  </div>
-  <div class="flex items-center min-w-[32px]">
-    <ng-container *ngTemplateOutlet="buttons"></ng-container>
-  </div>
+    <div class="flex-1 min-w-0">
+      <ng-container *ngTemplateOutlet="content"></ng-container>
+    </div>
+    <div class="flex items-center min-w-[32px]">
+      <ng-container *ngTemplateOutlet="buttons"></ng-container>
+    </div>
   }
   @if (size === 'S') {
-  <ng-container *ngTemplateOutlet="content"></ng-container>
+    <ng-container *ngTemplateOutlet="content"></ng-container>
   }
 </div>
 
 <ng-template #buttons>
   <div class="flex flex-row gap-2">
-    <gn-ui-copy-text-button [text]="link.url" [tooltipText]="'tooltip.url.copy' | translate" [displayText]="false"
-      class="border border-gray-300 rounded-lg pt-1 px-2 h-[34px]"></gn-ui-copy-text-button>
+    <gn-ui-copy-text-button
+      [text]="link.url"
+      [tooltipText]="'tooltip.url.copy' | translate"
+      [displayText]="false"
+      class="border border-gray-300 rounded-lg pt-1 px-2 h-[34px]"
+    ></gn-ui-copy-text-button>
     @if (displayApiFormButton) {
-    <button type="button" class="gn-ui-card-icon" [ngClass]="{
+      <button
+        type="button"
+        class="gn-ui-card-icon"
+        [ngClass]="{
           'py-2 px-4 rounded-r-md bg-gray-400 hover:bg-gray-600 focus:bg-gray-800 text-white':
             displayText,
-        }" [matTooltip]="
+        }"
+        [matTooltip]="
           !currentlyActive
             ? ('record.metadata.api.form.openForm' | translate)
             : ('record.metadata.api.form.closeForm' | translate)
-        " matTooltipPosition="above" (click)="openRecordApiFormPanel(link)">
-      <ng-icon *ngIf="link.accessServiceProtocol !== 'GPFDL'" class="pointer-events-none align-middle card-icon"
-        name="iconoirSettings" [ngClass]="{
+        "
+        matTooltipPosition="above"
+        (click)="openRecordApiFormPanel(link)"
+      >
+        <ng-icon
+          *ngIf="link.accessServiceProtocol !== 'GPFDL'"
+          class="pointer-events-none align-middle card-icon"
+          name="iconoirSettings"
+          [ngClass]="{
             'text-secondary opacity-100': currentlyActive,
-          }" />
-      <ng-icon *ngIf="link.accessServiceProtocol == 'GPFDL'" class="pointer-events-none align-middle card-icon"
-        name="iconoirDownload" [ngClass]="{
-          'text-secondary opacity-100': currentlyActive,
-        }" />
-    </button>
+          }"
+        />
+        <ng-icon
+          *ngIf="link.accessServiceProtocol == 'GPFDL'"
+          class="pointer-events-none align-middle card-icon"
+          name="iconoirDownload"
+          [ngClass]="{
+            'text-secondary opacity-100': currentlyActive,
+          }"
+        />
+      </button>
     }
   </div>
 </ng-template>
@@ -50,27 +72,33 @@
   <div class="flex flex-row justify-between">
     <div class="flex flex-row gap-2.5 items-center pt-1">
       @if (link.accessServiceProtocol !== 'GPFDL') {
-      <span
-        class="bg-primary-opacity-50 uppercase inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded text-primary-lightest group-hover:bg-primary transition-colors"
-        [ngClass]="{
+        <span
+          class="bg-primary-opacity-50 uppercase inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded text-primary-lightest group-hover:bg-primary transition-colors"
+          [ngClass]="{
             '!bg-primary': currentlyActive,
-          }" translate>record.metadata.api.accessServiceProtocol.{{
-        link.accessServiceProtocol
-        }}</span>
+          }"
+          translate
+          >record.metadata.api.accessServiceProtocol.{{
+            link.accessServiceProtocol
+          }}</span
+        >
       }
       @if (link.accessServiceProtocol === 'GPFDL') {
-      <span
-        class="bg-primary-opacity-50 uppercase inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded text-primary-lightest group-hover:bg-primary transition-colors"
-        [ngClass]="{
+        <span
+          class="bg-primary-opacity-50 uppercase inline-flex items-center justify-center px-2 py-1 text-13 font-medium leading-none text-white rounded text-primary-lightest group-hover:bg-primary transition-colors"
+          [ngClass]="{
             '!bg-primary': currentlyActive,
-          }" translate>
-        record.metadata.api.gpfdl</span>
+          }"
+          translate
+        >
+          record.metadata.api.gpfdl</span
+        >
       }
     </div>
     @if (size === 'S') {
-    <div>
-      <ng-container *ngTemplateOutlet="buttons"></ng-container>
-    </div>
+      <div>
+        <ng-container *ngTemplateOutlet="buttons"></ng-container>
+      </div>
     }
   </div>
 </ng-template>
