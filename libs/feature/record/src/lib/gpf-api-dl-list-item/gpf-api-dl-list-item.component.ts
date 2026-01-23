@@ -53,8 +53,6 @@ export class GpfApiDlListItemComponent implements OnInit {
         return
       }
 
-      console.log('fileUrls:', fileUrls)
-
       for (const fileUrl of fileUrls) {
         if (fileUrl?.id) {
           await this.downloadFile(fileUrl.id)

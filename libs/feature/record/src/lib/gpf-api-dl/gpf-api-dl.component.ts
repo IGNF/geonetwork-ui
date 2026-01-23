@@ -6,7 +6,6 @@ import {
   AfterViewInit,
   ViewChild,
   ElementRef,
-  inject,
 } from '@angular/core'
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
 import { BehaviorSubject, combineLatest, map, mergeMap, Observable } from 'rxjs'
@@ -50,8 +49,8 @@ export interface TermBucket {
 }
 
 export interface Field {
-  entry: Array<unknown>
-  link: Record<string, unknown>
+  entry: Array<any>
+  link: any
 }
 
 @Component({
@@ -69,9 +68,7 @@ export interface Field {
   ],
 })
 export class GpfApiDlComponent implements OnInit, AfterViewInit {
-  protected http = inject(HttpClient)
   @ViewChild('container') container: ElementRef<HTMLElement>
-
   isOpen = false
   collapsed = false
   initialLimit = 50
@@ -87,13 +84,13 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
 
   url =
     'https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
-  choices: { zone: TermBucket[]; format: TermBucket[]; category: TermBucket[] }
+  choices: any
   bucketPromisesZone: Choice[]
   bucketPromisesFormat: Choice[]
   bucketPromisesCrs: Choice[]
   defaultEditionDate: [any, any]
 
-  constructor(protected http: HttpClient) { }
+  constructor(protected http: HttpClient) {}
 
   @Input() set apiLink(value: DatasetServiceDistribution) {
     this.apiBaseUrl = value ? value.url.href : undefined
@@ -207,10 +204,8 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     })
   )
 
-  getFilteredProduct$(
-    url
-  ): Observable<{ entry: unknown[]; totalentries: number }> {
-    return this.http.get<{ entry: unknown[]; totalentries: number }>(url)
+  getFilteredProduct$(url): Observable<any> {
+    return this.http.get(url)
   }
 
   getLinkFormat(produit): string {
@@ -299,7 +294,7 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
 
     const tempZone = this.choices.zone.map((bucket) => ({
       value: bucket.term,
-      label: String(bucket.label),
+      label: bucket.label,
     }))
     tempZone.sort((a, b) => (a.label > b.label ? 1 : -1))
     tempZone.unshift({ value: 'null', label: 'ZONE' })
@@ -308,7 +303,7 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
 
     const tempFormat = this.choices.format.map((bucket) => ({
       value: bucket.term,
-      label: String(bucket.label),
+      label: bucket.label,
     }))
     tempFormat.sort((a, b) => (a.label > b.label ? 1 : -1))
     tempFormat.unshift({ value: 'null', label: 'FORMAT' })
@@ -317,7 +312,7 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
 
     const tempCrs = this.choices.category.map((bucket) => ({
       value: bucket.term,
-      label: String(bucket.label),
+      label: bucket.label,
     }))
     tempCrs.sort((a, b) => (a.label > b.label ? 1 : -1))
     tempCrs.unshift({ value: 'null', label: 'CRS' })
