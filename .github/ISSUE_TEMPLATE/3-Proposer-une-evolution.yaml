@@ -1,7 +1,7 @@
 name: 💡 Proposer une évolution
 description: Suggérer une idée d'évolution ou de nouvelle fonctionnalité pour cartes.gouv.fr
 labels: ["feature request","design"]
-projects: ["IGNF/52"]
+projects: ["IGNF/14"]
 type: "Feature"
 body:
   - type: textarea
