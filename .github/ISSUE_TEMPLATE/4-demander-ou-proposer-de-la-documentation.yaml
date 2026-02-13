@@ -1,7 +1,7 @@
 name: 📚 Demander ou proposer de la documentation
 description: Posez une question sur une étape à éclaircir, suggérez des modifications de la documentation
 labels: ["documentation"]
-projects: ["IGNF/52"]
+projects: ["IGNF/14"]
 type: "Task"
 body:
     - type: textarea
