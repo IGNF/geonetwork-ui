@@ -62,9 +62,9 @@ export class ExternalViewerButtonComponent {
       if (this.link.accessServiceProtocol === 'wmts') {
         return 'wmts'
       }
-      /*if (this.link.accessServiceProtocol === 'maplibre-style') {
+      if (this.link.accessServiceProtocol === 'maplibre-style') {
         return 'tms'
-      }*/
+      }
     } else if (
       this.link.type === 'download' &&
       getFileFormat(this.link) === 'geojson'
@@ -97,9 +97,11 @@ export class ExternalViewerButtonComponent {
       : this.translateService.instant('externalviewer.dataset.unnamed')
 
     //@ts-ignore
-    if (this.link.accessServiceProtocol == 'tms') {
+    if (this.link.accessServiceProtocol == 'maplibre-style') {
+      var layerStyle = `${layerName}`.split(' - ')
+      var layerRealName = this.link.url.href.split('/')
       url = templateUrl
-        .replace('${layer_name}', `${layerName}`)
+        .replace('${layer_name}', layerRealName[layerRealName.length - 2])
         .replace(
           '${service_url}',
           `${encodeURIComponent(this.link.url.toString())}`
@@ -109,6 +111,7 @@ export class ExternalViewerButtonComponent {
           `${this.supportedLinkLayerType.toUpperCase()}`
         )
         .replace('${geop_type}', `GPP`)
+        .replace('${tms_style}', ';' + layerStyle[1])
     } else {
       url = templateUrl
         .replace('${layer_name}', `${layerName}`)
@@ -121,6 +124,7 @@ export class ExternalViewerButtonComponent {
           `${this.supportedLinkLayerType.toUpperCase()}`
         )
         .replace('${geop_type}', `OGC`)
+        .replace('${tms_style}', '')
     }
 
     window.open(url, this.openinNewTab ? '_blank' : '_self').focus()

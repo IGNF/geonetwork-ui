@@ -9,7 +9,7 @@ import { ThemeService } from '@geonetwork-ui/util/shared'
   standalone: false,
 })
 export class AppComponent implements OnInit, AfterViewInit {
-  constructor(public renderer: Renderer2) {}
+  constructor(public renderer: Renderer2) { }
 
   ngOnInit(): void {
     const favicon = getThemeConfig().FAVICON
@@ -27,6 +27,5 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.renderer.removeClass(title, 'fr-badge--green-emeraude')
     this.renderer.insertBefore(title, spanBadge, title.firstChild)
     this.renderer.addClass(title, 'fr-badge--blue-cumulus')
-    console.log(title)
   }
 }

@@ -2,8 +2,13 @@
   <gn-ui-button
     (buttonClick)="openInIgnExternalViewer()"
     type="primary"
-    [title]="'record.externalViewer.open' | translate"
+    [title]="
+      supportedLinkLayerType === 'wfs'
+        ? 'Impossible d\'ouvrir ce type de service sur le visualiseur externe'
+        : ('record.externalViewer.open' | translate)
+    "
     [extraClass]="extraClass + 'bg-primary ms-2 !rounded-lg'"
+    [disabled]="supportedLinkLayerType === 'wfs'"
   >
     <ng-icon name="matOpenInNew"></ng-icon>
   </gn-ui-button>
