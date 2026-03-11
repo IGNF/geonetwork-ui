@@ -9,7 +9,7 @@ import { ThemeService } from '@geonetwork-ui/util/shared'
   standalone: false,
 })
 export class AppComponent implements OnInit, AfterViewInit {
-  constructor(public renderer: Renderer2) { }
+  constructor(public renderer: Renderer2) {}
 
   ngOnInit(): void {
     const favicon = getThemeConfig().FAVICON
