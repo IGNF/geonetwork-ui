@@ -98,30 +98,15 @@
         </dsfr-tool-link-menu>
       </li>
       <li>
-        <dsfr-tool-link-menu
-          [outline]="false"
-          [labelMenu]="'Mon espace'"
-          [iconMenu]="'fr-icon-account-circle-fill'"
-        >
-          <ng-template #linksTemplate>
-            <ul>
-              <dsfr-link
-                [link]="'https://cartes.gouv.fr/tableau-de-bord'"
-                [label]="'Tableau de bord'"
-                [icon]="'fr-icon-dashboard-3-line'"
-                [customClass]="'fr-nav__link'"
-                [iconPosition]="'left'"
-              ></dsfr-link>
-              <dsfr-link
-                [link]="'https://cartes.gouv.fr/mon-compte'"
-                [label]="'Mon compte'"
-                [icon]="'fr-icon-user-line'"
-                [customClass]="'fr-nav__link'"
-                [iconPosition]="'left'"
-              ></dsfr-link>
-            </ul>
-          </ng-template>
-        </dsfr-tool-link-menu>
+        <div id="header-auth">
+          <button
+            class="login-btn fr-icon-account-circle-fill fr-btn"
+            type="button"
+            title="Se connecter"
+          >
+            Se connecter
+          </button>
+        </div>
       </li>
     </ng-template>
   </dsfr-header>

@@ -106,6 +106,7 @@ export class SearchFiltersComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.isQualitySortable = false
     if (this.platformService.supportsAuthentication()) {
       this.platformService.getMe().subscribe((user) => (this.userId = user?.id))
     }
