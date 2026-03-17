@@ -10,7 +10,7 @@ import Keycloak from 'keycloak-js'
   standalone: false,
 })
 export class AppComponent implements OnInit, AfterViewInit {
-  constructor(public renderer: Renderer2) { }
+  constructor(public renderer: Renderer2) {}
 
   ngOnInit(): void {
     const favicon = getThemeConfig().FAVICON
@@ -35,11 +35,9 @@ export class AppComponent implements OnInit, AfterViewInit {
     const authContainer = document.getElementById('header-auth')
     if (!authContainer) return
 
-    const client_id = 'cartes-gouv-public';
-    let sso_url;
-    if (
-      encodeURIComponent(window.location.href).includes('mut-dev')
-    ) {
+    const client_id = 'cartes-gouv-public'
+    let sso_url
+    if (encodeURIComponent(window.location.href).includes('mut-dev')) {
       sso_url = 'sso-qua.priv.geopf.fr'
     } else {
       sso_url = 'sso.geopf.fr'
@@ -70,13 +68,13 @@ export class AppComponent implements OnInit, AfterViewInit {
                 <li>
                     <div class="fr-translate fr-nav">
                         <div class="fr-nav__item">
-                            <button aria-controls="${collapseId}" aria-expanded="false" title="Mon espace" class="fr-nav__btn fr-btn fr-px-2w">
+                            <button aria-controls="${collapseId}" aria-expanded="false" title="Mon espace" class="fr-nav__btn edu-menu-dropdown__btn fr-btn--sm fr-btn--icon-left fr-btn fr-btn--tertiary-no-outline">
                                 <span class="fr-icon-account-circle-fill fr-icon--sm fr-mr-1w" aria-hidden="true"></span>Mon espace</button>
-                            <div class="fr-collapse fr-translate__menu fr-menu" id="${collapseId}">
+                            <div class="fr-collapse fr-menu" style="width: 18rem;" id="${collapseId}">
                                 <ul class="fr-menu__list">
                                     <li style="pointer-events: none;">
                                         <div class="fr-text--sm">
-                                            <p class="custom-center-btn fr-text--bold fr-mx-2w fr-text--sm fr-mt-3v fr-mb-2v">${displayName}</p>
+                                            <p class="custom-center-btn fr-text--bold fr-mx-2w fr-text--sm fr-mt-3v" style="text-align: left;">${displayName}</p>
                                             <p class="fr-text--xs fr-mb-3v fr-mx-2w fr-text-mention--grey" style="text-align: left;">${claims.email}</p>
                                         </div>
                                     </li>
@@ -89,9 +87,9 @@ export class AppComponent implements OnInit, AfterViewInit {
                                             <span class="fr-icon-user-line fr-icon--sm">&emsp;Mon compte</span></a>
                                     </li>
                                     <li>
-                                        <div>
+                                        <div style="text-align: center;">
                                             <a href="https://${sso_url}/realms/geoplateforme/protocol/openid-connect/logout?post_logout_redirect_uri=${currentUrl}&client_id=${client_id}"
-                                                class="fr-icon-logout-box-r-line fr-icon--sm custom-center-btn fr-btn fr-btn--tertiary fr-btn--sm fr-mt-3v fr-mx-2w">
+                                                class="fr-icon-logout-box-r-line fr-icon--sm custom-center-btn fr-btn fr-btn--tertiary fr-btn--sm fr-mt-3v fr-mx-2w" style="width: 14rem; justify-content: center;">
                                                 Se déconnecter
                                             </a>
                                         </div>
@@ -120,11 +118,11 @@ export class AppComponent implements OnInit, AfterViewInit {
       clientId: client_id,
     })
 
-    let locationChecker;
+    let locationChecker
     if (window.location.href.includes('localhost')) {
-      locationChecker = `${window.location.origin}/assets/silent-check-sso.html`;
+      locationChecker = `${window.location.origin}/assets/silent-check-sso.html`
     } else {
-      locationChecker = `${window.location.origin}/rechercher-une-donnee/assets/silent-check-sso.html`;
+      locationChecker = `${window.location.origin}/rechercher-une-donnee/assets/silent-check-sso.html`
     }
 
     // "Authorization Code" flow avec PKCE (type de client Keycloak : Public).
