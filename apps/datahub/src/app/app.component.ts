@@ -35,6 +35,16 @@ export class AppComponent implements OnInit, AfterViewInit {
     const authContainer = document.getElementById('header-auth')
     if (!authContainer) return
 
+    let client_id
+    if (
+      encodeURIComponent(window.location.href).includes('qlf-') ||
+      encodeURIComponent(window.location.href).includes('mut-dev')
+    ) {
+      client_id = 'cartes-gouv-dev'
+    } else {
+      client_id = 'cartes-gouv-public'
+    }
+
     const renderLoggedOut = () => {
       document.querySelectorAll('.login-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -80,7 +90,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                                     </li>
                                     <li>
                                         <div>
-                                            <a href="https://sso.geopf.fr/realms/geoplateforme/protocol/openid-connect/logout?post_logout_redirect_uri=${currentUrl}&client_id=cartes-gouv-public"
+                                            <a href="https://sso.geopf.fr/realms/geoplateforme/protocol/openid-connect/logout?post_logout_redirect_uri=${currentUrl}&client_id=${client_id}"
                                                 class="fr-icon-logout-box-r-line fr-icon--sm custom-center-btn fr-btn fr-btn--tertiary fr-btn--sm fr-mt-3v fr-mx-2w">
                                                 Se déconnecter
                                             </a>
@@ -107,7 +117,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     const keycloak = new Keycloak({
       url: 'https://sso.geopf.fr',
       realm: 'geoplateforme',
-      clientId: 'cartes-gouv-public',
+      clientId: client_id,
     })
 
     // "Authorization Code" flow avec PKCE (type de client Keycloak : Public).
@@ -117,7 +127,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         flow: 'standard',
         pkceMethod: 'S256',
         checkLoginIframe: false,
-        silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
+        silentCheckSsoRedirectUri: `${window.location.origin}/assets/silent-check-sso.html`,
       })
       .then(async (authenticated) => {
         if (!authenticated) {
