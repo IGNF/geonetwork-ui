@@ -35,14 +35,14 @@ export class AppComponent implements OnInit, AfterViewInit {
     const authContainer = document.getElementById('header-auth')
     if (!authContainer) return
 
-    let client_id
+    const client_id = 'cartes-gouv-public';
+    let sso_url;
     if (
-      encodeURIComponent(window.location.href).includes('qlf-') ||
       encodeURIComponent(window.location.href).includes('mut-dev')
     ) {
-      client_id = 'cartes-gouv-dev'
+      sso_url = 'sso-qua.priv.geopf.fr'
     } else {
-      client_id = 'cartes-gouv-public'
+      sso_url = 'sso.geopf.fr'
     }
 
     const renderLoggedOut = () => {
@@ -90,7 +90,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                                     </li>
                                     <li>
                                         <div>
-                                            <a href="https://sso.geopf.fr/realms/geoplateforme/protocol/openid-connect/logout?post_logout_redirect_uri=${currentUrl}&client_id=${client_id}"
+                                            <a href="https://${sso_url}/realms/geoplateforme/protocol/openid-connect/logout?post_logout_redirect_uri=${currentUrl}&client_id=${client_id}"
                                                 class="fr-icon-logout-box-r-line fr-icon--sm custom-center-btn fr-btn fr-btn--tertiary fr-btn--sm fr-mt-3v fr-mx-2w">
                                                 Se déconnecter
                                             </a>
@@ -115,7 +115,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     const keycloak = new Keycloak({
-      url: 'https://sso.geopf.fr',
+      url: `https://${sso_url}`,
       realm: 'geoplateforme',
       clientId: client_id,
     })
