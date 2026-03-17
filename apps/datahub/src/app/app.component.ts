@@ -10,7 +10,7 @@ import Keycloak from 'keycloak-js'
   standalone: false,
 })
 export class AppComponent implements OnInit, AfterViewInit {
-  constructor(public renderer: Renderer2) {}
+  constructor(public renderer: Renderer2) { }
 
   ngOnInit(): void {
     const favicon = getThemeConfig().FAVICON
@@ -120,6 +120,13 @@ export class AppComponent implements OnInit, AfterViewInit {
       clientId: client_id,
     })
 
+    let locationChecker;
+    if (window.location.href.includes('localhost')) {
+      locationChecker = `${window.location.origin}/assets/silent-check-sso.html`;
+    } else {
+      locationChecker = `${window.location.origin}/rechercher-une-donnee/assets/silent-check-sso.html`;
+    }
+
     // "Authorization Code" flow avec PKCE (type de client Keycloak : Public).
     keycloak
       .init({
@@ -127,7 +134,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         flow: 'standard',
         pkceMethod: 'S256',
         checkLoginIframe: false,
-        silentCheckSsoRedirectUri: `${window.location.origin}/assets/silent-check-sso.html`,
+        silentCheckSsoRedirectUri: locationChecker,
       })
       .then(async (authenticated) => {
         if (!authenticated) {
