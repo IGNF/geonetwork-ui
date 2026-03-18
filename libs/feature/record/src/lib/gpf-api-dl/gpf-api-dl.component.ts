@@ -8,14 +8,20 @@ import {
   ElementRef,
 } from '@angular/core'
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
-import { BehaviorSubject, combineLatest, map, mergeMap, Observable } from 'rxjs'
+import {
+  BehaviorSubject,
+  combineLatest,
+  map,
+  switchMap,
+  Observable,
+  shareReplay,
+  tap,
+} from 'rxjs'
 import { HttpClient } from '@angular/common/http'
 import { Choice, DropdownSelectorComponent } from '@geonetwork-ui/ui/inputs'
-import axios from 'axios'
 import { CommonModule } from '@angular/common'
 import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
 import { GpfApiDlListItemComponent } from '../gpf-api-dl-list-item/gpf-api-dl-list-item.component'
-import { log } from 'rdflib'
 
 export interface Label {
   label: string
@@ -94,7 +100,6 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
 
   @Input() set apiLink(value: DatasetServiceDistribution) {
     this.apiBaseUrl = value ? value.url.href : undefined
-    // tenter de focuser le conteneur quand l'input est (re)défini
     Promise.resolve().then(() => {
       try {
         this.container?.nativeElement?.focus()
@@ -117,7 +122,6 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // focuser le conteneur une fois la vue initialisée
     Promise.resolve().then(() => {
       try {
         this.container?.nativeElement?.focus()
@@ -140,75 +144,51 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     this.page$,
   ]).pipe(
     map(([zone, format, editionDateFrom, editionDateTo, crs, page]) => {
-      let outputUrl
-      if (this.apiBaseUrl) {
-        const url = new URL(this.apiBaseUrl) // initialisation de l'url avec l'url de base
-        if (
-          editionDateFrom === this.defaultEditionDate[0] &&
-          editionDateTo === this.defaultEditionDate[1]
-        ) {
-          const params = {
-            zone: zone,
-            format: format,
-            editionDateFrom: '',
-            editionDateTo: '',
-            crs: crs,
-            page: page,
-          } // initialisation des paramètres de filtres
-          for (const [key, value] of Object.entries(params)) {
-            if (value && value !== 'null') {
-              url.searchParams.set(key, String(value))
-            } else {
-              url.searchParams.delete(key)
-            }
-          }
-          outputUrl = url.toString()
-        } else {
-          const params = {
-            zone: zone,
-            format: format,
-            editionDateFrom: editionDateFrom,
-            editionDateTo: editionDateTo,
-            crs: crs,
-            page: page,
-          } // initialisation des paramètres de filtres
-          for (const [key, value] of Object.entries(params)) {
-            if (value && value !== 'null') {
-              url.searchParams.set(key, String(value))
-            } else {
-              url.searchParams.delete(key)
-            }
-          }
-          outputUrl = url.toString()
-        }
-      } else {
+      if (!this.apiBaseUrl) {
         console.error('erreur apibaseUrl null')
+        return null
       }
-      return outputUrl
+
+      const url = new URL(this.apiBaseUrl)
+      const params: Record<string, string | number | null> = {
+        zone,
+        format,
+        editionDateFrom:
+          editionDateFrom === this.defaultEditionDate[0] ? '' : editionDateFrom,
+        editionDateTo:
+          editionDateTo === this.defaultEditionDate[1] ? '' : editionDateTo,
+        crs,
+        page,
+      }
+
+      for (const [key, value] of Object.entries(params)) {
+        if (value && value !== 'null') {
+          url.searchParams.set(key, String(value))
+        } else {
+          url.searchParams.delete(key)
+        }
+      }
+
+      return url.toString()
     })
   )
 
-  listFilteredProduct$ = this.apiQueryUrl$.pipe(
-    mergeMap((url) => {
-      return this.getFilteredProduct$(url).pipe(
-        map((response) => response['entry'])
-      )
-    })
+  private filteredData$ = this.apiQueryUrl$.pipe(
+    switchMap((url) => this.getFilteredProduct$(url)),
+    shareReplay(1)
   )
 
-  pageMax$ = this.apiQueryUrl$.pipe(
-    mergeMap((url) => {
-      return this.getFilteredProduct$(url).pipe(
-        map((response) => response['pagecount'])
-      )
-    })
+  listFilteredProduct$ = this.filteredData$.pipe(
+    map((r) => r['entry']),
+    tap((entries) => console.log('entries count:', entries?.length, entries))
   )
+  pageMax$ = this.filteredData$.pipe(map((r) => r['pagecount']))
 
-  getFilteredProduct$(url): Observable<any> {
+  getFilteredProduct$(url: string): Observable<any> {
     return this.http.get(url)
   }
 
-  getLinkFormat(produit): string {
+  getLinkFormat(produit: any): string {
     return produit['format'][0]['label']
   }
 
@@ -222,7 +202,6 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
   setEditionDateTo(value: string) {
     if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
       this.editionDateTo$.next(value)
-
       this.resetPage()
     }
   }
@@ -258,6 +237,7 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     this.editionDateFrom$.next(this.defaultEditionDate[0])
     this.editionDateTo$.next(this.defaultEditionDate[1])
   }
+
   moreResult(): void {
     this.page$.next(this.page$.value + 1)
   }
@@ -276,50 +256,46 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     let pageCount = 1
 
     while (choicesTest === undefined && pageCount > page) {
-      const response = await axios.get(
-        this.url.concat(`&limit=200&page=${page}`)
-      )
+      const response = await this.http
+        .get<any>(this.url.concat(`&limit=200&page=${page}`))
+        .toPromise()
 
-      choicesTest = response.data.entry.filter(
-        (element) => element['id'] == this.apiBaseUrl
+      choicesTest = response.entry.filter(
+        (element: any) => element['id'] === this.apiBaseUrl
       )[0]
       page += 1
-      pageCount = response.data.pagecount + 1
+      pageCount = response.pagecount + 1
     }
 
     return choicesTest
   }
+
   async getFields() {
     this.choices = await this.getCapabilities()
 
-    const tempZone = this.choices.zone.map((bucket) => ({
+    const tempZone = this.choices.zone.map((bucket: TermBucket) => ({
       value: bucket.term,
       label: bucket.label,
     }))
-    tempZone.sort((a, b) => (a.label > b.label ? 1 : -1))
+    tempZone.sort((a: Choice, b: Choice) => (a.label > b.label ? 1 : -1))
     tempZone.unshift({ value: 'null', label: 'ZONE' })
-
     this.bucketPromisesZone = tempZone
 
-    const tempFormat = this.choices.format.map((bucket) => ({
+    const tempFormat = this.choices.format.map((bucket: TermBucket) => ({
       value: bucket.term,
       label: bucket.label,
     }))
-    tempFormat.sort((a, b) => (a.label > b.label ? 1 : -1))
+    tempFormat.sort((a: Choice, b: Choice) => (a.label > b.label ? 1 : -1))
     tempFormat.unshift({ value: 'null', label: 'FORMAT' })
-
     this.bucketPromisesFormat = tempFormat
 
-    const tempCrs = this.choices.category.map((bucket) => ({
+    const tempCrs = this.choices.category.map((bucket: TermBucket) => ({
       value: bucket.term,
       label: bucket.label,
     }))
-    tempCrs.sort((a, b) => (a.label > b.label ? 1 : -1))
+    tempCrs.sort((a: Choice, b: Choice) => (a.label > b.label ? 1 : -1))
     tempCrs.unshift({ value: 'null', label: 'CRS' })
-
     this.bucketPromisesCrs = tempCrs
-
-    console.log('choices', this.choices.editionDateStart)
 
     this.defaultEditionDate = [
       this.choices.editionDateStart,
@@ -328,6 +304,5 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
 
     this.editionDateFrom$.next(this.defaultEditionDate[0])
     this.editionDateTo$.next(this.defaultEditionDate[1])
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   }
 }
