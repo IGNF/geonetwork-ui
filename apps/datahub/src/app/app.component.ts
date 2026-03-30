@@ -179,38 +179,9 @@ export class AppComponent implements OnInit, AfterViewInit {
       return
     }
 
-    let showModal = false
-
-    // Check for query parameter first (most reliable if referrer is blocked)
-    const urlParams = new URL(window.location.href).searchParams
-    const source = urlParams.get('source') || urlParams.get('utm_source')
-
-    if (source === 'geoservices') {
-      console.log('Navigation source detected via query param: geoservices')
-      showModal = true
-    }
-
-    // Fallback to referrer check
-    if (!showModal && this.document.referrer) {
-      try {
-        const previousURL = new URL(this.document.referrer)
-
-        // Check if the user is coming from https://geoservices.ign.fr/
-        if (previousURL.origin === 'https://geoservices.ign.fr') {
-          console.log(
-            'Navigation source detected via referrer: geoservices.ign.fr'
-          )
-          showModal = true
-        }
-      } catch (error) {
-        console.debug('Invalid referrer URL:', this.document.referrer)
-      }
-    }
-    if (showModal) {
-      setTimeout(() => {
-        this.welcomeModalRef?.open()
-      }, 1000)
-    }
+    setTimeout(() => {
+      this.welcomeModalRef?.open()
+    }, 1000)
   }
 
   onWelcomeModalCheckboxChange(event: Event): void {
