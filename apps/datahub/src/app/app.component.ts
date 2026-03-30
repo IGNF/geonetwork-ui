@@ -27,7 +27,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   constructor(
     public renderer: Renderer2,
     @Inject(DOCUMENT) private document: Document
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const favicon = getThemeConfig().FAVICON
@@ -179,9 +179,15 @@ export class AppComponent implements OnInit, AfterViewInit {
       return
     }
 
-    setTimeout(() => {
-      this.welcomeModalRef?.open()
-    }, 1000)
+    // Check for query parameter first to detect geoservices.ign.fr redirection
+    const urlParams = new URL(window.location.href).searchParams
+    const redirectFrom = urlParams.get('redirected_from')
+
+    if (redirectFrom === 'geoservices.ign.fr') {
+      setTimeout(() => {
+        this.welcomeModalRef?.open()
+      }, 1000)
+    }
   }
 
   onWelcomeModalCheckboxChange(event: Event): void {
