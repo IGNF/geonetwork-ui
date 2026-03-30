@@ -191,4 +191,79 @@
     des tiers, les contenus de ce site sont proposés sous &#60;a href=&#34;https://github.com/etalab/licence-ouverte/blob/master/LO.md&#34; target=&#34;_blank&#34; title=&#34;licence etalab-2.0 - ouvre une nouvelle fenêtre&#34;&#62;licence etalab-2.0&#60;/a&#62;'
     "
   ></dsfr-footer>
+  <dsfr-modal dialogId="welcomeModal" icon="" #welcomeModal modalSize="lg">
+    <div class="fr-container--fluid">
+      <div class="fr-grid-row logo-row">
+        <p class="fr-logo" style="font-size: 0.8rem; padding-right: 10px">
+          République<br />Française
+        </p>
+        <img
+          src="https://data.geopf.fr/annexes/ressources/header/cartes-gouv-logo.svg"
+          alt=""
+        />
+      </div>
+      <div class="fr-grid-row content" style="padding-top: 20px">
+        <h2 class="fr-modal__title">Bienvenue sur cartes.gouv.fr</h2>
+        <p style="margin: 0 0 1.5rem">
+          Géoservices converge vers cartes.gouv.fr. Retrouvez ici une vaste
+          collection de données et services :
+        </p>
+        <br />
+        <div style="margin-bottom: 1rem">
+          <span class="icon-welcome span-welcome purple-glycine"
+            ><i class="fr-icon-filter-line"></i></span
+          >Recherchez une fiche de données, triez, filtrez par thème ou
+          producteur
+        </div>
+        <div style="margin-bottom: 1rem">
+          <span class="icon-welcome span-welcome yellow-tournesol"
+            ><i class="fr-icon-search-line"></i></span
+          >Consultez leur contenu, accédez aux documents joints
+        </div>
+        <div style="margin-bottom: 1rem">
+          <span class="icon-welcome span-welcome green-archipel"
+            ><i class="fr-icon-download-line"></i></span
+          >Télécharger les données et retrouvez les flux associés à utiliser
+          dans votre logiciel ou en API
+        </div>
+        <div style="margin-bottom: 1rem">
+          <span class="icon-welcome span-welcome orange-abricot"
+            ><i class="fr-icon-question-line"></i></span
+          >Consultez l'aide via l'en-tête du site pour retrouver vos usages et
+          vous guider dans l'utilisation du site
+        </div>
+      </div>
+    </div>
+    <div id="welcomeModalCheckboxContainer">
+      <input
+        type="checkbox"
+        id="welcomeModalCheckbox"
+        class="fr-checkbox"
+        (change)="onWelcomeModalCheckboxChange($event)"
+      />
+      <label class="fr-label" for="welcomeModalCheckbox">
+        Ne plus afficher ce message</label
+      >
+    </div>
+    <ng-template #modalFooterTemplate>
+      <dsfr-buttons-group
+        inline="LG"
+        alignment="reverse"
+        iconPosition="left"
+        groupMarkup="div"
+      >
+        <dsfr-button
+          label="Continuer ma recherche >"
+          (click)="welcomeModal.close()"
+        ></dsfr-button>
+        <a
+          href="https://cartes.gouv.fr/decouvrir/rechercher-une-donnee/"
+          class="fr-btn fr-btn--secondary"
+          target="_blank"
+          rel="noopener noreferrer"
+          >En savoir plus</a
+        >
+      </dsfr-buttons-group>
+    </ng-template>
+  </dsfr-modal>
 </div>

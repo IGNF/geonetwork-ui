@@ -1,7 +1,16 @@
-import { Component, OnInit, AfterViewInit, Renderer2 } from '@angular/core'
+import {
+  Component,
+  OnInit,
+  AfterViewInit,
+  Renderer2,
+  Inject,
+  ViewChild,
+} from '@angular/core'
+import { DOCUMENT } from '@angular/common'
 import { getThemeConfig } from '@geonetwork-ui/util/app-config'
 import { ThemeService } from '@geonetwork-ui/util/shared'
 import Keycloak from 'keycloak-js'
+import { DsfrModalComponent } from '@edugouvfr/ngx-dsfr'
 
 @Component({
   selector: 'datahub-root',
@@ -10,7 +19,15 @@ import Keycloak from 'keycloak-js'
   standalone: false,
 })
 export class AppComponent implements OnInit, AfterViewInit {
-  constructor(public renderer: Renderer2) {}
+  private readonly welcomeModalDismissedStorageKey =
+    'datahub.welcomeModal.dismissed'
+
+  @ViewChild('welcomeModal') welcomeModalRef: DsfrModalComponent
+
+  constructor(
+    public renderer: Renderer2,
+    @Inject(DOCUMENT) private document: Document
+  ) {}
 
   ngOnInit(): void {
     const favicon = getThemeConfig().FAVICON
@@ -29,6 +46,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.renderer.insertBefore(title, spanBadge, title.firstChild)
     this.renderer.addClass(title, 'fr-badge--blue-cumulus')
     this.keycloakCheckAuth()
+    this.welcomeModalGeoservices()
   }
 
   keycloakCheckAuth(): void {
@@ -154,5 +172,70 @@ export class AppComponent implements OnInit, AfterViewInit {
         console.error('Failed to initialize Keycloak', error)
         renderLoggedOut()
       })
+  }
+
+  welcomeModalGeoservices(): void {
+    if (this.isWelcomeModalDismissed()) {
+      return
+    }
+
+    let showModal = false
+
+    // Check for query parameter first (most reliable if referrer is blocked)
+    const urlParams = new URL(window.location.href).searchParams
+    const source = urlParams.get('source') || urlParams.get('utm_source')
+
+    if (source === 'geoservices') {
+      console.log('Navigation source detected via query param: geoservices')
+      showModal = true
+    }
+
+    // Fallback to referrer check
+    if (!showModal && this.document.referrer) {
+      try {
+        const previousURL = new URL(this.document.referrer)
+
+        // Check if the user is coming from https://geoservices.ign.fr/
+        if (previousURL.origin === 'https://geoservices.ign.fr') {
+          console.log(
+            'Navigation source detected via referrer: geoservices.ign.fr'
+          )
+          showModal = true
+        }
+      } catch (error) {
+        console.debug('Invalid referrer URL:', this.document.referrer)
+      }
+    }
+    if (showModal) {
+      setTimeout(() => {
+        this.welcomeModalRef?.open()
+      }, 1000)
+    }
+  }
+
+  onWelcomeModalCheckboxChange(event: Event): void {
+    const checked = (event.target as HTMLInputElement | null)?.checked ?? false
+    this.setWelcomeModalDismissed(checked)
+  }
+
+  private isWelcomeModalDismissed(): boolean {
+    try {
+      return (
+        localStorage.getItem(this.welcomeModalDismissedStorageKey) === 'true'
+      )
+    } catch {
+      return false
+    }
+  }
+
+  private setWelcomeModalDismissed(value: boolean): void {
+    try {
+      localStorage.setItem(
+        this.welcomeModalDismissedStorageKey,
+        value ? 'true' : 'false'
+      )
+    } catch {
+      // Ignore storage failures and keep default behavior.
+    }
   }
 }

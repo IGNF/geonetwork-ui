@@ -110,3 +110,10 @@ a > ng-icon[name='iconoirOpenNewWindow'] {
 .fr-badge--sm {
   padding: 0 0.375rem 0 0 !important;
 }
+
+.fr-modal > .fr-container,
+.fr-modal > .fr-container-md {
+  max-width: unset !important;
+  padding-right: unset !important;
+  padding-left: unset !important;
+}

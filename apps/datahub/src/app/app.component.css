@@ -1,0 +1,38 @@
+.icon-welcome {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.span-welcome {
+  margin-right: 0.5rem;
+  border-radius: 50%;
+  height: 34px;
+  width: 34px;
+}
+
+.purple-glycine {
+  background-color: var(--purple-glycine-925-125);
+}
+
+.yellow-tournesol {
+  background-color: var(--yellow-tournesol-925-125);
+}
+
+.green-archipel {
+  background-color: var(--green-archipel-925-125);
+}
+
+.orange-abricot {
+  background-color: var(--orange-terre-battue-925-125);
+}
+
+#welcomeModalCheckboxContainer {
+  display: flex;
+  padding-left: 3px;
+  padding-top: 15px;
+}
+
+#welcomeModalCheckbox {
+  margin-right: 5px;
+}
