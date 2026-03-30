@@ -29,15 +29,7 @@
     </ng-icon>
   </a>
   <div *ngIf="isOpen" class="p-4 border-t bg-white">
-    <div class="flex justify-end mb-3">
-      <button
-        class="flex items-center gap-2 px-4 py-2 bg-primary-opacity-50 text-white rounded-md shadow hover:bg-primary' transition"
-        (click)="downloadMultipleFiles()"
-      >
-        <ng-icon name="matCloudDownloadOutline"></ng-icon>
-        {{ 'record.metadata.api.form.downloadAll' | translate }}
-      </button>
-    </div>
+    <div class="flex justify-end mb-3"></div>
     <div class="space-y-2">
       <div
         *ngFor="let entry of liste$ | async"
