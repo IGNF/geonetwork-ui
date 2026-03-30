@@ -27,7 +27,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   constructor(
     public renderer: Renderer2,
     @Inject(DOCUMENT) private document: Document
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     const favicon = getThemeConfig().FAVICON

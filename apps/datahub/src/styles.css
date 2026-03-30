@@ -113,7 +113,13 @@ a > ng-icon[name='iconoirOpenNewWindow'] {
 
 .fr-modal > .fr-container,
 .fr-modal > .fr-container-md {
-  max-width: unset !important;
+  max-width: 1000px !important;
   padding-right: unset !important;
   padding-left: unset !important;
+}
+
+#welcomeModal > .fr-container > .fr-grid-row > .fr-col-lg-6 {
+  flex: unset !important;
+  max-width: unset !important;
+  width: unset !important;
 }
