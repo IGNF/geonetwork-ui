@@ -22,6 +22,7 @@ import { Choice, DropdownSelectorComponent } from '@geonetwork-ui/ui/inputs'
 import { CommonModule } from '@angular/common'
 import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
 import { GpfApiDlListItemComponent } from '../gpf-api-dl-list-item/gpf-api-dl-list-item.component'
+import { de } from 'date-fns/locale'
 
 export interface Label {
   label: string
@@ -90,8 +91,6 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
   editionDateFrom$ = new BehaviorSubject<string | null>(null)
   editionDateTo$ = new BehaviorSubject<string | null>(null)
 
-  url =
-    'https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
   choices: any
   bucketPromisesZone: Choice[]
   bucketPromisesFormat: Choice[]
@@ -286,23 +285,11 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
   }
 
   async getCapabilities() {
-    let page = 0
-    let choicesTest = undefined
-    let pageCount = 1
+    const response = await this.http.get<any>(this.apiBaseUrl).toPromise()
 
-    while (choicesTest === undefined && pageCount > page) {
-      const response = await this.http
-        .get<any>(this.url.concat(`&limit=200&page=${page}`))
-        .toPromise()
+    console.log('helloresponse', response)
 
-      choicesTest = response.entry.filter(
-        (element: any) => element['id'] === this.apiBaseUrl
-      )[0]
-      page += 1
-      pageCount = response.pagecount + 1
-    }
-
-    return choicesTest
+    return response
   }
 
   async getFields() {
@@ -324,7 +311,7 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     tempFormat.unshift({ value: 'null', label: 'FORMAT' })
     this.bucketPromisesFormat = tempFormat
 
-    const tempCrs = this.choices.category.map((bucket: TermBucket) => ({
+    const tempCrs = this.choices.categories.map((bucket: TermBucket) => ({
       value: bucket.term,
       label: bucket.label,
     }))
@@ -336,6 +323,7 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
       this.choices.editionDateStart,
       this.choices.editionDateEnd,
     ]
+    console.log('this.defaultEditionDate', this.defaultEditionDate)
 
     this.editionDateFrom$.next(this.defaultEditionDate[0])
     this.editionDateTo$.next(this.defaultEditionDate[1])
