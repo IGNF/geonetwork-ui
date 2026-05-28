@@ -84,6 +84,8 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
   format$ = new BehaviorSubject('')
   crs$ = new BehaviorSubject('')
   page$ = new BehaviorSubject(1)
+  sortEntriesBy$ = new BehaviorSubject('editionDate')
+  sortEntriesOrder$ = new BehaviorSubject('desc')
 
   editionDateFrom$ = new BehaviorSubject<string | null>(null)
   editionDateTo$ = new BehaviorSubject<string | null>(null)
@@ -142,35 +144,52 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     this.editionDateTo$,
     this.crs$,
     this.page$,
+    this.sortEntriesBy$,
+    this.sortEntriesOrder$,
   ]).pipe(
-    map(([zone, format, editionDateFrom, editionDateTo, crs, page]) => {
-      if (!this.apiBaseUrl) {
-        console.error('erreur apibaseUrl null')
-        return null
-      }
-
-      const url = new URL(this.apiBaseUrl)
-      const params: Record<string, string | number | null> = {
+    map(
+      ([
         zone,
         format,
-        editionDateFrom:
-          editionDateFrom === this.defaultEditionDate[0] ? '' : editionDateFrom,
-        editionDateTo:
-          editionDateTo === this.defaultEditionDate[1] ? '' : editionDateTo,
+        editionDateFrom,
+        editionDateTo,
         crs,
         page,
-      }
-
-      for (const [key, value] of Object.entries(params)) {
-        if (value && value !== 'null') {
-          url.searchParams.set(key, String(value))
-        } else {
-          url.searchParams.delete(key)
+        sortEntriesBy,
+        sortEntriesOrder,
+      ]) => {
+        if (!this.apiBaseUrl) {
+          console.error('erreur apibaseUrl null')
+          return null
         }
-      }
 
-      return url.toString()
-    })
+        const url = new URL(this.apiBaseUrl)
+        const params: Record<string, string | number | null> = {
+          zone,
+          format,
+          editionDateFrom:
+            editionDateFrom === this.defaultEditionDate[0]
+              ? ''
+              : editionDateFrom,
+          editionDateTo:
+            editionDateTo === this.defaultEditionDate[1] ? '' : editionDateTo,
+          crs,
+          page,
+          sortEntriesBy,
+          sortEntriesOrder,
+        }
+
+        for (const [key, value] of Object.entries(params)) {
+          if (value && value !== 'null') {
+            url.searchParams.set(key, String(value))
+          } else {
+            url.searchParams.delete(key)
+          }
+        }
+
+        return url.toString()
+      }
+    )
   )
 
   private filteredData$ = this.apiQueryUrl$.pipe(
@@ -229,6 +248,20 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     }
   }
 
+  setSortEntriesBy(value: string) {
+    if (['title', 'editionDate'].includes(value)) {
+      this.sortEntriesBy$.next(value)
+      this.resetPage()
+    }
+  }
+
+  setSortEntriesOrder(value: string) {
+    if (['asc', 'desc'].includes(value)) {
+      this.sortEntriesOrder$.next(value)
+      this.resetPage()
+    }
+  }
+
   resetUrl() {
     this.zone$.next('null')
     this.format$.next('null')
@@ -236,6 +269,8 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     this.page$.next(1)
     this.editionDateFrom$.next(this.defaultEditionDate[0])
     this.editionDateTo$.next(this.defaultEditionDate[1])
+    this.sortEntriesBy$.next('editionDate')
+    this.sortEntriesOrder$.next('desc')
   }
 
   moreResult(): void {
