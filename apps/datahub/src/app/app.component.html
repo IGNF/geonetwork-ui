@@ -9,7 +9,7 @@
     [operatorImagePath]="
       'https://data.geopf.fr/annexes/ressources/header/cartes-gouv-logo.svg'
     "
-    [serviceTagline]="'Le service public des cartes et données du territoire'"
+    [serviceTagline]="'Notre territoire commun'"
     [menu]="[]"
   >
     <ng-template #toolsLinksTemplate>
@@ -36,6 +36,14 @@
                 [linkTarget]="'_blank'"
                 [label]="'Guide d\'utilisation'"
                 [icon]="'fr-icon-book-2-line'"
+                [customClass]="'fr-nav__link'"
+                [iconPosition]="'left'"
+              ></dsfr-link>
+              <dsfr-link
+                [link]="'https://cartes.gouv.fr/aide/fr/niveau-de-service/'"
+                [linkTarget]="'_blank'"
+                [label]="'Niveau de service'"
+                [icon]="'fr-icon-rfid-line'"
                 [customClass]="'fr-nav__link'"
                 [iconPosition]="'left'"
               ></dsfr-link>
@@ -87,8 +95,8 @@
               <li style="display: flex">
                 <a
                   style="margin: 16px 24px"
-                  class="fr-btn fr-btn--tertiary"
-                  target="_blank"
+                  class="fr-btn bouton-cartes-gouv"
+                  target="_self"
                   href="https://cartes.gouv.fr/decouvrir"
                   >Découvrir cartes.gouv.fr</a
                 >

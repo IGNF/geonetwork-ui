@@ -61,12 +61,20 @@
     <div class="flex flex-col px-4 gap-8 container-lg lg:mx-auto">
       <div class="flex flex-wrap justify-between sm:mb-2 ng-star-inserted">
         @if (selectedApiLink?.accessServiceProtocol) {
-          <p class="text-[21px] text-title font-title" translate>
-            {{
-              selectedApiLink?.accessServiceProtocol === 'GPFDL'
-                ? 'record.metadata.api.form.title.gpf'
-                : 'record.metadata.api.form.title'
-            }}
+          <p class="text-[21px] text-title font-title">
+            <span translate>
+              {{
+                selectedApiLink?.accessServiceProtocol === 'GPFDL'
+                  ? 'record.metadata.api.form.title.gpf'
+                  : 'record.metadata.api.form.title'
+              }}
+            </span>
+
+            <ng-container
+              *ngIf="selectedApiLink?.accessServiceProtocol === 'GPFDL'"
+            >
+              {{ selectedApiLink?.name }}
+            </ng-container>
           </p>
         }
         <button

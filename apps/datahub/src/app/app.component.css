@@ -75,3 +75,11 @@
   background-color: var(--background-alt-blue-france);
   padding: 1.5rem 0;
 }
+.bouton-cartes-gouv {
+  background-color: var(--background-action-high-blue-france) !important;
+  color: var(--text-inverted-blue-france) !important;
+}
+
+.bouton-cartes-gouv:hover {
+  background-color: var(--background-action-high-blue-france-hover) !important;
+}
