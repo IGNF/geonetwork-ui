@@ -106,34 +106,63 @@
         </dsfr-tool-link-menu>
       </li>
       <li>
-        <dsfr-tool-link-menu
-          [outline]="false"
-          [labelMenu]="'Mon espace'"
-          [iconMenu]="'fr-icon-account-circle-fill'"
-        >
-          <ng-template #linksTemplate>
-            <ul>
-              <dsfr-link
-                [link]="'https://cartes.gouv.fr/tableau-de-bord'"
-                [label]="'Tableau de bord'"
-                [icon]="'fr-icon-dashboard-3-line'"
-                [customClass]="'fr-nav__link'"
-                [iconPosition]="'left'"
-              ></dsfr-link>
-              <dsfr-link
-                [link]="'https://cartes.gouv.fr/mon-compte'"
-                [label]="'Mon compte'"
-                [icon]="'fr-icon-user-line'"
-                [customClass]="'fr-nav__link'"
-                [iconPosition]="'left'"
-              ></dsfr-link>
-            </ul>
-          </ng-template>
-        </dsfr-tool-link-menu>
+        <div id="header-auth">
+          <button
+            class="login-btn fr-btn--sm fr-btn--icon-left fr-btn fr-btn--tertiary-no-outline fr-icon-account-circle-fill"
+            type="button"
+            title="Se connecter"
+          >
+            Se connecter
+          </button>
+        </div>
       </li>
     </ng-template>
   </dsfr-header>
   <router-outlet></router-outlet>
+  <div class="fr-follow">
+    <div class="fr-container">
+      <div class="fr-grid-row">
+        <div class="fr-col-12 fr-col-md-6">
+          <div class="fr-follow__newsletter">
+            <div>
+              <h2 class="fr-h5">Inscrivez-vous à notre lettre d’information</h2>
+              <p class="fr-text--sm">
+                Retrouvez toutes les actualités directement par courriel chaque
+                trimestre.
+              </p>
+            </div>
+            <div>
+              <a
+                href="https://cartes.gouv.fr/lettre-d-information"
+                class="fr-btn"
+                id="newsletter-registration"
+                data-fr-js-button-actionee="true"
+                >S’inscrire</a
+              >
+            </div>
+          </div>
+        </div>
+        <div class="fr-col-12 fr-col-md-6">
+          <div class="fr-follow__newsletter">
+            <h2 class="fr-h5">Communauté</h2>
+            <p class="fr-text--sm">
+              Rejoignez la communauté Géoplateforme - cartes.gouv.fr pour suivre
+              les actualités et échanger avec les membres.
+            </p>
+            <a
+              href="https://www.expertises-territoires.fr/jcms/pl1_557493/fr/communaute-geoplateforme-et-cartes-gouv"
+              title="www.expertises-territoires.fr - ouvre une nouvelle fenêtre"
+              rel="noopener external"
+              target="_blank"
+              class="fr-link"
+              data-fr-js-link-actionee="true"
+              >Rejoindre la communauté</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   <dsfr-footer
     [presentation]="
       'Cartes.gouv.fr est le service public des cartes et données du territoire français. Porté par l’IGN et ses partenaires, il offre à tous un accès à la référence de la cartographie publique et permet à chacun de créer, d’héberger et de publier ses propres données et représentations.'
@@ -214,4 +243,79 @@
     des tiers, les contenus de ce site sont proposés sous &#60;a href=&#34;https://github.com/etalab/licence-ouverte/blob/master/LO.md&#34; target=&#34;_blank&#34; title=&#34;licence etalab-2.0 - ouvre une nouvelle fenêtre&#34;&#62;licence etalab-2.0&#60;/a&#62;'
     "
   ></dsfr-footer>
+  <dsfr-modal dialogId="welcomeModal" icon="" #welcomeModal modalSize="lg">
+    <div class="fr-container--fluid">
+      <div class="fr-grid-row logo-row">
+        <p class="fr-logo" style="font-size: 0.8rem; padding-right: 10px">
+          République<br />Française
+        </p>
+        <img
+          src="https://data.geopf.fr/annexes/ressources/header/cartes-gouv-logo.svg"
+          alt=""
+        />
+      </div>
+      <div class="fr-grid-row content" style="padding-top: 20px">
+        <h2 class="fr-modal__title">Bienvenue sur cartes.gouv.fr</h2>
+        <p style="margin: 0 0 1.5rem">
+          Géoservices converge vers cartes.gouv.fr. Retrouvez ici une vaste
+          collection de données et services :
+        </p>
+        <br />
+        <div style="margin-bottom: 1rem">
+          <span class="icon-welcome span-welcome purple-glycine"
+            ><i class="fr-icon-filter-line"></i></span
+          >Recherchez une fiche de données, triez, filtrez par thème ou
+          producteur
+        </div>
+        <div style="margin-bottom: 1rem">
+          <span class="icon-welcome span-welcome yellow-tournesol"
+            ><i class="fr-icon-search-line"></i></span
+          >Consultez leur contenu, accédez aux documents joints
+        </div>
+        <div style="margin-bottom: 1rem">
+          <span class="icon-welcome span-welcome green-archipel"
+            ><i class="fr-icon-download-line"></i></span
+          >Téléchargez les données et retrouvez les flux associés à utiliser
+          dans votre logiciel ou en API
+        </div>
+        <div style="margin-bottom: 1rem">
+          <span class="icon-welcome span-welcome orange-abricot"
+            ><i class="fr-icon-question-line"></i></span
+          >Consultez l'aide via l'en-tête du site pour retrouver vos usages et
+          vous guider dans l'utilisation du site
+        </div>
+      </div>
+    </div>
+    <div id="welcomeModalCheckboxContainer">
+      <input
+        type="checkbox"
+        id="welcomeModalCheckbox"
+        class="fr-checkbox"
+        (change)="onWelcomeModalCheckboxChange($event)"
+      />
+      <label class="fr-label" for="welcomeModalCheckbox">
+        Ne plus afficher ce message</label
+      >
+    </div>
+    <ng-template #modalFooterTemplate>
+      <dsfr-buttons-group
+        inline="LG"
+        alignment="reverse"
+        iconPosition="left"
+        groupMarkup="div"
+      >
+        <dsfr-button
+          label="Continuer ma recherche >"
+          (click)="welcomeModal.close()"
+        ></dsfr-button>
+        <a
+          href="https://cartes.gouv.fr/decouvrir/rechercher-une-donnee/"
+          class="fr-btn fr-btn--secondary"
+          target="_blank"
+          rel="noopener noreferrer"
+          >En savoir plus</a
+        >
+      </dsfr-buttons-group>
+    </ng-template>
+  </dsfr-modal>
 </div>

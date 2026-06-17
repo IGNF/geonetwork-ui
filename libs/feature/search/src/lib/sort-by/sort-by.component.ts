@@ -40,6 +40,10 @@ export class SortByComponent implements OnInit {
       label: marker('results.sortBy.popularity'),
       value: SortByEnum.POPULARITY,
     },
+    {
+      label: marker('results.sortBy.changeDate'),
+      value: SortByEnum.CHANGE_DATE,
+    },
   ]
   currentSortBy$ = this.facade.sortBy$.pipe(
     filter((sortBy) => !!sortBy),

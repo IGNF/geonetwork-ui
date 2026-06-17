@@ -84,6 +84,11 @@ import { MatIconModule } from '@angular/material/icon'
 import { DsfrHeaderModule, DsfrLinkComponent } from '@edugouvfr/ngx-dsfr'
 import { DsfrFooterModule } from '@edugouvfr/ngx-dsfr'
 import { DsfrToolLinkMenuComponent } from '@edugouvfr/ngx-dsfr'
+import {
+  DsfrModalComponent,
+  DsfrButtonComponent,
+  DsfrButtonsGroupComponent,
+} from '@edugouvfr/ngx-dsfr'
 
 export const metaReducers: MetaReducer[] = !environment.production ? [] : []
 
@@ -123,6 +128,9 @@ export const metaReducers: MetaReducer[] = !environment.production ? [] : []
     DsfrFooterModule,
     DsfrToolLinkMenuComponent,
     DsfrLinkComponent,
+    DsfrModalComponent,
+    DsfrButtonComponent,
+    DsfrButtonsGroupComponent,
   ],
   providers: [
     provideNgReflectAttributes(),

@@ -1,3 +1,80 @@
+.icon-welcome {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.span-welcome {
+  margin-right: 0.5rem;
+  border-radius: 50%;
+  height: 34px;
+  width: 34px;
+}
+
+.purple-glycine {
+  background-color: var(--purple-glycine-925-125);
+}
+
+.yellow-tournesol {
+  background-color: var(--yellow-tournesol-925-125);
+}
+
+.green-archipel {
+  background-color: var(--green-archipel-925-125);
+}
+
+.orange-abricot {
+  background-color: var(--orange-terre-battue-925-125);
+}
+
+#welcomeModalCheckboxContainer {
+  display: flex;
+  padding-left: 3px;
+  padding-top: 15px;
+}
+
+#welcomeModalCheckbox {
+  margin-right: 5px;
+}
+
+.fr-follow .fr-grid-row > :not(:first-child) {
+  box-shadow: 0 -1px 0 0 var(--border-default-blue-france);
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+}
+
+@media (min-width: 48em) {
+  .fr-follow {
+    padding: 2rem 0;
+  }
+
+  .fr-follow .fr-grid-row > :not(:last-child) {
+    padding-right: 8.3333333333%;
+  }
+
+  .fr-col-md-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+    width: 50%;
+  }
+
+  .fr-follow .fr-grid-row > :not(:first-child) {
+    box-shadow: -1px 0 0 0 var(--border-default-blue-france);
+    margin-top: 0;
+    padding-left: 8.3333333333%;
+    padding-top: 0;
+  }
+}
+
+.fr-follow {
+  --title-spacing: 0 0 0.5rem;
+  --text-spacing: 0 0 1rem;
+  --idle: transparent;
+  --hover: var(--background-alt-blue-france-hover);
+  --active: var(--background-alt-blue-france-active);
+  background-color: var(--background-alt-blue-france);
+  padding: 1.5rem 0;
+}
 .bouton-cartes-gouv {
   background-color: var(--background-action-high-blue-france) !important;
   color: var(--text-inverted-blue-france) !important;
