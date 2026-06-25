@@ -1,4 +1,10 @@
-<div class="flex flex-col gap-6 p-8 bg-white shadow-xl rounded-lg">
+<div
+  #container
+  tabindex="-1"
+  class="flex flex-col gap-6 p-8 bg-white shadow-xl rounded-lg"
+  role="region"
+  aria-label="GPF API filter"
+>
   <!-- Header with Filter Title and Reset Button -->
   <div class="flex items-center justify-between">
     <h2
@@ -99,17 +105,20 @@
       [attr.title]="'record.metadata.api.form.itemsTooltip' | translate"
       [attr.aria-label]="'record.metadata.api.form.itemsTooltip' | translate"
     >
-      <div
-        *ngFor="let link of listFilteredProduct$ | async"
-        class="mb-2 sm:mb-3 p-2 border rounded hover:bg-gray-200 transition"
-      >
-        <gn-ui-gpf-api-dl-list-item
-          [link]="link"
-          color="rgb(124 45 18)"
-          [format]="getLinkFormat(link)"
-          [isFromWfs]="true"
-        ></gn-ui-gpf-api-dl-list-item>
-      </div>
+      @for (link of listFilteredProduct$ | async; track link) {
+        <div class="mb-2 sm:mb-3">
+          <gn-ui-gpf-api-dl-list-item
+            [link]="link"
+            color="rgb(124 45 18)"
+            [format]="getLinkFormat(link)"
+            [isFromWfs]="true"
+            [attr.title]="'record.metadata.api.form.productTooltip' | translate"
+            [attr.aria-label]="
+              'record.metadata.api.form.productTooltip' | translate
+            "
+          ></gn-ui-gpf-api-dl-list-item>
+        </div>
+      }
     </div>
   </div>
 
