@@ -55,7 +55,9 @@
           "./node_modules/@angular/material/prebuilt-themes/indigo-pink.css",
           "./node_modules/@gouvfr/dsfr/dist/utility/utility.css"
         ],
-        "scripts": ["./node_modules/@gouvfr/dsfr/dist/dsfr/dsfr.module.js"],
+        "scripts": [
+           "./node_modules/@gouvfr/dsfr/standalone/analytics/analytics.nomodule.min.standalone.js"
+        ],
         "allowedCommonJsDependencies": [
           "@rgrove/parse-xml",
           "semver",

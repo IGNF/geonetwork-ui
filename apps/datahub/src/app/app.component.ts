@@ -3,7 +3,7 @@ import {
   OnInit,
   AfterViewInit,
   Renderer2,
-  Inject,
+  inject,
   ViewChild,
 } from '@angular/core'
 import { DOCUMENT } from '@angular/common'
@@ -11,6 +11,7 @@ import { getThemeConfig } from '@geonetwork-ui/util/app-config'
 import { ThemeService } from '@geonetwork-ui/util/shared'
 import Keycloak from 'keycloak-js'
 import { DsfrModalComponent } from '@edugouvfr/ngx-dsfr'
+import { DsfrAnalyticsService } from './services/dsfr-analytics.service'
 
 @Component({
   selector: 'datahub-root',
@@ -21,17 +22,16 @@ import { DsfrModalComponent } from '@edugouvfr/ngx-dsfr'
 export class AppComponent implements OnInit, AfterViewInit {
   private readonly welcomeModalDismissedStorageKey =
     'datahub.welcomeModal.dismissed'
+  readonly renderer = inject(Renderer2)
+  private readonly document = inject(DOCUMENT)
+  private readonly dsfrAnalytics = inject(DsfrAnalyticsService)
 
   @ViewChild('welcomeModal') welcomeModalRef: DsfrModalComponent
-
-  constructor(
-    public renderer: Renderer2,
-    @Inject(DOCUMENT) private document: Document
-  ) {}
 
   ngOnInit(): void {
     const favicon = getThemeConfig().FAVICON
     if (favicon) ThemeService.setFavicon(favicon)
+    this.dsfrAnalytics.init()
   }
 
   ngAfterViewInit(): void {
@@ -72,7 +72,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     const renderLoggedIn = async () => {
       const claims = keycloak.idTokenParsed || keycloak.tokenParsed || {}
 
-      let id_token = keycloak.idToken
+      const id_token = keycloak.idToken
 
       const displayName =
         (typeof claims.name === 'string' && claims.name) ||
