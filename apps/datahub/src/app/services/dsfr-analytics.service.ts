@@ -41,14 +41,25 @@ export class DsfrAnalyticsService {
     this.syncPage(this.router.url)
 
     this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .pipe(
+        filter(
+          (event): event is NavigationEnd => event instanceof NavigationEnd
+        )
+      )
       .subscribe((event) => {
         this.syncPage(event.urlAfterRedirects)
       })
   }
 
   private syncPage(url: string): void {
-    const win = window as DsfrWindow & { dsfr?: { analytics?: DsfrAnalytics & { readiness?: Promise<void>; isReady?: boolean } } }
+    const win = window as DsfrWindow & {
+      dsfr?: {
+        analytics?: DsfrAnalytics & {
+          readiness?: Promise<void>
+          isReady?: boolean
+        }
+      }
+    }
     const analytics = win.dsfr?.analytics
 
     if (!analytics) {
@@ -60,12 +71,14 @@ export class DsfrAnalyticsService {
     // Wait for readiness promise if available
     const readinessPromise = (analytics as any).readiness
     if (readinessPromise && typeof readinessPromise.then === 'function') {
-      readinessPromise.then(() => {
-        this.updatePage(url)
-      }).catch(() => {
-        // If readiness fails, still try to update
-        this.updatePage(url)
-      })
+      readinessPromise
+        .then(() => {
+          this.updatePage(url)
+        })
+        .catch(() => {
+          // If readiness fails, still try to update
+          this.updatePage(url)
+        })
     } else {
       // If no readiness promise, try immediate update
       // Guard against collector not being ready
