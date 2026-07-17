@@ -1,15 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  inject,
   Input,
   OnInit,
-  inject,
 } from '@angular/core'
 import { DatasetServiceDistribution } from '@geonetwork-ui/common/domain/model/record'
 import { BehaviorSubject, combineLatest, map, mergeMap, Observable } from 'rxjs'
 import { HttpClient } from '@angular/common/http'
 import { Choice, DropdownSelectorComponent } from '@geonetwork-ui/ui/inputs'
-import axios from 'axios'
 import { CommonModule } from '@angular/common'
 import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
 import { GpfApiDlListItemComponent } from '../gpf-api-dl-list-item/gpf-api-dl-list-item.component'
@@ -21,8 +20,8 @@ export interface Label {
 export interface FormatProduit {
   title: string
   update: string
-  format: Array<TermBucket>
-  zone: Array<TermBucket>
+  format: Array<GpfApiDlTermBucket>
+  zone: Array<GpfApiDlTermBucket>
 }
 
 export interface FormatSortieProduit {
@@ -40,7 +39,7 @@ export interface ListChoice {
   crs: Choice[]
 }
 
-export interface TermBucket {
+export interface GpfApiDlTermBucket {
   term: string
   label: string | number
 }
@@ -78,7 +77,11 @@ export class GpfApiDlComponent implements OnInit {
   page$ = new BehaviorSubject(1)
   url =
     'https://data.geopf.fr/telechargement/capabilities?outputFormat=application/json'
-  choices: { zone: TermBucket[]; format: TermBucket[]; category: TermBucket[] }
+  choices: {
+    zone: GpfApiDlTermBucket[]
+    format: GpfApiDlTermBucket[]
+    category: GpfApiDlTermBucket[]
+  }
   bucketPromisesZone: Choice[]
   bucketPromisesFormat: Choice[]
   bucketPromisesCrs: Choice[]
@@ -209,9 +212,9 @@ export class GpfApiDlComponent implements OnInit {
     let pageCount = 1
 
     while (choicesTest === undefined && pageCount > page) {
-      const response = await axios.get(
+      const response = await fetch(
         this.url.concat(`&limit=200&page=${page}`)
-      )
+      ).then((resp) => resp.json())
 
       choicesTest = response.data.entry.filter(
         (element) => element['id'] == this.apiBaseUrl

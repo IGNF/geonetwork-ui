@@ -103,7 +103,7 @@ beforeEach(() => {
   )
   cy.intercept(
     'GET',
-    'https://stacapi-cdos.apps.okd.crocc.meso.umontpellier.fr/collections/sentinel2-l2a-sen2cor/items?limit=12&datetime=2016-01-02T10%3A54%3A42.030Z%2F2019-12-31T23%3A00%3A00.000Z',
+    'https://stacapi-cdos.apps.okd.crocc.meso.umontpellier.fr/collections/sentinel2-l2a-sen2cor/items?limit=12&datetime=2016-01-02T10%3A54%3A42.030Z%2F2020-01-01T00%3A00%3A00.000Z',
     {
       fixture: 'stac-items-date-modified.json',
     }
@@ -153,17 +153,12 @@ describe('Preview section', () => {
       .children('div')
       .eq(3)
       .as('chartTab')
-    cy.get('@previewSection')
-      .find('.mat-mdc-tab-labels')
-      .children('div')
-      .eq(4)
-      .as('stacTab')
 
     // it should display the tabs
     cy.get('@previewSection')
       .find('.mat-mdc-tab-labels')
       .children('div')
-      .should('have.length', 5)
+      .should('have.length', 4)
 
     // it should display the dataset dropdown with at least 1 option
     cy.get('@previewSection')
@@ -174,7 +169,7 @@ describe('Preview section', () => {
       .should('have.length.gt', 1)
     cy.clickOnBody()
 
-    // it checks if style selector is disabled when no style is available
+    // it checks if style selector is disabled when only one style is available
     cy.get('@previewSection')
       .find('gn-ui-dropdown-selector')
       .eq(1)
@@ -522,11 +517,6 @@ describe('Preview section', () => {
         .children('div')
         .eq(3)
         .as('chartTab')
-      cy.get('@previewSection')
-        .find('.mat-mdc-tab-labels')
-        .children('div')
-        .eq(4)
-        .as('stacTab')
     })
     it('should NOT show the config saving btn when logged out', () => {
       cy.get('@configTab').find('gn-ui-button').should('not.exist')

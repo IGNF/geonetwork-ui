@@ -23,7 +23,7 @@ import { Collection } from 'ol'
 import { Interaction } from 'ol/interaction.js'
 import { DataService } from '@geonetwork-ui/feature/dataviz'
 import * as geoSdkCore from '@geospatial-sdk/core'
-import { MapContext } from '@geospatial-sdk/core'
+import { MapContext, MapContextLayer } from '@geospatial-sdk/core'
 import {
   MapContainerComponent,
   MapLegendComponent,
@@ -33,6 +33,30 @@ import { MockBuilder, MockProvider } from 'ng-mocks'
 import { ExternalViewerButtonComponent } from '../external-viewer-button/external-viewer-button.component'
 import { LoadingMaskComponent } from '@geonetwork-ui/ui/widgets'
 import { FetchError } from '@geonetwork-ui/data-fetcher'
+
+let mockWmsStyles = []
+let mockDescribeLayerResult: Record<string, unknown> | null = null
+let mockDescribeLayerError = false
+let mockGetLayerByNameResult: Record<string, unknown> | null = null
+
+jest.mock('@camptocamp/ogc-client', () => ({
+  WmsEndpoint: jest.fn().mockImplementation((url: string) => ({
+    isReady: jest.fn().mockImplementation(() => {
+      if (mockDescribeLayerError || url.indexOf('error') > -1) {
+        return Promise.reject(new Error('WMS endpoint error'))
+      }
+      return Promise.resolve({
+        describeLayer: jest
+          .fn()
+          .mockImplementation(() => Promise.resolve(mockDescribeLayerResult)),
+        getLayerByName: jest.fn().mockImplementation(() => ({
+          styles: mockWmsStyles,
+          ...(mockGetLayerByNameResult || {}),
+        })),
+      })
+    }),
+  })),
+}))
 
 jest.mock('@geonetwork-ui/ui/map', () => ({
   ...jest.requireActual('@geonetwork-ui/ui/map'),
@@ -82,6 +106,7 @@ class MdViewFacadeMock {
 
 class MapUtilsServiceMock {
   getRecordExtent = jest.fn(() => recordMapExtent)
+  getRecordExtentLayer = jest.fn(() => null)
 }
 
 const SAMPLE_GEOJSON = {
@@ -147,6 +172,9 @@ describe('MapViewComponent', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     geoSdkCore.returnImmediately(true)
+    mockDescribeLayerResult = null
+    mockDescribeLayerError = false
+    mockGetLayerByNameResult = null
   })
 
   beforeEach(() =>
@@ -198,6 +226,52 @@ describe('MapViewComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy()
+  })
+
+  describe('record spatial extent overlay', () => {
+    const extentLayer = {
+      type: 'geojson',
+      label: 'Spatial extent',
+      clickable: false,
+      data: { type: 'FeatureCollection', features: [] },
+    } as unknown as MapContextLayer
+    let mapUtils: {
+      getRecordExtent: jest.Mock
+      getRecordExtentLayer: jest.Mock
+    }
+
+    beforeEach(fakeAsync(() => {
+      mapUtils = TestBed.inject(MapUtilsService) as unknown as typeof mapUtils
+      mapUtils.getRecordExtentLayer.mockReturnValue(extentLayer)
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/'),
+          name: 'layer1',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+      tick()
+      fixture.detectChanges()
+    }))
+
+    it('overlays the record extent layer on top of the data layers', () => {
+      expect(mapComponent.context.layers).toEqual([
+        {
+          url: 'http://abcd.com/',
+          name: 'layer1',
+          type: 'wms',
+          format: 'image/png',
+        },
+        extentLayer,
+      ])
+    })
+
+    it('keeps the initial view independent from the overlay', () => {
+      expect(mapUtils.getRecordExtentLayer).toHaveBeenCalled()
+      expect(mapComponent.context.view).toEqual({ extent: recordMapExtent })
+    })
   })
 
   describe('map layers', () => {
@@ -267,6 +341,7 @@ describe('MapViewComponent', () => {
                 url: 'http://abcd.com/',
                 name: 'layer1',
                 type: 'wms',
+                format: 'image/png',
               },
             ],
             view: expect.any(Object),
@@ -290,6 +365,7 @@ describe('MapViewComponent', () => {
                 url: 'http://abcd.com/',
                 name: 'layer2',
                 type: 'wms',
+                format: 'image/png',
               },
             ],
             view: expect.any(Object),
@@ -821,6 +897,7 @@ describe('MapViewComponent', () => {
               url: 'http://abcd.com/',
               name: 'layer',
               type: 'wms',
+              format: 'image/png',
             },
           ],
           view: expect.any(Object),
@@ -890,6 +967,7 @@ describe('MapViewComponent', () => {
                 url: 'http://abcd.com/',
                 name: 'layer2',
                 type: 'wms',
+                format: 'image/png',
               },
             ],
             view: {
@@ -919,6 +997,7 @@ describe('MapViewComponent', () => {
                 url: 'http://abcd.com/',
                 name: 'layer2',
                 type: 'wms',
+                format: 'image/png',
               },
             ],
             view: {
@@ -948,6 +1027,7 @@ describe('MapViewComponent', () => {
                 url: 'http://abcd.com/',
                 name: 'layer2',
                 type: 'wms',
+                format: 'image/png',
               },
             ],
             view: { extent: recordMapExtent },
@@ -976,6 +1056,7 @@ describe('MapViewComponent', () => {
               url: 'http://abcd.com/',
               name: 'layer2',
               type: 'wms',
+              format: 'image/png',
             },
           ])
         })
@@ -1167,7 +1248,7 @@ describe('MapViewComponent', () => {
       expect(styleDropdown.disabled).toBeTruthy()
       expect(styleDropdown.choices).toEqual([
         {
-          label: '\u00A0\u00A0\u00A0\u00A0',
+          label: 'map.style.default',
           value: 0,
         },
       ])
@@ -1300,7 +1381,39 @@ describe('MapViewComponent', () => {
       )
     }))
 
-    it('disables style dropdown when no TMS is present', fakeAsync(() => {
+    it('disables style dropdown with default label when not a TMS or WMS source', fakeAsync(() => {
+      mockWmsStyles = []
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/wfs'),
+          name: 'featuretype',
+          type: 'service',
+          accessServiceProtocol: 'wfs',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+
+      tick(200)
+      fixture.detectChanges()
+
+      const dropdowns = fixture.debugElement.queryAll(
+        By.directive(DropdownSelectorComponent)
+      )
+      const styleDropdown = dropdowns[1]
+        .componentInstance as DropdownSelectorComponent
+
+      expect(styleDropdown.disabled).toBeTruthy()
+      expect(styleDropdown.choices).toEqual([
+        {
+          label: 'map.style.default',
+          value: 0,
+        },
+      ])
+    }))
+  })
+  describe('style selector with WMS', () => {
+    it('shows disabled dropdown with default when WMS has no published styles', fakeAsync(() => {
+      mockWmsStyles = []
       mdViewFacade.mapApiLinks$.next([
         {
           url: new URL('http://abcd.com/wms'),
@@ -1321,7 +1434,289 @@ describe('MapViewComponent', () => {
         .componentInstance as DropdownSelectorComponent
 
       expect(styleDropdown.disabled).toBeTruthy()
-      expect(styleDropdown.choices.length).toBe(1)
+      expect(styleDropdown.choices).toEqual([
+        {
+          label: 'map.style.default',
+          value: 0,
+        },
+      ])
+    }))
+
+    it('shows disabled dropdown with style name when WMS has one published style', fakeAsync(() => {
+      mockWmsStyles = [{ name: 'contour', title: 'Contour Lines' }]
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/wms'),
+          name: 'layer-wms',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+
+      tick(200)
+      fixture.detectChanges()
+
+      const dropdowns = fixture.debugElement.queryAll(
+        By.directive(DropdownSelectorComponent)
+      )
+      const styleDropdown = dropdowns[1]
+        .componentInstance as DropdownSelectorComponent
+
+      expect(styleDropdown.disabled).toBeTruthy()
+      expect(styleDropdown.choices).toEqual([
+        {
+          label: 'Contour Lines',
+          value: 0,
+        },
+      ])
+    }))
+
+    it('enables and populates styles for WMS with published styles', fakeAsync(() => {
+      mockWmsStyles = [
+        { name: 'contour', title: 'Contour Lines' },
+        { name: 'heatmap', title: 'Heat Map' },
+      ]
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/wms'),
+          name: 'layer-wms',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+
+      tick(200)
+      fixture.detectChanges()
+
+      const dropdowns = fixture.debugElement.queryAll(
+        By.directive(DropdownSelectorComponent)
+      )
+      const styleDropdown = dropdowns[1]
+        .componentInstance as DropdownSelectorComponent
+
+      expect(styleDropdown.disabled).toBeFalsy()
+      expect(styleDropdown.choices.map((c) => c.label)).toEqual([
+        'Contour Lines',
+        'Heat Map',
+      ])
+    }))
+
+    it('applies selected WMS style to the map context layer', fakeAsync(() => {
+      mockWmsStyles = [
+        { name: 'contour', title: 'Contour Lines' },
+        { name: 'heatmap', title: 'Heat Map' },
+      ]
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/wms'),
+          name: 'layer-wms',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+
+      tick(200)
+      fixture.detectChanges()
+
+      // Select the second style (heatmap)
+      component.selectStyleToDisplay(1)
+      tick(200)
+      fixture.detectChanges()
+
+      expect(mapComponent.context).toEqual({
+        layers: [
+          {
+            url: 'http://abcd.com/wms',
+            name: 'layer-wms',
+            type: 'wms',
+            style: 'heatmap',
+            format: 'image/png',
+          },
+        ],
+        view: expect.any(Object),
+      })
+    }))
+    it('handles WMS endpoint error gracefully', fakeAsync(() => {
+      mockWmsStyles = []
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/error'),
+          name: 'layer-wms',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+
+      tick(200)
+      fixture.detectChanges()
+
+      expect(component.error).toBeTruthy()
+    }))
+  })
+
+  describe('wmsMimeType$', () => {
+    let externalViewerButtonComponent: ExternalViewerButtonComponent
+
+    beforeEach(() => {
+      externalViewerButtonComponent = fixture.debugElement.query(
+        By.directive(ExternalViewerButtonComponent)
+      ).componentInstance
+    })
+
+    it('resolves to image/png when DescribeLayer returns owsType=wfs', fakeAsync(() => {
+      mockDescribeLayerResult = { owsType: 'wfs' }
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/'),
+          name: 'layer1',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+      tick(200)
+      fixture.detectChanges()
+      expect(externalViewerButtonComponent.mimeType).toEqual('image/png')
+    }))
+
+    it('resolves to image/jpeg when DescribeLayer returns owsType=wcs', fakeAsync(() => {
+      mockDescribeLayerResult = { owsType: 'wcs' }
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/'),
+          name: 'layer1',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+      tick(200)
+      fixture.detectChanges()
+      expect(externalViewerButtonComponent.mimeType).toEqual('image/jpeg')
+    }))
+
+    it('falls back to image/png when DescribeLayer fails', fakeAsync(() => {
+      mockDescribeLayerError = true
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/'),
+          name: 'layer1',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+      tick(200)
+      fixture.detectChanges()
+      expect(externalViewerButtonComponent.mimeType).toEqual('image/png')
+    }))
+
+    it('falls back to image/jpeg when DescribeLayer returns null and layer is opaque', fakeAsync(() => {
+      mockDescribeLayerResult = null
+      mockGetLayerByNameResult = { opaque: true }
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/'),
+          name: 'layer1',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+      tick(200)
+      fixture.detectChanges()
+      expect(externalViewerButtonComponent.mimeType).toEqual('image/jpeg')
+    }))
+
+    it('falls back to image/png when DescribeLayer returns null and layer is not opaque', fakeAsync(() => {
+      mockDescribeLayerResult = null
+      mockGetLayerByNameResult = { opaque: false }
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/'),
+          name: 'layer1',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+      tick(200)
+      fixture.detectChanges()
+      expect(externalViewerButtonComponent.mimeType).toEqual('image/png')
+    }))
+
+    it('falls back to image/png when DescribeLayer returns null and layer is not found', fakeAsync(() => {
+      mockDescribeLayerResult = null
+      mockGetLayerByNameResult = null
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/'),
+          name: 'layer1',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+      tick(200)
+      fixture.detectChanges()
+      expect(externalViewerButtonComponent.mimeType).toEqual('image/png')
+    }))
+
+    it('returns empty string for non-WMS links', fakeAsync(() => {
+      mdViewFacade.mapApiLinks$.next([])
+      mdViewFacade.geoDataLinksWithGeometry$.next([
+        {
+          url: new URL('http://abcd.com/wfs'),
+          name: 'featuretype',
+          type: 'service',
+          accessServiceProtocol: 'wfs',
+        },
+      ])
+      tick(200)
+      fixture.detectChanges()
+      expect(externalViewerButtonComponent.mimeType).toEqual('')
+    }))
+
+    it('sets format=image/png on the WMS map context layer when DescribeLayer returns owsType=wfs', fakeAsync(() => {
+      mockDescribeLayerResult = { owsType: 'wfs' }
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/'),
+          name: 'layer1',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+      tick(200)
+      fixture.detectChanges()
+      expect(mapComponent.context.layers[0]).toMatchObject({
+        type: 'wms',
+        format: 'image/png',
+      })
+    }))
+
+    it('sets format=image/jpeg on the WMS map context layer when DescribeLayer returns owsType=wcs', fakeAsync(() => {
+      mockDescribeLayerResult = { owsType: 'wcs' }
+      mdViewFacade.mapApiLinks$.next([
+        {
+          url: new URL('http://abcd.com/'),
+          name: 'layer1',
+          type: 'service',
+          accessServiceProtocol: 'wms',
+        },
+      ])
+      mdViewFacade.geoDataLinksWithGeometry$.next([])
+      tick(200)
+      fixture.detectChanges()
+      expect(mapComponent.context.layers[0]).toMatchObject({
+        type: 'wms',
+        format: 'image/jpeg',
+      })
     }))
   })
 })

@@ -39,6 +39,7 @@ marker('dataset.error.forbidden')
 marker('wfs.unreachable.unknown')
 marker('wfs.featuretype.notfound')
 marker('wfs.geojsongml.notsupported')
+marker('ogc.geojson.notsupported')
 marker('ogc.unreachable.unknown')
 marker('dataset.error.network')
 marker('dataset.error.http')
@@ -210,14 +211,19 @@ export class DataService {
     const collectionInfo = await this.getDownloadUrlsFromOgcApi(
       ogcApiLink.url.href
     )
-    return Object.keys(collectionInfo.bulkDownloadLinks).map((downloadLink) => {
+
+    return Object.keys(collectionInfo.bulkDownloadLinks).map((mimeType) => {
+      const urlWithoutLimit = new URL(
+        collectionInfo.bulkDownloadLinks[mimeType]
+      )
+      urlWithoutLimit.searchParams.delete('limit')
       return {
         ...ogcApiLink,
         name: collectionInfo.id,
         type: 'download',
-        url: new URL(collectionInfo.bulkDownloadLinks[downloadLink]),
+        url: urlWithoutLimit,
         mimeType: getMimeTypeForFormat(
-          getFileFormatFromServiceOutput(downloadLink)
+          getFileFormatFromServiceOutput(mimeType)
         ),
       }
     })
@@ -234,12 +240,15 @@ export class DataService {
       })
   }
 
-  async getItemsFromOgcApi(url: string): Promise<OgcApiRecord[]> {
+  async getItemsFromOgcApi(
+    url: string,
+    limit?: number
+  ): Promise<OgcApiRecord[]> {
     const endpoint = new OgcApiEndpoint(url)
     return await endpoint.featureCollections
       .then((collections) => {
         return collections.length
-          ? endpoint.getCollectionItems(collections[0])
+          ? endpoint.getCollectionItems(collections[0], limit)
           : null
       })
       .catch(() => {
@@ -372,13 +381,26 @@ export class DataService {
     ) {
       return from(this.getDownloadUrlsFromOgcApi(link.url.href)).pipe(
         switchMap((collectionInfo) => {
-          const geojsonUrl = collectionInfo.jsonDownloadLink
-          return openDataset(geojsonUrl, 'geojson', undefined, cacheActive)
-        }),
-        tap((url) => {
-          if (url === null) {
-            throw new Error('wfs.geojsongml.notsupported')
+          const isMimeTypeJson = (mimeType: string): boolean => {
+            return mimeType.toLowerCase().indexOf('json') > -1
           }
+          const geojsonUrl =
+            collectionInfo.bulkDownloadLinks[
+              Object.keys(collectionInfo.bulkDownloadLinks).find((mimeType) =>
+                isMimeTypeJson(mimeType)
+              )
+            ]
+          if (!geojsonUrl) {
+            return throwError(() => 'ogc.geojson.notsupported')
+          }
+          const urlWithoutLimit = new URL(geojsonUrl)
+          urlWithoutLimit.searchParams.delete('limit')
+          return openDataset(
+            urlWithoutLimit.toString(),
+            'geojson',
+            undefined,
+            cacheActive
+          )
         })
       )
     }

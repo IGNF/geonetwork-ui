@@ -111,6 +111,8 @@ export function reducerSearch(
         },
       }
     }
+    // From router.effects
+    // From home - fuzzy-search - search.service
     case fromActions.SET_FILTERS: {
       return {
         ...state,
@@ -132,6 +134,7 @@ export function reducerSearch(
         },
       }
     }
+    // From results WC
     case fromActions.SET_SEARCH: {
       return {
         ...state,

@@ -2,8 +2,8 @@ import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone'
 import {
   elasticFullResponseFixture,
   elasticHitsOnlyFixture,
-  elasticServiceMetadataHistsFixture,
   elasticReuseMetadataHitsFixture,
+  elasticServiceMetadataHistsFixture,
 } from '@geonetwork-ui/common/fixtures'
 import { Gn4Converter } from './gn4.converter'
 import { of } from 'rxjs'
@@ -38,7 +38,9 @@ class OrganisationsServiceMock {
 }
 
 const translateServiceMock = {
-  currentLang: 'de',
+  getCurrentLang() {
+    return 'de'
+  },
 }
 
 describe('Gn4Converter', () => {
@@ -106,6 +108,7 @@ describe('Gn4Converter', () => {
             },
             status: null,
             lineage: null,
+            sourceRecords: [],
             recordPublished: null,
             recordUpdated: null,
             resourceIdentifiers: [
@@ -161,6 +164,7 @@ describe('Gn4Converter', () => {
             },
             status: null,
             lineage: null,
+            sourceRecords: [],
             recordPublished: null,
             recordUpdated: null,
             resourceIdentifiers: [
@@ -1677,55 +1681,55 @@ describe('Gn4Converter', () => {
               },
               {
                 label: 'Lieux de surveillance',
-                type: 'other',
+                type: 'theme',
               },
               {
                 label: 'Observation',
-                type: 'other',
+                type: 'theme',
               },
               {
                 label: 'Surveillance',
-                type: 'other',
+                type: 'theme',
               },
               {
                 label: 'Environnement',
-                type: 'other',
+                type: 'theme',
               },
               {
                 label: 'Littoral',
-                type: 'other',
+                type: 'theme',
               },
               {
                 label: 'Quadrige',
-                type: 'other',
+                type: 'theme',
               },
               {
                 label: 'DCE',
-                type: 'other',
+                type: 'theme',
               },
               {
                 label: 'DCSMM',
-                type: 'other',
+                type: 'theme',
               },
               {
                 label: 'OSPAR',
-                type: 'other',
+                type: 'theme',
               },
               {
                 label: 'MEDPOL',
-                type: 'other',
+                type: 'theme',
               },
               {
                 label: 'Données ouvertes',
-                type: 'other',
+                type: 'theme',
               },
               {
                 label: 'Open Data',
-                type: 'other',
+                type: 'theme',
               },
               {
                 label: 'Surval',
-                type: 'other',
+                type: 'theme',
               },
             ],
             landingPage: new URL(
@@ -1733,6 +1737,7 @@ describe('Gn4Converter', () => {
             ),
             lineage:
               'Les données sont bancarisées dans la base de données Quadrige.',
+            sourceRecords: [],
             overviews: [
               {
                 description: 'parametres.gif',
@@ -1855,6 +1860,10 @@ describe('Gn4Converter', () => {
                 type: 'theme',
               },
               {
+                hierarchyPath: [
+                  'Allgemeine Angelegenheiten',
+                  'Nachhaltige Entwicklung',
+                ],
                 key: 'http://www.eionet.europa.eu/gemet/concept/8247',
                 label: 'Nachhaltige Entwicklung',
                 thesaurus: {
@@ -1867,6 +1876,10 @@ describe('Gn4Converter', () => {
                 type: 'theme',
               },
               {
+                hierarchyPath: [
+                  'Natürliche Lebensräume, Landschaft, Ökosysteme',
+                  'Raumplanung',
+                ],
                 key: 'http://www.eionet.europa.eu/gemet/concept/6225',
                 label: 'Raumplanung',
                 thesaurus: {
@@ -1879,6 +1892,10 @@ describe('Gn4Converter', () => {
                 type: 'theme',
               },
               {
+                hierarchyPath: [
+                  'Natürliche Lebensräume, Landschaft, Ökosysteme',
+                  'Bergschutz',
+                ],
                 key: 'http://www.eionet.europa.eu/gemet/concept/10236',
                 label: 'Bergschutz',
                 thesaurus: {
@@ -1891,6 +1908,7 @@ describe('Gn4Converter', () => {
                 type: 'theme',
               },
               {
+                hierarchyPath: ['Boden', 'Bodenschutz'],
                 key: 'http://www.eionet.europa.eu/gemet/concept/7852',
                 label: 'Bodenschutz',
                 thesaurus: {
@@ -2047,6 +2065,7 @@ describe('Gn4Converter', () => {
             ],
             lineage:
               'Digitalisiert nach den administrativen Einheiten der Schweiz, die im Anhang des Übereinkommens erscheinen.',
+            sourceRecords: [],
             onlineResources: [
               {
                 description: 'Vorschau map.geo.admin.ch',
@@ -2197,6 +2216,7 @@ describe('Gn4Converter', () => {
             kind: 'service',
             status: null,
             lineage: null,
+            sourceRecords: [],
             recordUpdated: new Date('2024-10-15T07:37:39.350Z'),
             recordPublished: null,
             resourceIdentifiers: [
@@ -2348,6 +2368,10 @@ describe('Gn4Converter', () => {
                 },
               },
               {
+                hierarchyPath: [
+                  'Services de gestion des modèles/informations géographiques',
+                  'Service de catalogue',
+                ],
                 label: 'Service de catalogue',
                 type: 'theme',
                 key: 'http://inspire.ec.europa.eu/metadata-codelist/SpatialDataServiceCategory/infoCatalogueService',
@@ -2384,6 +2408,7 @@ describe('Gn4Converter', () => {
                 },
               },
               {
+                hierarchyPath: ['Mobilité', 'Mobilité (autre)'],
                 label: 'Mobilité (autre)',
                 type: 'theme',
                 key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#SubThemesGeoportailWallon/3099',
@@ -2396,6 +2421,7 @@ describe('Gn4Converter', () => {
                 },
               },
               {
+                hierarchyPath: ['Données de base', 'Données de base (autre)'],
                 label: 'Données de base (autre)',
                 type: 'theme',
                 key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#SubThemesGeoportailWallon/5099',
@@ -2507,6 +2533,7 @@ describe('Gn4Converter', () => {
             status: null,
             lineage:
               "Localisation par un ponctuel de l'ouvrage de dépollution a partir d'un fichier csv collecté sur le site du ministère : http://assainissement.developpement-durable.gouv.fr/. \nLa table des ponctuels comprend désormais tous les points de localisation des stations d'épuration calculés à partir des centroïdes de leur emprise. \nFréquence de mise à jour : annuel. \nQualité des données : Variable selon le type de saisie.",
+            sourceRecords: [],
             recordUpdated: new Date('2024-05-29T11:58:54.326Z'),
             recordPublished: null,
             ownerOrganization: {
@@ -2968,6 +2995,7 @@ describe('Gn4Converter', () => {
                 },
               },
               {
+                hierarchyPath: ['Données de base', 'Cartes anciennes'],
                 label: 'Cartes anciennes',
                 type: 'theme',
                 key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#SubThemesGeoportailWallon/5040',
@@ -2992,6 +3020,7 @@ describe('Gn4Converter', () => {
                 },
               },
               {
+                hierarchyPath: ['Société et activités', 'Logement et habitat'],
                 label: 'Logement et habitat',
                 type: 'theme',
                 key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#SubThemesGeoportailWallon/6030',
@@ -3004,6 +3033,10 @@ describe('Gn4Converter', () => {
                 },
               },
               {
+                hierarchyPath: [
+                  'Aménagement du territoire',
+                  'Risques et contraintes',
+                ],
                 label: 'Risques et contraintes',
                 type: 'theme',
                 key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#SubThemesGeoportailWallon/2020',
@@ -3016,6 +3049,10 @@ describe('Gn4Converter', () => {
                 },
               },
               {
+                hierarchyPath: [
+                  'Aménagement du territoire',
+                  'Plans et règlements',
+                ],
                 label: 'Plans et règlements',
                 type: 'theme',
                 key: 'https://metawal.wallonie.be/thesaurus/theme-geoportail-wallon#SubThemesGeoportailWallon/2010',
@@ -3050,6 +3087,7 @@ describe('Gn4Converter', () => {
             ],
             lineage:
               "L'application a été développée sur base de l'API GeoViewer",
+            sourceRecords: [],
             onlineResources: [
               {
                 description:
@@ -3149,6 +3187,7 @@ describe('Gn4Converter', () => {
             kind: 'reuse',
             status: null,
             lineage: null,
+            sourceRecords: [],
             recordUpdated: new Date('2024-09-26T13:34:25.803Z'),
             recordPublished: null,
             ownerOrganization: {
@@ -3205,6 +3244,7 @@ describe('Gn4Converter', () => {
             ],
             keywords: [
               {
+                hierarchyPath: ['biologie', 'espèce animale'],
                 label: 'espèce animale',
                 type: 'theme',
                 key: 'http://www.eionet.europa.eu/gemet/concept/10073',
@@ -3217,6 +3257,7 @@ describe('Gn4Converter', () => {
                 },
               },
               {
+                hierarchyPath: ['sylviculture', 'chasse'],
                 label: 'chasse',
                 type: 'theme',
                 key: 'http://www.eionet.europa.eu/gemet/concept/4072',
@@ -3412,6 +3453,7 @@ describe('Gn4Converter', () => {
             kind: 'reuse',
             status: 'completed',
             lineage: null,
+            sourceRecords: [],
             recordUpdated: new Date('2024-01-25T07:45:05.215Z'),
             recordPublished: null,
             recordCreated: new Date('2024-01-25T07:19:13.493Z'),

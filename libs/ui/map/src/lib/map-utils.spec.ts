@@ -8,6 +8,8 @@ import {
 import Map from 'ol/Map.js'
 import MapBrowserEvent from 'ol/MapBrowserEvent.js'
 import {
+  createSpatialExtentLayer,
+  DEFAULT_SPATIAL_EXTENT_STYLE,
   dragPanCondition,
   mouseWheelZoomCondition,
   prioritizePageScroll,
@@ -32,6 +34,7 @@ describe('map utils', () => {
     it('returns true for a left click without modifier key', () => {
       const nativeEvent = {
         type: 'pointer',
+        pointerId: 1,
         pointerType: 'mouse',
         isPrimary: true,
         button: 0,
@@ -47,6 +50,7 @@ describe('map utils', () => {
     it('returns false for a left click with modifier key', () => {
       const nativeEvent = {
         type: 'pointer',
+        pointerId: 1,
         pointerType: 'mouse',
         isPrimary: true,
         button: 0,
@@ -96,6 +100,59 @@ describe('map utils', () => {
       })
       it('with no PinchRotate interaction', () => {
         expect(pinchRotate).toBeFalsy()
+      })
+    })
+  })
+
+  describe('createSpatialExtentLayer', () => {
+    const extents = [{ bbox: [0, 0, 1, 1] as [number, number, number, number] }]
+
+    it('returns null when there is no extent', () => {
+      expect(createSpatialExtentLayer([])).toBeNull()
+    })
+    it('returns null when no extent can be represented', () => {
+      expect(createSpatialExtentLayer([{ description: 'no shape' }])).toBeNull()
+    })
+    it('builds a geojson layer with the default style and label', () => {
+      expect(createSpatialExtentLayer(extents)).toEqual({
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'Polygon',
+                coordinates: [
+                  [
+                    [0, 0],
+                    [0, 1],
+                    [1, 1],
+                    [1, 0],
+                    [0, 0],
+                  ],
+                ],
+              },
+            },
+          ],
+        },
+        label: 'Spatial extents',
+        style: DEFAULT_SPATIAL_EXTENT_STYLE,
+      })
+    })
+    it('applies the provided overrides', () => {
+      const style = { 'stroke-color': 'red' }
+      expect(
+        createSpatialExtentLayer(extents, {
+          label: 'Custom',
+          clickable: false,
+          style,
+        })
+      ).toMatchObject({
+        label: 'Custom',
+        clickable: false,
+        style,
       })
     })
   })

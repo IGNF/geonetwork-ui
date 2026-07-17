@@ -1,4 +1,4 @@
-import { Injectable, Injector, inject } from '@angular/core'
+import { inject, Injectable, Injector } from '@angular/core'
 import type { Geometry } from 'geojson'
 import {
   ES_QUERY_FIELDS_PRIORITY,
@@ -234,7 +234,7 @@ export class ElasticsearchService {
     if (this.metadataLang) {
       const lang3 = toLang3(
         this.isCurrentSearchLang()
-          ? this.translateService.currentLang
+          ? this.translateService.getCurrentLang()
           : this.metadataLang
       )
       return `lang${lang3}`
@@ -261,10 +261,11 @@ export class ElasticsearchService {
         })
         .join(' OR ')
     }
-    const queryString =
+    let queryString =
       typeof filters === 'string'
         ? filters
         : Object.keys(filters)
+            .filter((fieldname) => fieldname !== 'gn-ui-crossFieldFilter')
             .filter((fieldname) => !isDateRange(filters[fieldname]))
             .filter(
               (fieldname) =>
@@ -275,6 +276,9 @@ export class ElasticsearchService {
               (fieldname) => `${fieldname}:(${makeQuery(filters[fieldname])})`
             )
             .join(' AND ')
+    if (filters['gn-ui-crossFieldFilter']) {
+      queryString = `${queryString} AND (${filters['gn-ui-crossFieldFilter']})`
+    }
     const queryRange = Object.entries(filters)
       .filter(([, value]) => isDateRange(value))
       .map(([searchField, dateRange]) => {

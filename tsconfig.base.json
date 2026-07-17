@@ -5,7 +5,6 @@
     "sourceMap": true,
     "declaration": false,
     "moduleResolution": "node",
-    "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "es2021",
@@ -27,6 +26,12 @@
       "@geonetwork-ui/api/repository": ["libs/api/repository/src/index.ts"],
       "@geonetwork-ui/api/repository/gn4": [
         "libs/api/repository/src/lib/gn4/index.ts"
+      ],
+      "@geonetwork-ui/apps/datahub/app.component.ts": [
+        "apps/datahub/src/app/app.component.ts"
+      ],
+      "@geonetwork-ui/apps/datahub/app.providers.ts": [
+        "apps/datahub/src/app/app.providers.ts"
       ],
       "@geonetwork-ui/common/domain/*": ["libs/common/domain/src/lib/*"],
       "@geonetwork-ui/common/fixtures": ["libs/common/fixtures/src/index.ts"],
@@ -61,7 +66,16 @@
       "@geonetwork-ui/util/i18n/language-codes": [
         "libs/util/i18n/src/lib/language-codes.ts"
       ],
-      "@geonetwork-ui/util/shared": ["libs/util/shared/src/index.ts"]
+      "@geonetwork-ui/util/i18n/embedded-translate-loader": [
+        "libs/util/i18n/src/lib/embedded.translate.loader.ts"
+      ],
+      "@geonetwork-ui/util/i18n/test-translate-loader": [
+        "libs/util/i18n/src/lib/test.translate.loader.ts"
+      ],
+      "@geonetwork-ui/util/shared": ["libs/util/shared/src/index.ts"],
+      "@geonetwork-ui/feature/notify-reuse": [
+        "libs/feature/notify-reuse/src/index.ts"
+      ]
     },
     "allowJs": true,
     "outDir": "/"

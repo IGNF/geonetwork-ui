@@ -3,6 +3,7 @@ import { Geometry } from 'geojson'
 export interface GlobalConfig {
   GN4_API_URL: string
   DATAHUB_URL?: string
+  EDIT_URL_TEMPLATE?: string
   PROXY_PATH?: string
   METADATA_LANGUAGE?: string
   LOGIN_URL?: string
@@ -58,6 +59,7 @@ export interface SearchConfig {
   RECORD_KIND_QUICK_FILTER?: boolean
   FILTER_GEOMETRY_URL?: string
   FILTER_GEOMETRY_DATA?: string
+  DO_NOT_USE_DEFAULT_SEARCH_PRESET?: boolean
   SEARCH_PRESET?: SearchPreset[]
   ADVANCED_FILTERS?: []
   LIMIT?: number
@@ -65,6 +67,13 @@ export interface SearchConfig {
 
 export interface MetadataQualityConfig {
   ENABLED: boolean
+}
+
+export type NewRecordStandard = 'iso19139' | 'iso19115-3'
+
+export interface EditorConfig {
+  NEW_RECORD_DEFAULT_LANGUAGE?: string
+  NEW_RECORD_STANDARD?: NewRecordStandard
 }
 
 export type CustomTranslations = { [translationKey: string]: string }

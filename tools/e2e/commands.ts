@@ -50,6 +50,9 @@ declare namespace Cypress {
 Cypress.Commands.add(
   'login',
   (username = 'admin', password = 'admin', redirect = false) => {
+    cy.clearCookie('XSRF-TOKEN', {
+      domain: 'http://localhost:8080/', // we're also clearing the cookie on the geonetwork domain, to make sure it doesn't persist there
+    })
     // first request to get the XSRF cookie
     cy.request({
       method: 'GET',
@@ -253,7 +256,10 @@ Cypress.Commands.add('editor_createRecordCopy', (uuidToCopy, titleToCopy) => {
 
   // Clear any existing copy of the test record
   cy.visit('/catalog/search')
-  cy.get('gn-ui-fuzzy-search input').type(`${recordTitle}{enter}`)
+  cy.get('gn-ui-fuzzy-search input').type(
+    //`{selectall}{del}${recordTitle}{enter}`
+    `{selectall}{del}{enter}${recordTitle}{enter}` // FIXME: we should not need to press "enter" before typing something to search! there is a debounce problem here
+  )
   cy.get('[data-cy="table-row"]')
     .should('have.length.lt', 10) // making sure the records were updated
     .then((rows$) => {
@@ -261,7 +267,7 @@ Cypress.Commands.add('editor_createRecordCopy', (uuidToCopy, titleToCopy) => {
         return
       }
       // there is a copy: delete it
-      cy.get('[data-test="record-menu-button"]').eq(0).click()
+      cy.get('[data-test="record-menu-button"]').eq(1).click()
       cy.get('[data-test="record-menu-delete-button"]').click()
       cy.get('[data-cy="confirm-button"]').click()
       cy.log('An existing copy of the test record was found and deleted.')

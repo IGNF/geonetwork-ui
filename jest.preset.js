@@ -11,6 +11,12 @@ const npmDependenciesOnlyInEsm = [
   'fetch-blob',
   'formdata-polyfill',
   '.*.mjs',
+  'rbush',
+  'quickselect',
+  'quick-lru',
+  'geotiff',
+  'pbf',
+  'marked',
 ]
 
 module.exports = {
@@ -26,7 +32,6 @@ module.exports = {
       {
         tsconfig: '<rootDir>/tsconfig.spec.json',
         stringifyContentPathRegex: '\\.(html|svg)$',
-        isolatedModules: true,
       },
     ],
   },

@@ -1,4 +1,4 @@
-import { toLang2 } from '@geonetwork-ui/util/i18n'
+import { LANG_2_TO_3_MAPPER, toLang2 } from '@geonetwork-ui/util/i18n'
 
 const flatten = (
   base: string,
@@ -136,4 +136,53 @@ export function checkMetadataLanguage(
     )
   }
   return parsedConfigSection
+}
+
+export function checkNewRecordDefaultLanguage(
+  parsedConfigSection: any,
+  outWarnings: string[]
+) {
+  const lang2 = toLang2(
+    parsedConfigSection.new_record_default_language.toLowerCase()
+  )
+  if (!(lang2 in LANG_2_TO_3_MAPPER)) {
+    outWarnings.push(
+      `In the [editing] section: new_record_default_language = "${parsedConfigSection.new_record_default_language}" is not a recognized ISO 639 language code`
+    )
+    return {
+      ...parsedConfigSection,
+      new_record_default_language: undefined,
+    }
+  }
+  return {
+    ...parsedConfigSection,
+    new_record_default_language: lang2,
+  }
+}
+
+export function checkNewRecordStandard(
+  parsedConfigSection: any,
+  outWarnings: string[]
+) {
+  const standard = parsedConfigSection.new_record_standard
+  const normalizedStandard =
+    typeof standard === 'string' ? standard.trim().toLowerCase() : null
+
+  if (
+    normalizedStandard === 'iso19139' ||
+    normalizedStandard === 'iso19115-3'
+  ) {
+    return {
+      ...parsedConfigSection,
+      new_record_standard: normalizedStandard,
+    }
+  }
+
+  outWarnings.push(
+    `In the [editing] section: new_record_standard = "${standard}" is not a supported metadata standard`
+  )
+  return {
+    ...parsedConfigSection,
+    new_record_standard: undefined,
+  }
 }

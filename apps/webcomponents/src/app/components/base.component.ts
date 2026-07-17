@@ -1,11 +1,11 @@
 import {
   Component,
   ElementRef,
+  inject,
   Injector,
   Input,
   OnChanges,
   OnInit,
-  inject,
 } from '@angular/core'
 import {
   LinkClassifierService,
@@ -18,13 +18,22 @@ import { TranslateService } from '@ngx-translate/core'
 import { firstValueFrom } from 'rxjs'
 import { DatasetOnlineResource } from '@geonetwork-ui/common/domain/model/record'
 import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
-import { OverlayContainer } from '@angular/cdk/overlay'
+import { Overlay, OverlayContainer } from '@angular/cdk/overlay'
 import { WebcomponentOverlayContainer } from '../webcomponent-overlay-container'
 import {
   MetadataLanguage,
   standaloneConfigurationObject,
   TextLanguage,
 } from '../configuration'
+
+export const DefaultProviders = [
+  SearchFacade,
+  Overlay, // we're providing an overlay service in this context to use the container specitic to each web component
+  {
+    provide: OverlayContainer,
+    useClass: WebcomponentOverlayContainer,
+  },
+]
 
 @Component({
   selector: 'wc-base',
@@ -54,22 +63,20 @@ export class BaseComponent implements OnChanges, OnInit {
   linkClassifier: LinkClassifierService
 
   constructor() {
-    const injector = this.injector
-
-    this.facade = injector.get(SearchFacade)
-    this.translate = injector.get(TranslateService)
-    this.searchService = injector.get(SearchApiService)
-    this.recordsRepository = injector.get(RecordsRepositoryInterface)
-    this.linkClassifier = injector.get(LinkClassifierService)
-
-    const elementRef = injector.get(ElementRef)
-    const overlayContainer = injector.get(
-      OverlayContainer
-    ) as WebcomponentOverlayContainer
-    overlayContainer.setRoot(elementRef.nativeElement.shadowRoot)
+    this.facade = this.injector.get(SearchFacade)
+    this.translate = this.injector.get(TranslateService)
+    this.searchService = this.injector.get(SearchApiService)
+    this.recordsRepository = this.injector.get(RecordsRepositoryInterface)
+    this.linkClassifier = this.injector.get(LinkClassifierService)
   }
 
   ngOnInit() {
+    const elementRef = this.injector.get(ElementRef)
+    const overlayContainer = this.injector.get(
+      OverlayContainer
+    ) as WebcomponentOverlayContainer
+    overlayContainer.setRoot(elementRef.nativeElement.shadowRoot)
+
     if (!this.isInitialized && this.apiUrl) {
       this.init()
     }
@@ -95,7 +102,7 @@ export class BaseComponent implements OnChanges, OnInit {
       this.translate.use(this.textLanguage)
     }
 
-    this.translate.reloadLang(this.translate.currentLang)
+    this.translate.reloadLang(this.translate.getCurrentLang())
     ThemeService.applyCssVariables(
       this.primaryColor,
       this.secondaryColor,
@@ -105,33 +112,12 @@ export class BaseComponent implements OnChanges, OnInit {
       this.titleFont
     )
     this.facade.init(this.searchId)
-    this.copyFontFacesToDocument()
+    copyFontFacesToDocument(this.injector.get(ElementRef).nativeElement)
     this.isInitialized = true
   }
 
   changes() {
     // to override
-  }
-
-  private copyFontFacesToDocument() {
-    // get the list of font face definitions in the Shadow DOM
-    const root = this.injector.get(ElementRef).nativeElement as HTMLElement
-    const styles = root.shadowRoot.styleSheets
-    const fontFaces = Array.from(styles).reduce(
-      (prev, curr) => [
-        ...prev,
-        ...Array.from(curr.cssRules)
-          .filter((rule) => rule.cssText.startsWith('@font-face'))
-          .map((rule) => rule.cssText),
-      ],
-      []
-    )
-
-    // all font faces are then copied to the document
-    const style = document.createElement('style')
-    const cssText = fontFaces.join('\n')
-    style.appendChild(document.createTextNode(cssText))
-    document.head.appendChild(style)
   }
 
   async getRecordLink(
@@ -147,4 +133,24 @@ export class BaseComponent implements OnChanges, OnInit {
     )
     return dataLinks[0]
   }
+}
+
+export function copyFontFacesToDocument(rootElement: HTMLElement) {
+  // get the list of font face definitions in the Shadow DOM
+  const styles = rootElement.shadowRoot.styleSheets
+  const fontFaces = Array.from(styles).reduce(
+    (prev, curr) => [
+      ...prev,
+      ...Array.from(curr.cssRules)
+        .filter((rule) => rule.cssText.startsWith('@font-face'))
+        .map((rule) => rule.cssText),
+    ],
+    []
+  )
+
+  // all font faces are then copied to the document
+  const style = document.createElement('style')
+  const cssText = fontFaces.join('\n')
+  style.appendChild(document.createTextNode(cssText))
+  document.head.appendChild(style)
 }

@@ -11,6 +11,7 @@ import {
 } from '@angular/core'
 import { MapUtilsService } from '@geonetwork-ui/feature/map'
 import { getLinkId, getLinkLabel } from '@geonetwork-ui/util/shared'
+import { WmsEndpoint, LayerStyle } from '@camptocamp/ogc-client'
 import {
   BehaviorSubject,
   combineLatest,
@@ -40,6 +41,7 @@ import {
   createViewFromLayer,
   MapContext,
   MapContextLayer,
+  MapContextLayerWms,
   SourceLoadErrorEvent,
 } from '@geospatial-sdk/core'
 import {
@@ -77,6 +79,7 @@ marker('map.dropdown.placeholder')
 marker('wfs.feature.limit')
 marker('dataset.error.restrictedAccess')
 marker('map.select.style')
+marker('map.style.default')
 
 @Component({
   selector: 'gn-ui-map-view',
@@ -228,7 +231,16 @@ export class MapViewComponent implements AfterViewInit {
           return compatibleLinks[0]
         }
       }
-    })
+    }),
+    shareReplay(1)
+  )
+
+  isWmsStyleMode$ = this.selectedSourceLink$.pipe(
+    map(
+      (src) => src?.type === 'service' && src?.accessServiceProtocol === 'wms'
+    ),
+    distinctUntilChanged(),
+    shareReplay(1)
   )
 
   styleLinks$ = this.selectedSourceLink$.pipe(
@@ -262,6 +274,22 @@ export class MapViewComponent implements AfterViewInit {
           })
         )
       }
+      if (
+        src &&
+        src.type === 'service' &&
+        src.accessServiceProtocol === 'wms'
+      ) {
+        return from(new WmsEndpoint(src.url.toString()).isReady()).pipe(
+          map((endpoint) => {
+            const layer = endpoint.getLayerByName(src.name)
+            return layer?.styles || []
+          }),
+          catchError((error) => {
+            this.handleError(error)
+            return of([])
+          })
+        )
+      }
       return of([])
     }),
     tap((styles) => {
@@ -274,19 +302,36 @@ export class MapViewComponent implements AfterViewInit {
     shareReplay(1)
   )
 
-  styleDropdownChoices$ = this.styleLinks$.pipe(
-    map((links) =>
+  styleDropdownChoices$ = combineLatest([
+    this.styleLinks$,
+    this.isWmsStyleMode$,
+  ]).pipe(
+    map(([links, isWmsStyleMode]) =>
       links.length
         ? links.map((link, index) => ({
-            label: getLinkLabel(link),
+            label: isWmsStyleMode
+              ? (link as LayerStyle).title || (link as LayerStyle).name
+              : getLinkLabel(link as DatasetOnlineResource),
             value: index,
           }))
         : [
             {
-              label: '\u00A0\u00A0\u00A0\u00A0',
+              label: this.translateService.instant('map.style.default'),
               value: 0,
             },
           ]
+    )
+  )
+
+  selectedWmsStyleName$ = combineLatest([
+    this.styleLinks$,
+    this.isWmsStyleMode$,
+    this.selectedStyleId$.pipe(distinctUntilChanged()),
+  ]).pipe(
+    map(([styles, isWmsStyleMode, styleIdx]) =>
+      isWmsStyleMode && Array.isArray(styles)
+        ? (styles[styleIdx] as LayerStyle)?.name
+        : undefined
     )
   )
 
@@ -294,13 +339,46 @@ export class MapViewComponent implements AfterViewInit {
     this.selectedSourceLink$,
     this.styleLinks$,
     this.selectedStyleId$.pipe(distinctUntilChanged()),
+    this.isWmsStyleMode$,
   ]).pipe(
-    map(([src, styles, styleIdx]) => (styles.length ? styles[styleIdx] : src)),
+    map(([src, styles, styleIdx, isWmsStyleMode]) =>
+      !isWmsStyleMode && styles.length ? styles[styleIdx] : src
+    ),
     shareReplay(1)
   )
 
-  currentLayers$ = combineLatest([this.selectedLink$, this.excludeWfs$]).pipe(
-    switchMap(([link, excludeWfs]) => {
+  wmsMimeType$ = this.selectedSourceLink$.pipe(
+    switchMap((link) => {
+      if (link?.type === 'service' && link?.accessServiceProtocol === 'wms') {
+        return from(
+          new WmsEndpoint(link.url.toString())
+            .isReady()
+            .then((endpoint) => {
+              return endpoint.describeLayer(link.name).then((description) => {
+                if (description) {
+                  return description.owsType === 'wfs'
+                    ? 'image/png'
+                    : 'image/jpeg'
+                }
+                const layer = endpoint.getLayerByName(link.name)
+                return layer?.opaque ? 'image/jpeg' : 'image/png'
+              })
+            })
+            .catch(() => 'image/png')
+        )
+      }
+      return of('')
+    }),
+    shareReplay(1)
+  )
+
+  currentLayers$ = combineLatest([
+    this.selectedLink$,
+    this.excludeWfs$,
+    this.selectedWmsStyleName$,
+    this.wmsMimeType$,
+  ]).pipe(
+    switchMap(([link, excludeWfs, wmsStyleName, wmsMimeType]) => {
       if (!link) {
         return of([])
       }
@@ -315,6 +393,15 @@ export class MapViewComponent implements AfterViewInit {
         return of([])
       }
       return this.getLayerFromLink(link).pipe(
+        map((layer) =>
+          layer.type === 'wms'
+            ? {
+                ...layer,
+                ...(wmsStyleName && { style: wmsStyleName }),
+                ...(wmsMimeType && { format: wmsMimeType }),
+              }
+            : layer
+        ),
         map((layer) => [layer]),
         catchError((e) => {
           this.handleError(e)
@@ -344,11 +431,19 @@ export class MapViewComponent implements AfterViewInit {
     }),
     withLatestFrom(this.mdViewFacade.metadata$),
     map(([context, metadata]) => {
-      if (context.view) return context
+      // overlay the record's declared spatial extent on top of the data layers
+      const extentLayer = this.mapUtils.getRecordExtentLayer(metadata)
+      const layers = extentLayer
+        ? [...context.layers, extentLayer]
+        : context.layers
+      // the view (initial zoom) is derived from the data layer or, as a
+      // fallback, from the record extent — independently from the overlay above
+      if (context.view) return { ...context, layers }
       const extent = this.mapUtils.getRecordExtent(metadata)
       const view = extent ? { extent } : null
       return {
         ...context,
+        layers,
         view,
       }
     }),
@@ -394,7 +489,7 @@ export class MapViewComponent implements AfterViewInit {
         url: link.url.toString(),
         type: 'wms',
         name: link.name,
-      })
+      } as MapContextLayerWms)
     } else if (
       link.type === 'service' &&
       link.accessServiceProtocol === 'tms'

@@ -139,6 +139,90 @@ describe('editor form', () => {
       .should('eql', '100%')
   })
 
+  describe('metadata quality panel navigation', () => {
+    beforeEach(() => {
+      cy.get('md-editor-top-toolbar').find('gn-ui-button').eq(2).click()
+      cy.get('gn-ui-metadata-quality-panel').should('be.visible')
+    })
+
+    it('quality panel navigation', () => {
+      // it should highlight and focus the field when clicking an invalid criterion on the current page
+      cy.get('@abstractField').clear()
+      cy.get('gn-ui-metadata-quality-panel')
+        .find('[data-cy="md-quality-btn-editor.record.form.field.abstract"]')
+        .click()
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should(
+        'have.class',
+        'gn-ui-field-focus-glow'
+      )
+      cy.focused()
+        .closest('gn-ui-form-field[ng-reflect-model=abstract]')
+        .should('exist')
+
+      // it should scroll the field back into view when it is off-screen on the current page
+      cy.get('gn-ui-record-form').closest('.overflow-auto').scrollTo('bottom')
+      cy.get('gn-ui-metadata-quality-panel')
+        .find('[data-cy="md-quality-btn-editor.record.form.field.abstract"]')
+        .click()
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should(($el) => {
+        expect($el[0].getBoundingClientRect().top).to.be.within(
+          0,
+          Cypress.config('viewportHeight')
+        )
+      })
+
+      // it should switch page, scroll to and highlight/focus the field when clicking an invalid criterion
+      cy.get('@accessContactPageBtn').click()
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should('not.exist')
+      cy.get('gn-ui-metadata-quality-panel')
+        .find('[data-cy="md-quality-btn-editor.record.form.field.abstract"]')
+        .click()
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should('be.visible')
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should(($el) => {
+        const { top, bottom } = $el[0].getBoundingClientRect()
+        expect(top).to.be.within(0, Cypress.config('viewportHeight'))
+        expect(bottom).to.be.greaterThan(0)
+      })
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should(
+        'have.class',
+        'gn-ui-field-focus-glow'
+      )
+      cy.focused()
+        .closest('gn-ui-form-field[ng-reflect-model=abstract]')
+        .should('exist')
+
+      // it should not navigate nor highlight when clicking a valid criterion
+      cy.get('@accessContactPageBtn').click()
+      cy.get('gn-ui-metadata-quality-panel')
+        .find('[data-cy="md-quality-btn-editor.record.form.field.title"]')
+        .click()
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should('not.exist')
+      cy.get('gn-ui-record-form')
+        .find('gn-ui-form-field.gn-ui-field-focus-glow')
+        .should('not.exist')
+
+      // it should highlight the whole section when the target field is hidden
+      // (toggling a shortcut on then off leaves the emptied field hidden)
+      cy.get('[data-cy=constraints-shortcut-toggles]')
+        .find('gn-ui-check-toggle label')
+        .eq(0)
+        .click()
+      cy.get('[data-cy=constraints-shortcut-toggles]')
+        .find('gn-ui-check-toggle label')
+        .eq(0)
+        .click()
+      cy.get('[data-cy=legalConstraints]').should('not.exist')
+      cy.get('gn-ui-metadata-quality-panel')
+        .find(
+          '[data-cy="md-quality-btn-editor.record.form.field.legalConstraints"]'
+        )
+        .click()
+      cy.get('gn-ui-record-form .gn-ui-field-focus-glow')
+        .find('[data-cy=constraints-shortcut-toggles]')
+        .should('exist')
+    })
+  })
+
   describe('form fields', () => {
     it('about section', () => {
       // TITLE

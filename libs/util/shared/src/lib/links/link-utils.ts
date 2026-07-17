@@ -266,7 +266,7 @@ export function checkFileFormat(
       new RegExp(`[./]${format}`, 'i').test(link.name.toLowerCase())) ||
     ('url' in link &&
       new RegExp(`[./]${format}`, 'i').test(link.url.toString())) ||
-    ('name' in link && link.name.toLowerCase().includes(format))
+    ('name' in link && new RegExp(`\\b${format}\\b`, 'i').test(link.name))
   )
 }
 
@@ -331,11 +331,15 @@ export async function getLayers(url: string, serviceProtocol: ServiceProtocol) {
     case 'wfs': {
       const endpointWfs = await new WfsEndpoint(url).isReady()
       const featureTypes = await endpointWfs.getFeatureTypes()
-      const layers = await Promise.all(
-        featureTypes.map(async (collection) => {
-          return await endpointWfs.getFeatureTypeFull(collection.name)
-        })
+      const layers = (
+        await Promise.allSettled(
+          featureTypes.map((collection) => {
+            return endpointWfs.getFeatureTypeFull(collection.name)
+          })
+        )
       )
+        .filter((settled) => settled.status === 'fulfilled')
+        .map((fulfilled) => fulfilled.value)
       return layers
     }
     case 'wms': {

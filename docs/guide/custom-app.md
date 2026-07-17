@@ -52,51 +52,33 @@ Setting up a Custom Application requires precisely following several steps.
 
 ### Step 1: Create an application with Angular
 
-This can be done in several ways, see for instance [Angular Setup Guide](https://angular.io/guide/setup-local).
+This can be done in several ways, see for instance [Angular Setup Guide](https://angular.dev/tools/cli/setup-local).
 
 ::: tip
 GeoNetwork-UI as an NPM package is **not compatible with Server-Side Rendering!** use the `--ssr false` flag
 :::
 
 ::: tip
-If using Angular 17+, make sure to create a **non-standalone app** using the `--no-standalone` flag
+If using a **standalone app**, all the providers usually defined in the app module of a non-standalone app should be instead provided in the `ApplicationConfig` given to `bootstrapApplication`.
 :::
 
 ### Step 2: Adjust the Typescript configuration
 
-Add the following settings to the `tsconfig.json` file at the root of your project:
+Some dependencies of GeoNetwork-UI will trigger an error by the Angular compiler. To suppress these errors, add
+the following settings to the `tsconfig.json` file at the root of your project:
 
 ```json
 {
   "compilerOptions": {
     // ...
-    "strict": false,
-    "noImplicitOverride": false,
-    "noPropertyAccessFromIndexSignature": false,
-    "lib": [
-      // ...
-      "dom.iterable"
-    ],
-    "skipDefaultLibCheck": true,
-    "skipLibCheck": true,
-    "emitDecoratorMetadata": true,
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true
-  },
-  "angularCompilerOptions": {
-    // ...
-    "strictTemplates": false
+    "skipLibCheck": true
   }
 }
 ```
 
-This is necessary mostly because GeoNetwork-UI will not compile under Typescript strict mode.
+### Step 3: Adjust the Angular configuration (for GeoNetwork-UI dev, optional)
 
-### Step 3: Adjust the Angular configuration
-
-Some dependencies of GeoNetwork-UI will trigger a warning by the Angular compiler. To suppress these warnings, add
-the following settings to the `angular.json` file at the root of your project:
+Add the following settings to the `angular.json` file at the root of your project:
 
 ```json
   // ...
@@ -110,18 +92,6 @@ the following settings to the `angular.json` file at the root of your project:
         "development": {
           // ..
           "preserveSymlinks": true,
-          "allowedCommonJsDependencies": [
-            "duration-relativetimeformat",
-            "papaparse",
-            "xlsx",
-            "chroma-js",
-            "@rgrove/parse-xml",
-            "@messageformat/core",
-            "rbush",
-            "pbf",
-            "alasql"
-            // add dependencies here if other warnings show up and you want to hide them
-          ]
         }
       },
       "defaultConfiguration": "production"
@@ -129,17 +99,17 @@ the following settings to the `angular.json` file at the root of your project:
   }
 ```
 
-The `preserveSymlinks` setting is also important if you're working in dev mode and use a symbolic link to point
+The `preserveSymlinks` setting is important if you're working in dev mode and use a symbolic link to point
 to a dev build of GeoNetwork-UI.
 
-### Step 4: Install Tailwind
+### Step 4: Install Tailwind 3
 
-[Tailwind CSS](https://tailwindcss.com/) is used for styling across the whole of GeoNetwork-UI, and is a mandatory dependency.
+[Tailwind CSS](https://v3.tailwindcss.com/) is used for styling across the whole of GeoNetwork-UI, and is a mandatory dependency.
 
 To install and initialize it:
 
 ```shell
-npm install -D tailwindcss postcss autoprefixer
+npm install -D tailwindcss@3 postcss autoprefixer
 npx tailwindcss init
 ```
 
@@ -166,7 +136,6 @@ Here we are inheriting from the GeoNetwork-UI base Tailwind config, which provid
 ```shell
 npm install --save \
   @angular/material \
-  @angular/material-moment-adapter \
   @angular/cdk \
   @ngrx/component \
   @ngrx/effects \
@@ -186,20 +155,7 @@ Run:
 npm install --save geonetwork-ui
 ```
 
-### Step 7: Include the required fonts
-
-The root `index.html` file of your application should include the Material Symbols font for icons. Add these lines to itS `<head>` section:
-
-```html
-<head>
-  <!-- ... -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-</head>
-```
-
-### Step 8: Include the GeoNetwork-UI stylesheet
+### Step 7: Include the GeoNetwork-UI stylesheet
 
 GeoNetwork-UI comes with its own stylesheet, which you should include at the top of your application `style.css` file like so:
 
@@ -207,10 +163,10 @@ GeoNetwork-UI comes with its own stylesheet, which you should include at the top
 @import 'geonetwork-ui/style.css';
 ```
 
-### Step 9: Initialize the color theme
+### Step 8: Initialize the color theme
 
 GeoNetwork-UI lets users define their own theme based on primary and secondary colors for instance. By default, no theme is specified
-so UI components might not render properly. To define a theme, call the following function on the application module constructor:
+so UI components might not render properly. To define a theme, call the following function on the application module (or standalone component) constructor:
 
 ```ts
 export class AppModule {

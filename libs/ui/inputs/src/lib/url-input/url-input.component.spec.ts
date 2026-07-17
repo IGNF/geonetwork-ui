@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { UrlInputComponent } from './url-input.component'
 import { By } from '@angular/platform-browser'
 import { ButtonComponent } from '../button/button.component'
+import { SimpleChange } from '@angular/core'
 
 describe('UrlInputComponent', () => {
   let component: UrlInputComponent
@@ -46,7 +47,7 @@ describe('UrlInputComponent', () => {
         let emitted
         component.uploadClick.subscribe((v) => (emitted = v))
         inputEl.value = 'http://aaa.com/bcd'
-        button.triggerEventHandler('buttonClick', null)
+        button.triggerEventHandler('buttonClick', new MouseEvent('click'))
         expect(emitted).toBe('http://aaa.com/bcd')
       })
       it('does not emit the value on an input event', () => {
@@ -84,13 +85,20 @@ describe('UrlInputComponent', () => {
         inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'enter' }))
         expect(emitted).toBe('http://bla')
       })
+      it('stops event propagation so parent components are not triggered', () => {
+        const event = new KeyboardEvent('keydown', { key: 'enter' })
+        const stopPropagation = jest.spyOn(event, 'stopPropagation')
+        inputEl.value = 'http://aaa.com/bcd'
+        inputEl.dispatchEvent(event)
+        expect(stopPropagation).toHaveBeenCalled()
+      })
     })
     describe('valueChange', () => {
       it('does not the value on a button click event', () => {
         let emitted = null
         component.valueChange.subscribe((v) => (emitted = v))
         inputEl.value = 'http://aaa.com/bcd'
-        button.triggerEventHandler('buttonClick', null)
+        button.triggerEventHandler('buttonClick', new MouseEvent('click'))
         expect(emitted).toBe(null)
       })
       it('emits the value on an input event', () => {
@@ -141,6 +149,25 @@ describe('UrlInputComponent', () => {
         inputEl.dispatchEvent(new Event('input'))
         fixture.detectChanges()
         expect(button.componentInstance.disabled).toBeFalsy()
+      })
+    })
+
+    describe('resetUrlOnChange', () => {
+      it('does not clear the value on the initial binding', () => {
+        component.value = 'https://example.com/wms'
+        component.ngOnChanges({
+          resetUrlOnChange: new SimpleChange(undefined, Math.random(), true),
+        })
+        fixture.detectChanges()
+        expect(inputEl.value).toEqual('https://example.com/wms')
+      })
+      it('clears the value on subsequent changes', () => {
+        component.value = 'https://example.com/wms'
+        component.ngOnChanges({
+          resetUrlOnChange: new SimpleChange(1, 2, false),
+        })
+        fixture.detectChanges()
+        expect(inputEl.value).toEqual('')
       })
     })
 

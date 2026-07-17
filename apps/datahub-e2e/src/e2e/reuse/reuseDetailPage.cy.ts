@@ -5,7 +5,7 @@ describe('reuse pages', () => {
     cy.visit('/reuse/7eb795c2-d612-4b5e-b15e-d985b0f4e697')
     // Header
     // should display a link to the reuse
-    cy.get('datahub-header-record')
+    cy.get('datahub-record-header')
       .find('header')
       .find('a')
       .first()
@@ -34,7 +34,7 @@ describe('reuse pages', () => {
 
     // About
     // should display the spatial extent
-    cy.get('gn-ui-expandable-panel').eq(2).click()
+    cy.get('gn-ui-expandable-panel').eq(3).click()
     cy.get('gn-ui-map-container').should('be.visible')
 
     // Links

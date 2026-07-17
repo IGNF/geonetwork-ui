@@ -21,7 +21,10 @@
               >
               </gn-ui-metadata-info>
             </div>
-            <div class="flex flex-col gap-5">
+            <div
+              class="flex flex-col gap-5"
+              [ngClass]="(hasThumbnail$ | async) ? 'sm:pt-10' : ''"
+            >
               @if (metadataViewFacade.resourceDoi$ | async; as resourceDoi) {
                 <gn-ui-metadata-doi
                   [code]="resourceDoi.code"
@@ -147,7 +150,7 @@
       </section>
     }
     @if (displayLinked$ | async) {
-      <section id="linked-records" class="bg-primary-opacity-10 pb-3">
+      <section id="linked-records" class="bg-primary/10 pb-3">
         <div class="container-lg px-4 lg:mx-auto">
           <datahub-record-linked-records></datahub-record-linked-records>
         </div>

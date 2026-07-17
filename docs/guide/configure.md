@@ -67,6 +67,8 @@ Some additional notes:
 
   - `${current_url}`: replaced by the current browser URL
 
+  - `${current_path}`: replaced by the _path component_ of the current browser URL; in a URL like https://my.host.org/hello/world?param=value, the _path component_ is `/hello/world?param=value` (it includes anything after the first `/`, including query params and hash fragments)
+
   - `${lang2}`, `${lang3}`: replaced by the ISO-639 code of the current language, respectively in 2- or 3-characters format
 
   Example for a platform relying on CAS:
@@ -91,7 +93,21 @@ Some additional notes:
 
 - `datahub_url` (optional)
 
-  deprecated - not used anymore
+  deprecated - not used currently
+
+- `edit_url_template` (optional)
+
+  URL template allowing opening datasets in an editor; if set, applications such as the Datahub will offer a button in the header to open the currently-viewed dataset in an editor.
+
+  The template must include the following placeholders, which allow applications to inject the correct values when generating the final URL:
+
+  - `${record_id}`: identifier of the record
+
+  Example for an integration with the Metadata-Editor:
+
+  ```toml
+  edit_url_template = '/metadata-editor/edit/${record_id}'
+  ```
 
 #### `[theme]`
 
@@ -189,8 +205,13 @@ advanced_filters = ['organization', 'inspireKeyword', 'keyword', 'topic']
 ```
 
 ⚠️ **WARNING**: `'resourceType'` filter has been deprecated, please use `'recordKind'` instead. Using both filters is not recommended as it may imply some inconsistencies in the page results. `'resourceType'` filter will fetch records of all type (instead of `featureCatalog`), whereas `'recordKind'` filter will fetch `datasets` (wich are `datasets`, `featureCatalog` that are `datasets`, and `series`), `services` and `reuse` (`application` and all kind of `map`).
+For a detailed explanation on the classification system, see [this documentation page](../guide/record-kind.md).
 
 ⚠️ **Breaking change**: Record of type featureCatalog are not retrieved anymore.
+
+- `do_not_use_default_search_preset` (optional)
+
+  If set to `true`, the two default pre-configured search badges ("The latest" and "The most popular") will not be shown under the main search bar. Defaults to `false`. Note that the "My favorites" badge cannot be disabled by configuration.
 
 - `[[search_preset]]` (multiple, optional)
 
@@ -220,7 +241,8 @@ advanced_filters = ['organization', 'inspireKeyword', 'keyword', 'topic']
   filters.organization = ['Org 1', 'Org 2']
   filters.format = ['format 1', 'format 2']
   filters.documentStandard = ['iso19115-3.2018']
-  filters.inspireKeyword = ['keyword 1', 'keyword 2']
+  filters.keyword = ['keyword 1', 'keyword 2']
+  filters.inspireKeyword = ['http://inspire.ec.europa.eu/theme/er']
   filters.topic = ['boundaries']
   filters.publicationYear = ['2023', '2022']
   filters.isSpatial = ['yes']
@@ -231,6 +253,8 @@ advanced_filters = ['organization', 'inspireKeyword', 'keyword', 'topic']
   name = 'otherFilter'
   filters.q = 'full text search'
   ```
+
+      Note: Values for the same filter are treated with an OR logic, value for different filters are treated with an AND logic
 
 #### `[metadata-quality]`
 
@@ -243,6 +267,32 @@ To show Metadata Quality scores on records and allow sorting, enabling the setti
 - `enabled` (optional)
 
   By default, the widget is not activated; to enable it, just set this parameter to "true".
+
+#### `[editing]`
+
+This section contains settings for metadata editing behavior in the Metadata Editor application.
+
+- `new_record_default_language` (optional)
+
+  Defines the default language assigned to newly created metadata records (e.g. `en`, `fr`, `de`).
+
+  If not set, defaults to the current UI language.
+
+  ```toml
+  [editing]
+  new_record_default_language = "fr"
+  ```
+
+- `new_record_standard` (optional)
+
+  Defines the metadata standard used when creating new records. Accepted values are `iso19139` and `iso19115-3`.
+
+  If not set, defaults to `iso19139`.
+
+  ```toml
+  [editing]
+  new_record_standard = "iso19115-3"
+  ```
 
 #### `[map]`
 
@@ -318,18 +368,19 @@ The map section lets you customize how maps appear and behave across GeoNetwork-
 
 - `external_viewer_url_template` (optional)
 
-  URL template allowing opening map layers in an external viewer; if set, applications such as the Datahub will offer a button next to the map viewer tp open the currently-viewed layers in an external viewer.
+  URL template allowing opening map layers in an external viewer; if set, applications such as the Datahub will offer a button next to the map viewer to open the currently-viewed layers in an external viewer.
 
   The template must include the following placeholders, which allow applications to inject the correct values when generating the final URL:
 
   - `${service_url}`: URL of the data file or web service providing the layer
   - `${service_type}`: Type of layer; currently supported types are WMS, WFS, GEOJSON
   - `${layer_name}`: Name of the layer
+  - `${mime_type}`: Preferred image format for WMS layers; resolves to `image/png` for WMS layers backed by vector data (WFS), `image/jpeg` otherwise; empty for non-WMS layers
 
   Example for an integration with MapStore viewer:
 
   ```toml
-  external_viewer_url_template = 'https://my.sdi.org/mapstore/#/?actions=[{"type":"CATALOG:ADD_LAYERS_FROM_CATALOGS","layers":["${layer_name}"],"sources":[{"url":"${service_url}","type":"${service_type}"}]}]'
+  external_viewer_url_template = 'https://my.sdi.org/mapstore/#/?actions=[{"type":"CATALOG:ADD_LAYERS_FROM_CATALOGS","layers":["${layer_name}"],"sources":[{"url":"${service_url}","type":"${service_type}"}],"options":[{"format":"${mime_type}"}]}]'
   ```
 
 - `external_viewer_open_new_tab` (optional)

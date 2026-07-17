@@ -21,7 +21,7 @@ import {
   matCallOutline,
   matLocationOnOutline,
 } from '@ng-icons/material-icons/outline'
-
+import { getAddressLines } from '@geonetwork-ui/util/shared'
 import { TranslateDirective } from '@ngx-translate/core'
 
 @Component({
@@ -52,17 +52,14 @@ export class MetadataContactComponent {
 
   get contacts() {
     return (
-      (this.metadata.kind === 'dataset'
-        ? this.metadata.contactsForResource
-        : this.metadata.contacts) || []
+      (this.metadata.kind === 'service'
+        ? this.metadata.contacts
+        : this.metadata.contactsForResource) || []
     )
   }
 
   get address() {
-    const addressParts = this.contacts[0].address
-      .split(',')
-      .map((part) => part.trim())
-    return addressParts
+    return getAddressLines(this.contacts[0]?.address)
   }
 
   onOrganizationClick() {

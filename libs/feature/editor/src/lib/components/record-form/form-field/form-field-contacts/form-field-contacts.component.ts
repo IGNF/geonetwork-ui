@@ -28,9 +28,15 @@ import { UserModel } from '@geonetwork-ui/common/domain/model/user'
 import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
 import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
 import { ContactCardComponent } from '../../../contact-card/contact-card.component'
-import { createFuzzyFilter } from '@geonetwork-ui/util/shared'
+import { ContactDetailsFormComponent } from '../../../contact-details/contact-details-form.component'
+import {
+  createFuzzyFilter,
+  getIndividualDisplayName,
+  toIndividual,
+} from '@geonetwork-ui/util/shared'
 import { map } from 'rxjs/operators'
 import { SortableListComponent } from '@geonetwork-ui/ui/layout'
+import { FieldModelSpecifier } from '../../../../models/editor-config.model'
 
 @Component({
   selector: 'gn-ui-form-field-contacts',
@@ -43,6 +49,7 @@ import { SortableListComponent } from '@geonetwork-ui/ui/layout'
     TranslateDirective,
     TranslatePipe,
     ContactCardComponent,
+    ContactDetailsFormComponent,
     SortableListComponent,
   ],
 })
@@ -52,6 +59,7 @@ export class FormFieldContactsComponent implements OnDestroy, OnChanges {
   private changeDetectorRef = inject(ChangeDetectorRef)
 
   @Input() value: Individual[]
+  @Input() modelSpecifier: FieldModelSpecifier
   @Output() valueChange: EventEmitter<Individual[]> = new EventEmitter()
 
   contacts: Individual[] = []
@@ -113,13 +121,19 @@ export class FormFieldContactsComponent implements OnDestroy, OnChanges {
     this.valueChange.emit(contacts)
   }
 
+  handleContactChanged(updatedContact: Individual, index: number) {
+    const contacts = this.contacts.map((contact, i) =>
+      i === index ? updatedContact : contact
+    )
+
+    this.handleContactsChanged(contacts)
+  }
+
   /**
    * gn-ui-autocomplete
    */
   displayWithFn: (user: UserModel) => string = (user) =>
-    `${user.name} ${user.surname} ${
-      user.organisation ? `(${user.organisation})` : ''
-    }`
+    getIndividualDisplayName(toIndividual(user))
 
   /**
    * gn-ui-autocomplete
