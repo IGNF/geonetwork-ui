@@ -38,8 +38,6 @@ export class DsfrAnalyticsService {
     if (this.initialized) return
     this.initialized = true
 
-    this.syncPage(this.router.url)
-
     this.router.events
       .pipe(
         filter(
