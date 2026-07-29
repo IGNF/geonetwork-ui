@@ -1,4 +1,7 @@
-<header class="h-full px-5" [style.background]="backgroundCss">
+<header
+  class="px-5 mt-[100px] sm:mt-[110px]"
+  [style.background]="backgroundCss"
+>
   @if (translatedBannerMessage$ | async; as bannerMessage) {
     <div class="container-lg relative top-0 mx-auto z-[1005]">
       <gn-ui-application-banner
@@ -14,7 +17,7 @@
     <div
       class="py-8 relative z-50 mb-[184px] sm:mb-0"
       [ngClass]="{ 'pointer-events-none': expandRatio < 0.2 }"
-      [style.transform]="'translate(0, ' + (1 - expandRatio) * 5 + 'px)'"
+      [style.transform]="'translate(0, ' + (1 - expandRatio) * 50 + 'px)'"
     >
       <div
         data-cy="dh-title"
