@@ -31,6 +31,16 @@
             "glob": "**/*",
             "input": "assets-common",
             "output": "assets/"
+          },
+          {
+            "glob": "dsfr.module.min.js",
+            "input": "node_modules/@gouvfr/dsfr/dist",
+            "output": "assets/dsfr/"
+          },
+          {
+            "glob": "analytics.module.min.js",
+            "input": "node_modules/@gouvfr/dsfr/dist/analytics",
+            "output": "assets/dsfr/"
           }
         ],
         "styles": [
@@ -55,9 +65,7 @@
           "./node_modules/@angular/material/prebuilt-themes/indigo-pink.css",
           "./node_modules/@gouvfr/dsfr/dist/utility/utility.css"
         ],
-        "scripts": [
-          "./node_modules/@gouvfr/dsfr/standalone/analytics/analytics.module.standalone.js"
-        ],
+        "scripts": [],
         "allowedCommonJsDependencies": [
           "@rgrove/parse-xml",
           "semver",

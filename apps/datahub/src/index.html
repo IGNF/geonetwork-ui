@@ -13,7 +13,9 @@
       crossorigin
     />
     <script>
-      window.dsfr = window.dsfr || {}
+      window.dsfr = window.dsfr || {
+        mode: 'angular',
+      }
       window.dsfr.analytics = {
         domain: 'acwg.cartes.gouv.fr',
         collection: 'manual',
@@ -25,6 +27,8 @@
         },
       }
     </script>
+    <script type="module" src="assets/dsfr/dsfr.module.min.js"></script>
+    <script type="module" src="assets/dsfr/analytics.module.min.js"></script>
     <!--
       Add more preload links here to reduce the time to initial page render!
       Example:

@@ -47,6 +47,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.renderer.addClass(title, 'fr-badge--blue-cumulus')
     this.keycloakCheckAuth()
     this.welcomeModalGeoservices()
+    ;(window as any).dsfr?.start?.()
   }
 
   keycloakCheckAuth(): void {
