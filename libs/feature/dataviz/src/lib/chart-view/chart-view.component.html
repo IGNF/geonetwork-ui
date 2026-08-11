@@ -1,0 +1,62 @@
+<div class="w-full h-full flex flex-col">
+  <div
+    class="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2 justify-between text-[13px]"
+  >
+    <gn-ui-dropdown-selector
+      class="basis-1/4"
+      [choices]="typeChoices"
+      [extraBtnClass]="'secondary min-w-full'"
+      (selectValue)="chartType$.next($event)"
+      [selected]="chartType$.value"
+      [title]="'chart.dropdown.type' | translate"
+    ></gn-ui-dropdown-selector>
+    <gn-ui-dropdown-selector
+      class="basis-1/4"
+      [choices]="xChoices$ | async"
+      [extraBtnClass]="'secondary min-w-full'"
+      (selectValue)="xProperty$.next($event)"
+      [selected]="xProperty$.value"
+      [title]="'chart.dropdown.xProperty' | translate"
+    ></gn-ui-dropdown-selector>
+    <gn-ui-dropdown-selector
+      class="basis-1/4"
+      *ngIf="!isCountAggregation"
+      [choices]="yChoices$ | async"
+      (selectValue)="yProperty$.next($event)"
+      [selected]="yProperty$.value"
+      [title]="'chart.dropdown.yProperty' | translate"
+      class="select-y-prop"
+    ></gn-ui-dropdown-selector>
+    <gn-ui-dropdown-selector
+      class="basis-1/4"
+      [choices]="aggregationChoices"
+      class="aggregation-choices"
+      (selectValue)="aggregation$.next($event)"
+      [selected]="aggregation$.value"
+      [title]="'chart.dropdown.aggregation' | translate"
+    ></gn-ui-dropdown-selector>
+  </div>
+  <div
+    class="relative h-full mt-2 bg-white border border-gray-300 rounded-lg overflow-hidden"
+  >
+    <gn-ui-chart
+      [data]="chartData$ | async"
+      [type]="chartType$.value"
+      [labelProperty]="labelProperty"
+      [valueProperty]="valueProperty"
+    ></gn-ui-chart>
+    <gn-ui-loading-mask
+      *ngIf="loading"
+      class="absolute inset-0"
+      [message]="'chart.loading.data' | translate"
+    ></gn-ui-loading-mask>
+    <gn-ui-popup-alert
+      *ngIf="error"
+      type="warning"
+      icon="error_outline"
+      class="absolute m-2 inset-0"
+    >
+      <span>{{ error }}</span>
+    </gn-ui-popup-alert>
+  </div>
+</div>

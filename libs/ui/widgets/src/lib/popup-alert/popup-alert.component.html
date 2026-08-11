@@ -1,0 +1,23 @@
+<div class="h-full relative container">
+  <div
+    class="pointer-events-auto absolute text-white flex flex-row p-2 rounded message"
+    role="alert"
+    [ngClass]="{
+      'position-bottom': position === 'bottom',
+      'position-top': position === 'top',
+      expanded: this.expanded,
+      'bg-red-500': type === 'danger',
+      'bg-yellow-500': type === 'warning',
+      'bg-blue-500': type === 'info'
+    }"
+    (mouseenter)="expand()"
+    (mouseleave)="expandAndClose()"
+  >
+    <mat-icon class="material-symbols-outlined mr-2 shrink-0 select-none">{{
+      icon
+    }}</mat-icon>
+    <div class="grow" #content [ngClass]="{ invisible: !expanded }">
+      <ng-content></ng-content>
+    </div>
+  </div>
+</div>

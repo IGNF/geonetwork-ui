@@ -1,0 +1,24 @@
+<div
+  class="group flex align-middle title border-b border-gray-100 cursor-pointer pt-2.5"
+  (click)="toggle()"
+>
+  <div class="grow font-medium text-black text-sm">
+    {{ title }}
+  </div>
+  <div
+    class="w-8 opacity-25 text-primary group-hover:opacity-100 transition-opacity"
+  >
+    <mat-icon class="material-symbols-outlined" *ngIf="collapsed">add</mat-icon>
+    <mat-icon class="material-symbols-outlined" *ngIf="!collapsed"
+      >remove</mat-icon
+    >
+  </div>
+</div>
+<div
+  class="content overflow-hidden transition-[max-height] duration-300"
+  [ngClass]="collapsed ? 'ease-out' : 'ease-in'"
+  [style.maxHeight]="maxHeight"
+  #contentDiv
+>
+  <ng-content></ng-content>
+</div>

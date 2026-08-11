@@ -1,0 +1,10 @@
+<button
+  class="badge-btn bg-primary-opacity-50 hover-bg-primary-opacity-100"
+  [class.active]="toggled"
+  (click)="toggle()"
+>
+  <mat-icon *ngIf="icon" class="material-symbols-outlined align-middle mr-2">{{
+    icon
+  }}</mat-icon>
+  <span>{{ label | translate }}</span>
+</button>
