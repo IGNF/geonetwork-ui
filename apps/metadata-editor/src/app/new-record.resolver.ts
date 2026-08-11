@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import {
   CatalogRecord,
   Individual,
@@ -10,6 +10,7 @@ import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.
 import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
 import { TranslateService } from '@ngx-translate/core'
 import { NOT_KNOWN_CONSTRAINT } from '@geonetwork-ui/feature/editor'
+import { getOptionalEditorConfig } from '@geonetwork-ui/util/app-config'
 
 @Injectable({
   providedIn: 'root',
@@ -20,31 +21,39 @@ export class NewRecordResolver {
   private translateService = inject(TranslateService)
 
   resolve(): Observable<[CatalogRecord, string, boolean]> {
+    const defaultLang =
+      getOptionalEditorConfig()?.NEW_RECORD_DEFAULT_LANGUAGE ??
+      this.translateService.currentLang
     return this.getCurrentUserAsPointOfContact().pipe(
       map((userContact) => {
+        const recordKind = 'dataset'
         const catalogRecord: CatalogRecord = {
+          kind: recordKind,
+          status: 'ongoing',
           uniqueIdentifier: null,
-          title: this.translateService.instant('editor.new.record.title'),
+          title: this.translateService.instant('editor.new.record.title', {
+            recordKind,
+          }),
           abstract: '',
+          overviews: [],
           ownerOrganization: {
             name: 'Owner organization',
           },
-          contacts: userContact ? [userContact] : [],
           recordUpdated: new Date(),
           updateFrequency: 'unknown',
           otherLanguages: [],
-          defaultLanguage: 'en',
+          defaultLanguage: defaultLang,
           topics: [],
           keywords: [],
           licenses: [],
           legalConstraints: [NOT_KNOWN_CONSTRAINT],
           securityConstraints: [],
           otherConstraints: [],
-          overviews: [],
+          contacts: userContact ? [userContact] : [],
           contactsForResource: userContact ? [userContact] : [],
-          kind: 'dataset',
-          status: 'ongoing',
           lineage: '',
+          sourceRecords: [],
+          associatedRecords: [],
           onlineResources: [],
           spatialExtents: [],
           temporalExtents: [],

@@ -104,13 +104,10 @@ export interface Keyword {
   type: KeywordType
   thesaurus?: ThesaurusModel
   bbox?: [number, number, number, number]
+  // thesaurus hierarchy path incl. the keyword as last element; unset for root-level keywords
+  hierarchyPath?: string[]
 
   translations?: KeywordTranslations
-}
-
-export interface INSPIRE_topic {
-  value: string
-  label: string
 }
 
 export interface ResourceIdentifier {
@@ -254,10 +251,29 @@ export interface DatasetTemporalExtent {
   end?: Date
 }
 
+/**
+ * Represents a source dataset referenced from a lineage entry.
+ */
+export interface SourceRecord {
+  uuid?: string
+  title?: string
+  href?: string
+}
+
+/**
+ * Represents another record associated with this one (e.g. a parent/sibling dataset).
+ */
+export interface AssociatedRecord {
+  uuid: string
+  associationType: string
+}
+
 export interface DatasetRecord extends BaseRecord {
   kind: 'dataset'
   status: RecordStatus
   lineage: string // Explanation of the origin of this record (e.g: how, why)"
+  sourceRecords: Array<SourceRecord>
+  associatedRecords: Array<AssociatedRecord>
   onlineResources: Array<DatasetOnlineResource>
   spatialExtents: Array<DatasetSpatialExtent>
   temporalExtents: Array<DatasetTemporalExtent>
@@ -285,6 +301,8 @@ export interface ServiceRecord extends BaseRecord {
 export interface ReuseRecord extends BaseRecord {
   kind: 'reuse'
   lineage: string // Explanation of the origin of this record (e.g: how, why)"
+  sourceRecords: Array<SourceRecord>
+  associatedRecords: Array<AssociatedRecord>
   onlineResources: Array<DatasetOnlineResource>
   reuseType: ReuseType
   spatialExtents: Array<DatasetSpatialExtent>

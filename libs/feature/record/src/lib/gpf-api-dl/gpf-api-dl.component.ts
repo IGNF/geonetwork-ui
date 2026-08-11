@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  inject,
   Input,
   OnInit,
   AfterViewInit,
@@ -31,8 +32,8 @@ export interface Label {
 export interface FormatProduit {
   title: string
   update: string
-  format: Array<TermBucket>
-  zone: Array<TermBucket>
+  format: Array<GpfApiDlTermBucket>
+  zone: Array<GpfApiDlTermBucket>
 }
 
 export interface FormatSortieProduit {
@@ -50,7 +51,7 @@ export interface ListChoice {
   crs: Choice[]
 }
 
-export interface TermBucket {
+export interface GpfApiDlTermBucket {
   term: string
   label: string | number
 }
@@ -97,7 +98,7 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
   bucketPromisesCrs: Choice[]
   defaultEditionDate: [any, any]
 
-  constructor(protected http: HttpClient) {}
+  constructor(protected http: HttpClient) { }
 
   @Input() set apiLink(value: DatasetServiceDistribution) {
     this.apiBaseUrl = value ? value.url.href : undefined
@@ -295,7 +296,7 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
   async getFields() {
     this.choices = await this.getCapabilities()
 
-    const tempZone = this.choices.zone.map((bucket: TermBucket) => ({
+    const tempZone = this.choices.zone.map((bucket: GpfApiDlTermBucket) => ({
       value: bucket.term,
       label: bucket.label,
     }))
@@ -303,7 +304,7 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     tempZone.unshift({ value: 'null', label: 'ZONE' })
     this.bucketPromisesZone = tempZone
 
-    const tempFormat = this.choices.format.map((bucket: TermBucket) => ({
+    const tempFormat = this.choices.format.map((bucket: GpfApiDlTermBucket) => ({
       value: bucket.term,
       label: bucket.label,
     }))
@@ -311,7 +312,7 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     tempFormat.unshift({ value: 'null', label: 'FORMAT' })
     this.bucketPromisesFormat = tempFormat
 
-    const tempCrs = this.choices.categories.map((bucket: TermBucket) => ({
+    const tempCrs = this.choices.categories.map((bucket: GpfApiDlTermBucket) => ({
       value: bucket.term,
       label: bucket.label,
     }))

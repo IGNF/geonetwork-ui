@@ -39,6 +39,8 @@ class EditorFacadeMock {
   pagesCount$ = new BehaviorSubject(2)
   hasRecordChanged$ = new BehaviorSubject(false)
   saveRecord = jest.fn()
+  setCurrentPage = jest.fn()
+  checkHasRecordChanged = jest.fn()
 }
 class NotificationsServiceMock {
   showNotification = jest.fn()
@@ -115,8 +117,9 @@ describe('EditPageComponent', () => {
         fixture.detectChanges()
       })
       describe('publish version error', () => {
-        it('shows notification', () => {
+        it('shows notification', async () => {
           ;(facade.saveError$ as any).next(new PublicationVersionError('1.0.0'))
+          await Promise.resolve() // wait for all pending microtasks
           expect(notificationsService.showNotification).toHaveBeenCalledWith(
             {
               type: 'error',
@@ -131,8 +134,9 @@ describe('EditPageComponent', () => {
       })
 
       describe('publish error', () => {
-        it('shows notification', () => {
+        it('shows notification', async () => {
           ;(facade.saveError$ as any).next(new Error('oopsie'))
+          await Promise.resolve() // wait for all pending microtasks
           expect(notificationsService.showNotification).toHaveBeenCalledWith(
             {
               type: 'error',
@@ -147,9 +151,10 @@ describe('EditPageComponent', () => {
       })
 
       describe('publish success', () => {
-        it('shows notification', () => {
+        it('shows notification', async () => {
           component.newRecord = false
           ;(facade.saveSuccess$ as any).next()
+          await Promise.resolve() // wait for all pending microtasks
           expect(notificationsService.showNotification).toHaveBeenCalledWith(
             {
               type: 'success',

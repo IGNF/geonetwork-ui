@@ -77,6 +77,8 @@ export class DcatApConverter extends BaseConverter<string> {
     updateFrequency: () => 'unknown',
     overviews: () => [],
     lineage: () => '',
+    sourceRecords: () => [],
+    associatedRecords: () => [],
     temporalExtents: () => [],
     spatialRepresentation: () => undefined,
     extras: () => undefined,
@@ -114,6 +116,8 @@ export class DcatApConverter extends BaseConverter<string> {
     spatialRepresentation: () => undefined,
     overviews: () => undefined,
     lineage: () => undefined,
+    sourceRecords: () => [],
+    associatedRecords: () => [],
     onlineResources: () => undefined,
     temporalExtents: () => undefined,
     spatialExtents: () => undefined,
@@ -314,6 +318,18 @@ export class DcatApConverter extends BaseConverter<string> {
         tr,
         defaultLanguage
       )
+      const sourceRecords = this.readers['sourceRecords'](
+        dataStore,
+        catalogRecord,
+        tr,
+        defaultLanguage
+      )
+      const associatedRecords = this.readers['associatedRecords'](
+        dataStore,
+        catalogRecord,
+        tr,
+        defaultLanguage
+      )
       const onlineResources = this.readers['onlineResources'](
         dataStore,
         catalogRecord,
@@ -351,6 +367,8 @@ export class DcatApConverter extends BaseConverter<string> {
         securityConstraints,
         otherConstraints,
         lineage,
+        sourceRecords,
+        associatedRecords,
         ...(spatialRepresentation && { spatialRepresentation }),
         overviews,
         spatialExtents,
@@ -490,6 +508,8 @@ export class DcatApConverter extends BaseConverter<string> {
     if (record.kind === 'dataset') {
       fieldChanged('status') &&
         this.writers['status'](record, dataStore, recordNode)
+    }
+    if (record.kind === 'dataset' || record.kind === 'reuse') {
       fieldChanged('updateFrequency') &&
         this.writers['updateFrequency'](record, dataStore, recordNode)
       fieldChanged('spatialRepresentation') &&

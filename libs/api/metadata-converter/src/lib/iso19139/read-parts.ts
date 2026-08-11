@@ -1,4 +1,5 @@
 import {
+  AssociatedRecord,
   Constraint,
   ConstraintTranslations,
   DatasetOnlineResource,
@@ -8,6 +9,7 @@ import {
   Keyword,
   KeywordTranslations,
   LanguageCode,
+  SourceRecord,
   ModelTranslations,
   OnlineLinkResource,
   OnlineResource,
@@ -891,6 +893,77 @@ export function readLineage(
     ),
     extractLocalizedCharacterString('lineage', translations),
     map(([lineage]) => lineage)
+  )(rootEl)
+}
+
+export function extractSourceRecords(liLineageEl: XmlElement): SourceRecord[] {
+  if (!liLineageEl) return []
+  return pipe(
+    findChildrenElement('gmd:source', false),
+    mapArray((el) => {
+      const uuid = readAttribute('uuidref')(el)
+      const title = readAttribute('xlink:title')(el)
+      const href = readAttribute('xlink:href')(el)
+      if (!uuid && !title && !href) return null
+      return {
+        ...(uuid ? { uuid } : {}),
+        ...(title ? { title } : {}),
+        ...(href ? { href } : {}),
+      } as SourceRecord
+    }),
+    filterArray((s): s is SourceRecord => s !== null)
+  )(liLineageEl)
+}
+
+export function readSourceRecords(rootEl: XmlElement): SourceRecord[] {
+  return extractSourceRecords(
+    pipe(
+      findNestedElement(
+        'gmd:dataQualityInfo',
+        'gmd:DQ_DataQuality',
+        'gmd:lineage',
+        'gmd:LI_Lineage'
+      )
+    )(rootEl)
+  )
+}
+
+export function extractAssociatedRecords(
+  containerName: string,
+  aggregateName: string,
+  readUuid: ChainableFunction<XmlElement, string>
+): ChainableFunction<XmlElement, AssociatedRecord[]> {
+  return pipe(
+    findChildrenElement(containerName, false),
+    mapArray((el) => {
+      const aggregateEl = findChildElement(aggregateName, false)(el)
+      const uuid = readUuid(aggregateEl)
+      const associationType = pipe(
+        findNestedElement('gmd:associationType', 'gmd:DS_AssociationTypeCode'),
+        readAttribute('codeListValue')
+      )(aggregateEl)
+      if (!uuid || !associationType) return null
+      return { uuid, associationType }
+    }),
+    filterArray((r): r is AssociatedRecord => r !== null)
+  )
+}
+
+export function readAssociatedRecords(rootEl: XmlElement): AssociatedRecord[] {
+  return pipe(
+    findIdentification(),
+    extractAssociatedRecords(
+      'gmd:aggregationInfo',
+      'gmd:MD_AggregateInformation',
+      pipe(
+        findNestedElement(
+          'gmd:aggregateDataSetIdentifier',
+          'gmd:MD_Identifier',
+          'gmd:code'
+        ),
+        extractCharacterString()
+      )
+    )
   )(rootEl)
 }
 

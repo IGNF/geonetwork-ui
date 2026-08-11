@@ -308,7 +308,7 @@ describe('dashboard (landing page)', () => {
     cy.url().should('not.include', 'owner')
 
     // it should not show the feature catalog
-    cy.get('gn-ui-autocomplete').type('catalog')
+    cy.get('gn-ui-autocomplete').type('{selectall}{del}catalog')
     cy.get('mat-option').should('not.have.text', 'Feature Catalog')
   })
 
@@ -350,10 +350,10 @@ describe('dashboard (landing page)', () => {
         })
     }
     it('allRecords search filter', () => {
-      // it should contain filter component with two search filters
+      // it should contain filter component with three search filters
       cy.get('md-editor-search-filters')
         .find('gn-ui-button')
-        .should('have.length', 2)
+        .should('have.length', 3)
 
       // it should filter the record list by user (Barbara Roberts)
       selectUser(1)
@@ -387,10 +387,10 @@ describe('dashboard (landing page)', () => {
     it('myRecords search filters', () => {
       cy.visit('/my-space/my-records')
 
-      // it should contain filter component with one search filter
+      // it should contain filter component with two search filters
       cy.get('md-editor-search-filters')
         .find('gn-ui-button')
-        .should('have.length', 1)
+        .should('have.length', 2)
 
       // it should filter the record list by last update (changeDate)
       cy.get('md-editor-search-filters').find('gn-ui-button').first().click()

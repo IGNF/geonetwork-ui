@@ -1,4 +1,5 @@
 import {
+  GroupsApiService,
   MeApiService,
   RecordsApiService,
   RegistriesApiService,
@@ -8,7 +9,7 @@ import {
   UsersApiService,
 } from '@geonetwork-ui/data-access/gn4'
 import { TestBed } from '@angular/core/testing'
-import { Gn4PlatformService, DISABLE_AUTH } from './gn4-platform.service'
+import { DISABLE_AUTH, Gn4PlatformService } from './gn4-platform.service'
 import { firstValueFrom, lastValueFrom, of, Subject, throwError } from 'rxjs'
 import { AvatarServiceInterface } from '../auth/avatar.service.interface'
 import { Gn4PlatformMapper } from './gn4-platform.mapper'
@@ -168,7 +169,7 @@ class RegistriesApiServiceMock {
 }
 
 class TranslateServiceMock {
-  currentLang = 'fr'
+  getCurrentLang = () => 'fr'
 }
 
 const associatedResources = {
@@ -201,6 +202,17 @@ class RecordsApiServiceMock {
 class UserfeedbackApiServiceMock {
   getUserComments = jest.fn(() => of(someUserFeedbacksFixture()))
   newUserFeedback = jest.fn(() => of(undefined))
+}
+
+class GroupsApiServiceMock {
+  // intentionally different order than me response arrays to validate ordering logic
+  getGroups = jest.fn(() =>
+    of([
+      { id: 22, name: 'Autre groupe' },
+      { id: 103, name: 'Groupe Editors' },
+      { id: 105, name: 'Groupe Reviewers' },
+    ])
+  )
 }
 
 describe('Gn4PlatformService', () => {
@@ -256,6 +268,10 @@ describe('Gn4PlatformService', () => {
         {
           provide: RecordsApiService,
           useClass: RecordsApiServiceMock,
+        },
+        {
+          provide: GroupsApiService,
+          useClass: GroupsApiServiceMock,
         },
       ],
       imports: [HttpClientTestingModule],
@@ -376,6 +392,96 @@ describe('Gn4PlatformService', () => {
         })
       })
     })
+    describe('getUserPermissionsByGroup', () => {
+      it('maps canApprove from groupsWithReviewer and canEdit from groupsWithEditor for non-admin user', async () => {
+        const permissionsPromise = firstValueFrom(
+          service.getUserPermissionsByGroup()
+        )
+        ;(meApiService as any)._me$.next({
+          admin: false,
+          groupsWithRegisteredUser: [],
+          groupsWithEditor: [103],
+          groupsWithReviewer: [105],
+          groupsWithUserAdmin: [],
+        })
+        const permissions = await permissionsPromise
+        expect(permissions).toEqual([
+          {
+            groupId: 22,
+            groupName: 'Autre groupe',
+            isMember: false,
+            canEdit: false,
+            canApprove: false,
+            canAdministrate: false,
+          },
+          {
+            groupId: 103,
+            groupName: 'Groupe Editors',
+            isMember: false,
+            canEdit: true,
+            canApprove: false,
+            canAdministrate: false,
+          },
+          {
+            groupId: 105,
+            groupName: 'Groupe Reviewers',
+            isMember: false,
+            canEdit: false,
+            canApprove: true,
+            canAdministrate: false,
+          },
+        ])
+      })
+
+      it('returns all groups with all flags set to true for admin user', async () => {
+        const permissionsPromise = firstValueFrom(
+          service.getUserPermissionsByGroup()
+        )
+        ;(meApiService as any)._me$.next({
+          admin: true,
+          groupsWithRegisteredUser: [],
+          groupsWithEditor: [],
+          groupsWithReviewer: [],
+          groupsWithUserAdmin: [],
+        })
+        const permissions = await permissionsPromise
+        expect(permissions).toEqual([
+          {
+            groupId: 22,
+            groupName: 'Autre groupe',
+            isMember: true,
+            canEdit: true,
+            canApprove: true,
+            canAdministrate: true,
+          },
+          {
+            groupId: 103,
+            groupName: 'Groupe Editors',
+            isMember: true,
+            canEdit: true,
+            canApprove: true,
+            canAdministrate: true,
+          },
+          {
+            groupId: 105,
+            groupName: 'Groupe Reviewers',
+            isMember: true,
+            canEdit: true,
+            canApprove: true,
+            canAdministrate: true,
+          },
+        ])
+      })
+
+      it('returns empty array when user is anonymous', async () => {
+        const permissionsPromise = firstValueFrom(
+          service.getUserPermissionsByGroup()
+        )
+        ;(meApiService as any)._me$.next(null)
+        const permissions = await permissionsPromise
+        expect(permissions).toEqual([])
+      })
+    })
     describe('#translateKey', () => {
       it('returns translation ', async () => {
         const translation = await lastValueFrom(
@@ -476,7 +582,7 @@ describe('Gn4PlatformService', () => {
       })
       describe('if translations are unavailable', () => {
         it('uses default values', async () => {
-          service['translateService']['currentLang'] = 'de'
+          service['translateService']['getCurrentLang'] = () => 'de'
           const keywords = await lastValueFrom(
             service.searchKeywords('road', ['theme'])
           )
@@ -618,7 +724,7 @@ describe('Gn4PlatformService', () => {
       })
       describe('if translations are unavailable', () => {
         it('uses default values', async () => {
-          service['translateService']['currentLang'] = 'de'
+          service['translateService']['getCurrentLang'] = () => 'de'
           const thesaurusDomain = await lastValueFrom(
             service.getKeywordsByUri('http://inspire.ec.europa.eu/theme/')
           )

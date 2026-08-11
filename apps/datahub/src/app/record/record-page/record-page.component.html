@@ -1,10 +1,15 @@
 <div id="record-page">
+  <div
+    class="fixed top-12 w-full z-[100] flex justify-center pointer-events-none"
+  >
+    <gn-ui-notifications-container></gn-ui-notifications-container>
+  </div>
   <gn-ui-record-meta
     [metadata]="mdViewFacade.metadata$ | async"
   ></gn-ui-record-meta>
-  <datahub-header-record
+  <datahub-record-header
     [metadata]="mdViewFacade.metadata$ | async"
-  ></datahub-header-record>
+  ></datahub-record-header>
 
   <datahub-record-metadata
     [metadataQualityDisplay]="metadataQualityDisplay"

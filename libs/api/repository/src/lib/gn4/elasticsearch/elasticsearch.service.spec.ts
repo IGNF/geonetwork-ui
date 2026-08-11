@@ -9,7 +9,7 @@ import { METADATA_LANGUAGE } from '../../metadata-language.token'
 import { TranslateService } from '@ngx-translate/core'
 
 class TranslateServiceMock {
-  currentLang = 'en'
+  getCurrentLang = () => 'en'
 }
 
 let currentMetadataLang: string | (() => string)
@@ -519,6 +519,50 @@ describe('ElasticsearchService', () => {
             {
               query_string: {
                 query: 'Org:(/world.*/ OR -/*country^[fr|en]/)',
+              },
+            },
+            {
+              ids: { values: [] },
+            },
+          ],
+        },
+      })
+    })
+    it('handles cross field filter special case', () => {
+      const query = service['buildPayloadQuery'](
+        {
+          resourceType: {
+            application: true,
+            interactiveMap: true,
+            map: true,
+            'map/static': true,
+            'map/interactive': true,
+            'map-interactive': true,
+            'map-static': true,
+            mapDigital: true,
+            mapHardcopy: true,
+            staticMap: true,
+            dataset: true,
+            document: true,
+          },
+          'gn-ui-crossFieldFilter':
+            '(resourceType:("dataset" OR "document") AND cl_presentationForm.key:("mapDigital" OR "mapHardcopy")) OR resourceType:("application" OR "interactiveMap" OR "map" OR "map/static" OR "map/interactive" OR "map-interactive" OR "map-static" OR "mapDigital" OR "mapHardcopy" OR "staticMap")',
+        },
+        {},
+        []
+      )
+      expect(query).toMatchObject({
+        bool: {
+          filter: [
+            {
+              terms: {
+                isTemplate: ['n'],
+              },
+            },
+            {
+              query_string: {
+                query:
+                  'resourceType:("application" OR "interactiveMap" OR "map" OR "map/static" OR "map/interactive" OR "map-interactive" OR "map-static" OR "mapDigital" OR "mapHardcopy" OR "staticMap" OR "dataset" OR "document") AND ((resourceType:("dataset" OR "document") AND cl_presentationForm.key:("mapDigital" OR "mapHardcopy")) OR resourceType:("application" OR "interactiveMap" OR "map" OR "map/static" OR "map/interactive" OR "map-interactive" OR "map-static" OR "mapDigital" OR "mapHardcopy" OR "staticMap"))',
               },
             },
             {

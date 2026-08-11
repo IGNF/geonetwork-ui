@@ -1,6 +1,10 @@
-import { DatasetRecord } from '@geonetwork-ui/common/domain/model/record'
+import {
+  DatasetRecord,
+  ReuseRecord,
+} from '@geonetwork-ui/common/domain/model/record'
 import { XmlElement } from '@rgrove/parse-xml'
 import { GENERIC_DATASET_RECORD } from '../fixtures/generic.records'
+import { GEO2FRANCE_REUSE_ROILAYE_RECORD } from '../fixtures/geo2france.records.reuse+roilaye'
 import {
   createElement,
   getRootElement,
@@ -9,12 +13,14 @@ import {
 } from '../xml-utils'
 import {
   getISODuration,
+  writeAssociatedRecords,
   writeContacts,
   writeContactsForResource,
   writeDefaultLanguage,
   writeKeywords,
   writeLanguages,
   writeLegalConstraints,
+  writeSourceRecords,
   writeOnlineResources,
   writeOtherConstraints,
   writeResourceCreated,
@@ -29,6 +35,7 @@ import {
 describe('write parts', () => {
   let rootEl: XmlElement
   let datasetRecord: DatasetRecord
+  let reuseRecord: ReuseRecord
 
   function rootAsString() {
     return xmlToString(rootEl).trim()
@@ -37,6 +44,7 @@ describe('write parts', () => {
   beforeEach(() => {
     rootEl = createElement('root')()
     datasetRecord = { ...GENERIC_DATASET_RECORD }
+    reuseRecord = { ...GEO2FRANCE_REUSE_ROILAYE_RECORD }
   })
 
   describe('write dates', () => {
@@ -1094,6 +1102,347 @@ describe('write parts', () => {
         </gmd:PT_Locale>
     </gmd:locale>
 </root>`)
+    })
+  })
+
+  describe('writeSourceRecords', () => {
+    describe('sources is empty array', () => {
+      it('removes existing source elements when LI_Lineage exists', () => {
+        const sample = parseXmlString(`
+<root>
+    <gmd:dataQualityInfo>
+        <gmd:DQ_DataQuality>
+            <gmd:lineage>
+                <gmd:LI_Lineage>
+                    <gmd:source uuidref="old-uuid"/>
+                </gmd:LI_Lineage>
+            </gmd:lineage>
+        </gmd:DQ_DataQuality>
+    </gmd:dataQualityInfo>
+</root>`)
+        rootEl = getRootElement(sample)
+        writeSourceRecords({ ...datasetRecord, sourceRecords: [] }, rootEl)
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:dataQualityInfo>
+        <gmd:DQ_DataQuality>
+            <gmd:lineage>
+                <gmd:LI_Lineage/>
+            </gmd:lineage>
+        </gmd:DQ_DataQuality>
+    </gmd:dataQualityInfo>
+</root>`)
+      })
+    })
+
+    describe('sources with uuidref only', () => {
+      it('writes source elements with only uuidref', () => {
+        writeSourceRecords(
+          {
+            ...datasetRecord,
+            sourceRecords: [{ uuid: 'abc-123' }, { uuid: 'def-456' }],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:dataQualityInfo>
+        <gmd:DQ_DataQuality>
+            <gmd:lineage>
+                <gmd:LI_Lineage>
+                    <gmd:source uuidref="abc-123"/>
+                    <gmd:source uuidref="def-456"/>
+                </gmd:LI_Lineage>
+            </gmd:lineage>
+        </gmd:DQ_DataQuality>
+    </gmd:dataQualityInfo>
+</root>`)
+      })
+    })
+
+    describe('sources with xlink:href only', () => {
+      it('writes source elements with only href', () => {
+        writeSourceRecords(
+          {
+            ...datasetRecord,
+            sourceRecords: [{ href: 'https://example.com/source' }],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:dataQualityInfo>
+        <gmd:DQ_DataQuality>
+            <gmd:lineage>
+                <gmd:LI_Lineage>
+                    <gmd:source xlink:href="https://example.com/source"/>
+                </gmd:LI_Lineage>
+            </gmd:lineage>
+        </gmd:DQ_DataQuality>
+    </gmd:dataQualityInfo>
+</root>`)
+      })
+    })
+
+    describe('replaces existing sources', () => {
+      it('wipes old source elements and writes only new ones', () => {
+        const sample = parseXmlString(`
+<root>
+    <gmd:dataQualityInfo>
+        <gmd:DQ_DataQuality>
+            <gmd:lineage>
+                <gmd:LI_Lineage>
+                    <gmd:source uuidref="old-uuid-1" xlink:title="Old Title 1" xlink:href="https://example.com/old-source-1"/>
+                    <gmd:source uuidref="old-uuid-2" xlink:title="Old Title 2" xlink:href="https://example.com/old-source-2"/>
+                </gmd:LI_Lineage>
+            </gmd:lineage>
+        </gmd:DQ_DataQuality>
+    </gmd:dataQualityInfo>
+</root>`)
+        rootEl = getRootElement(sample)
+        writeSourceRecords(
+          {
+            ...datasetRecord,
+            sourceRecords: [
+              { uuid: 'new-uuid' },
+              {
+                uuid: 'new-uuid-2',
+                title: 'New Title 2',
+                href: 'https://example.com/new-source-2',
+              },
+            ],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:dataQualityInfo>
+        <gmd:DQ_DataQuality>
+            <gmd:lineage>
+                <gmd:LI_Lineage>
+                    <gmd:source uuidref="new-uuid"/>
+                    <gmd:source uuidref="new-uuid-2" xlink:title="New Title 2" xlink:href="https://example.com/new-source-2"/>
+                </gmd:LI_Lineage>
+            </gmd:lineage>
+        </gmd:DQ_DataQuality>
+    </gmd:dataQualityInfo>
+</root>`)
+      })
+    })
+
+    describe('with a reuse record', () => {
+      it('writes source records for a reuse record', () => {
+        writeSourceRecords(
+          {
+            ...reuseRecord,
+            sourceRecords: [{ uuid: 'dataset-uuid', title: 'Source Dataset' }],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:dataQualityInfo>
+        <gmd:DQ_DataQuality>
+            <gmd:lineage>
+                <gmd:LI_Lineage>
+                    <gmd:source uuidref="dataset-uuid" xlink:title="Source Dataset"/>
+                </gmd:LI_Lineage>
+            </gmd:lineage>
+        </gmd:DQ_DataQuality>
+    </gmd:dataQualityInfo>
+</root>`)
+      })
+    })
+  })
+
+  describe('writeAssociatedRecords', () => {
+    describe('associatedRecords is empty array', () => {
+      it('removes existing aggregationInfo elements when identification exists', () => {
+        const sample = parseXmlString(`
+<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <gmd:aggregationInfo>
+                <gmd:MD_AggregateInformation>
+                    <gmd:aggregateDataSetIdentifier>
+                        <gmd:MD_Identifier>
+                            <gmd:code>
+                                <gco:CharacterString>old-uuid</gco:CharacterString>
+                            </gmd:code>
+                        </gmd:MD_Identifier>
+                    </gmd:aggregateDataSetIdentifier>
+                    <gmd:associationType>
+                        <gmd:DS_AssociationTypeCode codeListValue="crossReference"/>
+                    </gmd:associationType>
+                </gmd:MD_AggregateInformation>
+            </gmd:aggregationInfo>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+        rootEl = getRootElement(sample)
+        writeAssociatedRecords(
+          { ...datasetRecord, associatedRecords: [] },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification/>
+    </gmd:identificationInfo>
+</root>`)
+      })
+    })
+
+    describe('associatedRecords has an entry with an empty uuid', () => {
+      it('does not serialize it', () => {
+        writeAssociatedRecords(
+          {
+            ...datasetRecord,
+            associatedRecords: [
+              { uuid: '', associationType: 'crossReference' },
+            ],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification/>
+    </gmd:identificationInfo>
+</root>`)
+      })
+    })
+
+    describe('one association', () => {
+      it('writes the aggregationInfo element', () => {
+        writeAssociatedRecords(
+          {
+            ...datasetRecord,
+            associatedRecords: [
+              { uuid: 'abc-123', associationType: 'crossReference' },
+            ],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <gmd:aggregationInfo>
+                <gmd:MD_AggregateInformation>
+                    <gmd:aggregateDataSetIdentifier>
+                        <gmd:MD_Identifier>
+                            <gmd:code>
+                                <gco:CharacterString>abc-123</gco:CharacterString>
+                            </gmd:code>
+                        </gmd:MD_Identifier>
+                    </gmd:aggregateDataSetIdentifier>
+                    <gmd:associationType>
+                        <gmd:DS_AssociationTypeCode codeList="http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#DS_AssociationTypeCode" codeListValue="crossReference"/>
+                    </gmd:associationType>
+                </gmd:MD_AggregateInformation>
+            </gmd:aggregationInfo>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+      })
+    })
+
+    describe('multiple associations', () => {
+      it('writes one aggregationInfo element per association, in order', () => {
+        writeAssociatedRecords(
+          {
+            ...datasetRecord,
+            associatedRecords: [
+              { uuid: 'uuid-1', associationType: 'crossReference' },
+              { uuid: 'uuid-2', associationType: 'largerWorkCitation' },
+            ],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <gmd:aggregationInfo>
+                <gmd:MD_AggregateInformation>
+                    <gmd:aggregateDataSetIdentifier>
+                        <gmd:MD_Identifier>
+                            <gmd:code>
+                                <gco:CharacterString>uuid-1</gco:CharacterString>
+                            </gmd:code>
+                        </gmd:MD_Identifier>
+                    </gmd:aggregateDataSetIdentifier>
+                    <gmd:associationType>
+                        <gmd:DS_AssociationTypeCode codeList="http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#DS_AssociationTypeCode" codeListValue="crossReference"/>
+                    </gmd:associationType>
+                </gmd:MD_AggregateInformation>
+            </gmd:aggregationInfo>
+            <gmd:aggregationInfo>
+                <gmd:MD_AggregateInformation>
+                    <gmd:aggregateDataSetIdentifier>
+                        <gmd:MD_Identifier>
+                            <gmd:code>
+                                <gco:CharacterString>uuid-2</gco:CharacterString>
+                            </gmd:code>
+                        </gmd:MD_Identifier>
+                    </gmd:aggregateDataSetIdentifier>
+                    <gmd:associationType>
+                        <gmd:DS_AssociationTypeCode codeList="http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#DS_AssociationTypeCode" codeListValue="largerWorkCitation"/>
+                    </gmd:associationType>
+                </gmd:MD_AggregateInformation>
+            </gmd:aggregationInfo>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+      })
+    })
+
+    describe('replaces existing associations', () => {
+      it('wipes old aggregationInfo elements and writes only new ones', () => {
+        const sample = parseXmlString(`
+<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <gmd:aggregationInfo>
+                <gmd:MD_AggregateInformation>
+                    <gmd:aggregateDataSetIdentifier>
+                        <gmd:MD_Identifier>
+                            <gmd:code>
+                                <gco:CharacterString>old-uuid</gco:CharacterString>
+                            </gmd:code>
+                        </gmd:MD_Identifier>
+                    </gmd:aggregateDataSetIdentifier>
+                    <gmd:associationType>
+                        <gmd:DS_AssociationTypeCode codeListValue="source"/>
+                    </gmd:associationType>
+                </gmd:MD_AggregateInformation>
+            </gmd:aggregationInfo>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+        rootEl = getRootElement(sample)
+        writeAssociatedRecords(
+          {
+            ...datasetRecord,
+            associatedRecords: [
+              { uuid: 'new-uuid', associationType: 'stereoMate' },
+            ],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <gmd:aggregationInfo>
+                <gmd:MD_AggregateInformation>
+                    <gmd:aggregateDataSetIdentifier>
+                        <gmd:MD_Identifier>
+                            <gmd:code>
+                                <gco:CharacterString>new-uuid</gco:CharacterString>
+                            </gmd:code>
+                        </gmd:MD_Identifier>
+                    </gmd:aggregateDataSetIdentifier>
+                    <gmd:associationType>
+                        <gmd:DS_AssociationTypeCode codeList="http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#DS_AssociationTypeCode" codeListValue="stereoMate"/>
+                    </gmd:associationType>
+                </gmd:MD_AggregateInformation>
+            </gmd:aggregationInfo>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+      })
     })
   })
 })

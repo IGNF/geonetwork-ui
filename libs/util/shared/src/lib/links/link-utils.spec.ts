@@ -46,6 +46,10 @@ const mockWfsFeatureType = [
     name: 'ft3',
     title: 'Feature Type 3',
   },
+  {
+    name: 'fte',
+    title: 'Feature Type Error',
+  },
 ]
 
 jest.mock('@camptocamp/ogc-client', () => ({
@@ -58,12 +62,16 @@ jest.mock('@camptocamp/ogc-client', () => ({
       return mockWfsFeatureType
     }
     getFeatureTypeFull(name: string) {
-      return Promise.resolve({
-        name,
-        title: mockWfsFeatureType.find((layer) => layer.name === name)?.title,
-        abstract: mockWfsFeatureType.find((layer) => layer.name === name)
-          ?.title,
-      })
+      if (name === 'fte') {
+        return Promise.reject('Something went wrong')
+      } else {
+        return Promise.resolve({
+          name,
+          title: mockWfsFeatureType.find((layer) => layer.name === name)?.title,
+          abstract: mockWfsFeatureType.find((layer) => layer.name === name)
+            ?.title,
+        })
+      }
     }
   },
   OgcApiEndpoint: class {
@@ -209,6 +217,30 @@ describe('link utils', () => {
       it('returns zip format', () => {
         expect(getFileFormat(aSetOfLinksFixture().dataZip())).toEqual('zip')
       })
+    })
+    describe('for format names in link labels', () => {
+      const namesToTest = [
+        ['Digital Object Identifier (DOI)', null],
+        ['Certificat de conformité', null],
+        ['Tiffany Lane dataset', null],
+        ['Télécharger au format GeoTIFF', 'tiff'],
+        ['ESRI Shapefile (SHP)', 'shp'],
+      ]
+
+      describe.each(namesToTest)(
+        'link name=%s, recognized file format=%s',
+        (name, fileFormat) => {
+          it('returns the correct file format', () => {
+            expect(
+              getFileFormat({
+                name,
+                url: new URL('https://example.com/download'),
+                type: 'download',
+              })
+            ).toEqual(fileFormat)
+          })
+        }
+      )
     })
 
     // format name, file extension, mime type
@@ -533,7 +565,7 @@ describe('link utils', () => {
       ])
     })
 
-    it('should return WFS feature types', async () => {
+    it('should return fulfilled WFS feature types', async () => {
       const layers = await getLayers('https://example.com', 'wfs')
       expect(layers).toEqual([
         {

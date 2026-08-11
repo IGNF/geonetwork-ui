@@ -23,7 +23,11 @@ import {
   AutocompleteComponent,
   ButtonComponent,
 } from '@geonetwork-ui/ui/inputs'
-import { createFuzzyFilter } from '@geonetwork-ui/util/shared'
+import {
+  createFuzzyFilter,
+  getIndividualDisplayName,
+  toIndividual,
+} from '@geonetwork-ui/util/shared'
 import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
 import {
   debounceTime,
@@ -169,11 +173,7 @@ export class FormFieldContactsForResourceComponent
    * gn-ui-autocomplete
    */
   displayWithFn: (user: UserModel) => string = (user) =>
-    user.name
-      ? `${user.name} ${user.surname} ${
-          user.organisation ? `(${user.organisation})` : ''
-        }`
-      : ``
+    getIndividualDisplayName(toIndividual(user))
 
   /**
    * gn-ui-autocomplete

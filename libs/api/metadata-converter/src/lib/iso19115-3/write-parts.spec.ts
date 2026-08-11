@@ -1,8 +1,11 @@
 import { GENERIC_DATASET_RECORD } from '../fixtures/generic.records'
+import { GEO2FRANCE_REUSE_ROILAYE_RECORD } from '../fixtures/geo2france.records.reuse+roilaye'
 import {
+  writeAssociatedRecords,
   writeContacts,
   writeContactsForResource,
   writeDefaultLanguage,
+  writeSourceRecords,
   writeOnlineResources,
   writeOtherLanguages,
   writeRecordCreated,
@@ -18,11 +21,15 @@ import {
   xmlToString,
 } from '../xml-utils'
 import { XmlElement } from '@rgrove/parse-xml'
-import { DatasetRecord } from '@geonetwork-ui/common/domain/model/record'
+import {
+  DatasetRecord,
+  ReuseRecord,
+} from '@geonetwork-ui/common/domain/model/record'
 
 describe('write parts', () => {
   let rootEl: XmlElement
   let datasetRecord: DatasetRecord
+  let reuseRecord: ReuseRecord
 
   function rootAsString() {
     return xmlToString(rootEl).trim()
@@ -31,6 +38,7 @@ describe('write parts', () => {
   beforeEach(() => {
     rootEl = createElement('root')()
     datasetRecord = { ...GENERIC_DATASET_RECORD }
+    reuseRecord = { ...GEO2FRANCE_REUSE_ROILAYE_RECORD }
   })
 
   describe('write dates', () => {
@@ -702,6 +710,283 @@ describe('write parts', () => {
         </lan:PT_Locale>
     </mdb:otherLocale>
 </root>`)
+    })
+  })
+
+  describe('writeSourceRecords', () => {
+    describe('sources is empty array', () => {
+      it('removes existing source elements when LI_Lineage exists', () => {
+        const sample = parseXmlString(`
+<root>
+    <mdb:resourceLineage>
+        <mrl:LI_Lineage>
+            <mrl:source uuidref="old-uuid"/>
+        </mrl:LI_Lineage>
+    </mdb:resourceLineage>
+</root>`)
+        rootEl = getRootElement(sample)
+        writeSourceRecords({ ...datasetRecord, sourceRecords: [] }, rootEl)
+        expect(rootAsString()).toEqual(`<root>
+    <mdb:resourceLineage>
+        <mrl:LI_Lineage/>
+    </mdb:resourceLineage>
+</root>`)
+      })
+    })
+
+    describe('sources with uuidref only', () => {
+      it('writes source elements with only uuidref', () => {
+        writeSourceRecords(
+          {
+            ...datasetRecord,
+            sourceRecords: [{ uuid: 'abc-123' }, { uuid: 'def-456' }],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <mdb:resourceLineage>
+        <mrl:LI_Lineage>
+            <gmd:source uuidref="abc-123"/>
+            <gmd:source uuidref="def-456"/>
+        </mrl:LI_Lineage>
+    </mdb:resourceLineage>
+</root>`)
+      })
+    })
+
+    describe('sources with xlink:href only', () => {
+      it('writes source elements with only href', () => {
+        writeSourceRecords(
+          {
+            ...datasetRecord,
+            sourceRecords: [{ href: 'https://example.com/source' }],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <mdb:resourceLineage>
+        <mrl:LI_Lineage>
+            <gmd:source xlink:href="https://example.com/source"/>
+        </mrl:LI_Lineage>
+    </mdb:resourceLineage>
+</root>`)
+      })
+    })
+
+    describe('replaces existing sources', () => {
+      it('wipes old source elements and writes only new ones', () => {
+        const sample = parseXmlString(`
+<root>
+    <mdb:resourceLineage>
+        <mrl:LI_Lineage>
+            <mrl:source uuidref="old-uuid-1" xlink:title="Old Title 1" xlink:href="https://example.com/old-source-1"/>
+            <mrl:source uuidref="old-uuid-2" xlink:title="Old Title 2" xlink:href="https://example.com/old-source-2"/>
+        </mrl:LI_Lineage>
+    </mdb:resourceLineage>
+</root>`)
+        rootEl = getRootElement(sample)
+        writeSourceRecords(
+          {
+            ...datasetRecord,
+            sourceRecords: [
+              { uuid: 'new-uuid' },
+              {
+                uuid: 'old-uuid-2',
+                title: 'Old Title 2',
+                href: 'https://example.com/old-source-2',
+              },
+            ],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <mdb:resourceLineage>
+        <mrl:LI_Lineage>
+            <gmd:source uuidref="new-uuid"/>
+            <gmd:source uuidref="old-uuid-2" xlink:title="Old Title 2" xlink:href="https://example.com/old-source-2"/>
+        </mrl:LI_Lineage>
+    </mdb:resourceLineage>
+</root>`)
+      })
+    })
+
+    describe('with a reuse record', () => {
+      it('writes source records for a reuse record', () => {
+        writeSourceRecords(
+          {
+            ...reuseRecord,
+            sourceRecords: [{ uuid: 'dataset-uuid', title: 'Source Dataset' }],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <mdb:resourceLineage>
+        <mrl:LI_Lineage>
+            <gmd:source uuidref="dataset-uuid" xlink:title="Source Dataset"/>
+        </mrl:LI_Lineage>
+    </mdb:resourceLineage>
+</root>`)
+      })
+    })
+  })
+
+  describe('writeAssociatedRecords', () => {
+    describe('associatedRecords is empty array', () => {
+      it('removes existing associatedResource elements when identification exists', () => {
+        const sample = parseXmlString(`
+<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <mri:associatedResource>
+                <mri:MD_AssociatedResource>
+                    <mri:associationType>
+                        <mri:DS_AssociationTypeCode codeListValue="crossReference"/>
+                    </mri:associationType>
+                    <mri:metadataReference uuidref="old-uuid"/>
+                </mri:MD_AssociatedResource>
+            </mri:associatedResource>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+        rootEl = getRootElement(sample)
+        writeAssociatedRecords(
+          { ...datasetRecord, associatedRecords: [] },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification/>
+    </gmd:identificationInfo>
+</root>`)
+      })
+    })
+
+    describe('associatedRecords has an entry with an empty uuid', () => {
+      it('does not serialize it', () => {
+        writeAssociatedRecords(
+          {
+            ...datasetRecord,
+            associatedRecords: [
+              { uuid: '', associationType: 'crossReference' },
+            ],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification/>
+    </gmd:identificationInfo>
+</root>`)
+      })
+    })
+
+    describe('one association', () => {
+      it('writes the associatedResource element', () => {
+        writeAssociatedRecords(
+          {
+            ...datasetRecord,
+            associatedRecords: [
+              { uuid: 'abc-123', associationType: 'crossReference' },
+            ],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <mri:associatedResource>
+                <mri:MD_AssociatedResource>
+                    <mri:associationType>
+                        <mri:DS_AssociationTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#DS_AssociationTypeCode" codeListValue="crossReference"/>
+                    </mri:associationType>
+                    <mri:metadataReference uuidref="abc-123"/>
+                </mri:MD_AssociatedResource>
+            </mri:associatedResource>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+      })
+    })
+
+    describe('multiple associations', () => {
+      it('writes one associatedResource element per association, in order', () => {
+        writeAssociatedRecords(
+          {
+            ...datasetRecord,
+            associatedRecords: [
+              { uuid: 'uuid-1', associationType: 'crossReference' },
+              { uuid: 'uuid-2', associationType: 'largerWorkCitation' },
+            ],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <mri:associatedResource>
+                <mri:MD_AssociatedResource>
+                    <mri:associationType>
+                        <mri:DS_AssociationTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#DS_AssociationTypeCode" codeListValue="crossReference"/>
+                    </mri:associationType>
+                    <mri:metadataReference uuidref="uuid-1"/>
+                </mri:MD_AssociatedResource>
+            </mri:associatedResource>
+            <mri:associatedResource>
+                <mri:MD_AssociatedResource>
+                    <mri:associationType>
+                        <mri:DS_AssociationTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#DS_AssociationTypeCode" codeListValue="largerWorkCitation"/>
+                    </mri:associationType>
+                    <mri:metadataReference uuidref="uuid-2"/>
+                </mri:MD_AssociatedResource>
+            </mri:associatedResource>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+      })
+    })
+
+    describe('replaces existing associations', () => {
+      it('wipes old associatedResource elements and writes only new ones', () => {
+        const sample = parseXmlString(`
+<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <mri:associatedResource>
+                <mri:MD_AssociatedResource>
+                    <mri:associationType>
+                        <mri:DS_AssociationTypeCode codeListValue="source"/>
+                    </mri:associationType>
+                    <mri:metadataReference uuidref="old-uuid"/>
+                </mri:MD_AssociatedResource>
+            </mri:associatedResource>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+        rootEl = getRootElement(sample)
+        writeAssociatedRecords(
+          {
+            ...datasetRecord,
+            associatedRecords: [
+              { uuid: 'new-uuid', associationType: 'stereoMate' },
+            ],
+          },
+          rootEl
+        )
+        expect(rootAsString()).toEqual(`<root>
+    <gmd:identificationInfo>
+        <gmd:MD_DataIdentification>
+            <mri:associatedResource>
+                <mri:MD_AssociatedResource>
+                    <mri:associationType>
+                        <mri:DS_AssociationTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#DS_AssociationTypeCode" codeListValue="stereoMate"/>
+                    </mri:associationType>
+                    <mri:metadataReference uuidref="new-uuid"/>
+                </mri:MD_AssociatedResource>
+            </mri:associatedResource>
+        </gmd:MD_DataIdentification>
+    </gmd:identificationInfo>
+</root>`)
+      })
     })
   })
 })

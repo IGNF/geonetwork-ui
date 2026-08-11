@@ -8,6 +8,7 @@ import {
   Individual,
   Keyword,
   LanguageCode,
+  SourceRecord,
   RecordStatus,
   RecordTranslations,
   ReuseRecord,
@@ -1227,6 +1228,84 @@ export function writeLineage(record: DatasetRecord, rootEl: XmlElement) {
       record.lineage,
       record.translations?.lineage,
       record.defaultLanguage
+    )
+  )(rootEl)
+}
+
+export function appendSourceRecords(
+  sources: SourceRecord[]
+): ChainableFunction<XmlElement, XmlElement> {
+  return pipe(
+    removeChildrenByName('gmd:source'),
+    appendChildren(
+      ...sources
+        .filter((source) => source.uuid || source.title || source.href)
+        .map((source) =>
+          pipe(
+            createElement('gmd:source'),
+            source.uuid ? writeAttribute('uuidref', source.uuid) : noop,
+            source.title ? writeAttribute('xlink:title', source.title) : noop,
+            source.href ? writeAttribute('xlink:href', source.href) : noop
+          )
+        )
+    )
+  )
+}
+
+export function writeSourceRecords(
+  record: DatasetRecord | ReuseRecord,
+  rootEl: XmlElement
+) {
+  pipe(
+    findNestedChildOrCreate(
+      'gmd:dataQualityInfo',
+      'gmd:DQ_DataQuality',
+      'gmd:lineage',
+      'gmd:LI_Lineage'
+    ),
+    appendSourceRecords(record.sourceRecords)
+  )(rootEl)
+}
+
+export function writeAssociatedRecords(
+  record: DatasetRecord | ReuseRecord,
+  rootEl: XmlElement
+) {
+  pipe(
+    findOrCreateIdentification(),
+    removeChildrenByName('gmd:aggregationInfo'),
+    appendChildren(
+      ...record.associatedRecords
+        .filter((assoc) => assoc.uuid && assoc.associationType)
+        .map((assoc) =>
+          pipe(
+            createNestedElement(
+              'gmd:aggregationInfo',
+              'gmd:MD_AggregateInformation'
+            ),
+            appendChildren(
+              pipe(
+                createNestedElement(
+                  'gmd:aggregateDataSetIdentifier',
+                  'gmd:MD_Identifier',
+                  'gmd:code'
+                ),
+                writeCharacterString(assoc.uuid)
+              ),
+              pipe(
+                createNestedElement(
+                  'gmd:associationType',
+                  'gmd:DS_AssociationTypeCode'
+                ),
+                writeAttribute(
+                  'codeList',
+                  'http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#DS_AssociationTypeCode'
+                ),
+                writeAttribute('codeListValue', assoc.associationType)
+              )
+            )
+          )
+        )
     )
   )(rootEl)
 }

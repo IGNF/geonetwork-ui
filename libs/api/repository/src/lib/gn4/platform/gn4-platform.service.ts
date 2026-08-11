@@ -1,5 +1,5 @@
 import { HttpClient, HttpEventType } from '@angular/common/http'
-import { Injectable, InjectionToken, inject } from '@angular/core'
+import { inject, Injectable, InjectionToken } from '@angular/core'
 import {
   KeywordApiResponse,
   ThesaurusApiResponse,
@@ -12,11 +12,13 @@ import {
 } from '@geonetwork-ui/common/domain/model/record'
 import { KeywordType } from '@geonetwork-ui/common/domain/model/thesaurus'
 import { UserModel } from '@geonetwork-ui/common/domain/model/user/user.model'
+import { GroupModel } from '@geonetwork-ui/common/domain/model/user/group.model'
 import {
   PlatformServiceInterface,
   UploadEvent,
 } from '@geonetwork-ui/common/domain/platform.service.interface'
 import {
+  GroupsApiService,
   MeApiService,
   RecordsApiService,
   RegistriesApiService,
@@ -57,6 +59,7 @@ export const DISABLE_AUTH = new InjectionToken<boolean>('gnDisableAuth', {
 export class Gn4PlatformService implements PlatformServiceInterface {
   private meApi = inject(MeApiService)
   private usersApi = inject(UsersApiService)
+  private groupsApi = inject(GroupsApiService)
   private mapper = inject(Gn4PlatformMapper)
   private toolsApiService = inject(ToolsApiService)
   private registriesApiService = inject(RegistriesApiService)
@@ -97,7 +100,7 @@ export class Gn4PlatformService implements PlatformServiceInterface {
   private keywordsByThesauri: Record<string, Observable<Keyword[]>> = {}
 
   private get lang3() {
-    return toLang3(this.translateService.currentLang)
+    return toLang3(this.translateService.getCurrentLang())
   }
 
   constructor() {
@@ -153,6 +156,38 @@ export class Gn4PlatformService implements PlatformServiceInterface {
 
   getUsers(): Observable<UserModel[]> {
     return this.users$
+  }
+
+  getUserPermissionsByGroup(): Observable<GroupModel[]> {
+    if (this.disableAuth) return of([])
+    return combineLatest([this.meApi.getMe(), this.groupsApi.getGroups()]).pipe(
+      map(([meResponse, groups]) => {
+        if (!meResponse) return []
+        if (meResponse.admin) {
+          return groups.map((group) => ({
+            groupId: group.id,
+            groupName: group.name,
+            isMember: true,
+            canEdit: true,
+            canApprove: true,
+            canAdministrate: true,
+          }))
+        }
+        const reviewerIds = meResponse.groupsWithReviewer ?? []
+        const editorIds = meResponse.groupsWithEditor ?? []
+        const memberIds = meResponse.groupsWithRegisteredUser ?? []
+        const adminIds = meResponse.groupsWithUserAdmin ?? []
+
+        return groups.map((group) => ({
+          groupId: group.id,
+          groupName: group.name,
+          isMember: memberIds.includes(group.id),
+          canEdit: editorIds.includes(group.id),
+          canApprove: reviewerIds.includes(group.id),
+          canAdministrate: adminIds.includes(group.id),
+        }))
+      })
+    )
   }
 
   translateKey(key: string): Observable<string> {

@@ -18,9 +18,11 @@ import {
   pipe,
 } from '../function-utils'
 import {
+  extractAssociatedRecords,
   extractCharacterString,
   extractDatasetOnlineResources,
   extractDateTime,
+  extractSourceRecords,
   extractLocalizedCharacterString,
   extractReuseOnlineResources,
   extractRole,
@@ -29,8 +31,10 @@ import {
   findIdentification,
 } from '../iso19139/read-parts'
 import {
+  AssociatedRecord,
   Individual,
   LanguageCode,
+  SourceRecord,
   OnlineResource,
   Organization,
   OrganizationTranslations,
@@ -288,6 +292,23 @@ export function readLineage(
     findNestedElement('mdb:resourceLineage', 'mrl:LI_Lineage', 'mrl:statement'),
     extractLocalizedCharacterString('lineage', translations),
     map(([lineage]) => lineage)
+  )(rootEl)
+}
+
+export function readSourceRecords(rootEl: XmlElement): SourceRecord[] {
+  return extractSourceRecords(
+    pipe(findNestedElement('mdb:resourceLineage', 'mrl:LI_Lineage'))(rootEl)
+  )
+}
+
+export function readAssociatedRecords(rootEl: XmlElement): AssociatedRecord[] {
+  return pipe(
+    findIdentification(),
+    extractAssociatedRecords(
+      'mri:associatedResource',
+      'mri:MD_AssociatedResource',
+      pipe(findNestedElement('mri:metadataReference'), readAttribute('uuidref'))
+    )
   )(rootEl)
 }
 

@@ -4,6 +4,7 @@ import {
   Component,
   ElementRef,
   EventEmitter,
+  inject,
   Input,
   Output,
   ViewChild,
@@ -17,11 +18,18 @@ import {
   Individual,
   Keyword,
   OnlineResource,
+  RecordKind,
   UpdateFrequency,
 } from '@geonetwork-ui/common/domain/model/record'
 import { FormFieldWrapperComponent } from '@geonetwork-ui/ui/layout'
+import { NgIconComponent, provideIcons } from '@ng-icons/core'
+import {
+  matEditOutline,
+  matHelpOutline,
+} from '@ng-icons/material-icons/outline'
 import { TranslatePipe } from '@ngx-translate/core'
 import {
+  FieldFocusDirective,
   FormFieldDateComponent,
   FormFieldLicenseComponent,
   FormFieldTemporalExtentsComponent,
@@ -36,6 +44,7 @@ import { FormFieldContactsComponent } from './form-field-contacts/form-field-con
 import { FormFieldKeywordsComponent } from './form-field-keywords/form-field-keywords.component'
 import { FormFieldOnlineLinkResourcesComponent } from './form-field-online-link-resources/form-field-online-link-resources.component'
 import { FormFieldOnlineResourcesComponent } from './form-field-online-resources/form-field-online-resources.component'
+import { FormFieldOnlineSingleLinkResourceComponent } from './form-field-online-single-link-resource/form-field-online-single-link-resource.component'
 import { FormFieldOverviewsComponent } from './form-field-overviews/form-field-overviews.component'
 import { FormFieldRichComponent } from './form-field-rich/form-field-rich.component'
 import { FormFieldSimpleComponent } from './form-field-simple/form-field-simple.component'
@@ -70,16 +79,21 @@ import { FormFieldTopicsComponent } from './form-field-topics/form-field-topics.
     FormFieldContactsForResourceComponent,
     FormFieldOnlineResourcesComponent,
     FormFieldOnlineLinkResourcesComponent,
+    FormFieldOnlineSingleLinkResourceComponent,
     FormFieldContactsComponent,
     FormFieldConstraintsComponent,
     FormFieldConstraintsShortcutsComponent,
     FormFieldSpatialToggleComponent,
     FormFieldTopicsComponent,
     TextFieldModule,
+    NgIconComponent,
   ],
+  providers: [provideIcons({ matEditOutline, matHelpOutline })],
+  hostDirectives: [FieldFocusDirective],
 })
 export class FormFieldComponent {
   @Input() uniqueIdentifier: string
+  @Input() recordKind: RecordKind
   @Input() model: CatalogRecordKeys
   @Input() modelSpecifier: FieldModelSpecifier
   @Input() componentName: FormFieldComponentName
@@ -91,6 +105,8 @@ export class FormFieldComponent {
 
   @ViewChild('titleInput') titleInput: ElementRef
   isOpenData = false
+
+  fieldFocus = inject(FieldFocusDirective)
 
   toggleIsOpenData(event: boolean) {
     this.isOpenData = event

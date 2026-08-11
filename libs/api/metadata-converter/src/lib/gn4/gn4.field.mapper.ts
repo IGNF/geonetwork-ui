@@ -14,7 +14,7 @@ import {
   toDate,
 } from './atomic-operations'
 import { MetadataUrlService } from './metadata-url.service'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { getStatusFromStatusCode } from '../iso19139/utils/status.mapper'
 import { getUpdateFrequencyFromFrequencyCode } from '../iso19139/utils/update-frequency.mapper'
 import {
@@ -49,7 +49,7 @@ export class Gn4FieldMapper {
   private translateService = inject(TranslateService)
 
   private get getLocalizedIndexKey() {
-    return `lang${toLang3(this.translateService.currentLang)}`
+    return `lang${toLang3(this.translateService.getCurrentLang())}`
   }
 
   protected fields: Record<string, EsFieldMapperFn> = {
@@ -84,7 +84,7 @@ export class Gn4FieldMapper {
           'resourceAbstractObject',
           this.getLocalizedIndexKey
         ),
-        'no title'
+        this.translateService.instant('record.metadata.abstract.empty')
       ),
     }),
     overview: (output, source) => {
@@ -240,8 +240,9 @@ export class Gn4FieldMapper {
     allKeywords: (output, source) => ({
       ...output,
       keywords: mapKeywords(
-        selectField<Thesaurus[]>(source, 'allKeywords'),
-        this.getLocalizedIndexKey
+        selectField<Record<string, Thesaurus>>(source, 'allKeywords'),
+        this.getLocalizedIndexKey,
+        source
       ),
     }),
     inspireTheme: (output, source) => ({

@@ -19,9 +19,17 @@ export interface FormFieldConfig {
 // This is used for instance to target only certain online resources in a field
 type OnlineLinkResourceSpecifier = `onlineResourceType:link`
 type DatasetDistributionsSpecifier = `onlineResourceType:!link`
+// Renders a single URL input bound to the first online resource of the record
+// (FormFieldOnlineSingleLinkResourceComponent)
+type OnlineSingleLinkResourceSpecifier = `onlineResourceType:singleLink`
+// When set on the `contacts` field, contacts are rendered as editable detail
+// fields (ContactDetailsFormComponent) instead of cards (ContactCardComponent)
+type EditableContactDetailsSpecifier = `contact:editableDetails`
 export type FieldModelSpecifier =
   | OnlineLinkResourceSpecifier
   | DatasetDistributionsSpecifier
+  | OnlineSingleLinkResourceSpecifier
+  | EditableContactDetailsSpecifier
 
 export type FormFieldComponentName =
   | 'form-field-constraints-shortcuts'
@@ -44,8 +52,7 @@ export interface EditorField extends EditorFieldIdentification {
   gridColumnSpan?: number
 
   // a hidden field won't show but can still be used to modify the record
-  // FIXME: currently this is redundant with an absence of formFieldConfig but necessary for clarity
-  hidden?: boolean
+  hidden?: boolean | EditorFieldExpression
 
   // the result of this expression will replace the field value on save
   onSaveProcess?: EditorFieldExpression
@@ -54,7 +61,7 @@ export interface EditorField extends EditorFieldIdentification {
 export interface EditorSection {
   labelKey?: string
   descriptionKey?: string
-  hidden: boolean
+  hidden?: boolean | EditorFieldExpression
   fields: EditorField[]
 }
 

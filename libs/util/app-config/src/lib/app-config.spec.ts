@@ -1,8 +1,9 @@
-import fetchMock from 'fetch-mock-jest'
+import fetchMock from '@fetch-mock/jest'
 import {
   _reset,
   getCustomTranslations,
   getGlobalConfig,
+  getOptionalEditorConfig,
   getOptionalMapConfig,
   getOptionalSearchConfig,
   getThemeConfig,
@@ -20,7 +21,7 @@ import {
 describe('app config utils', () => {
   beforeEach(() => {
     jest.spyOn(global.console, 'warn')
-    fetchMock.reset()
+    fetchMock.mockReset()
     _reset()
   })
   describe('when the configuration file is missing', () => {
@@ -161,6 +162,7 @@ describe('app config utils', () => {
         expect(getOptionalSearchConfig()).toEqual({
           RECORD_KIND_QUICK_FILTER: false,
           FILTER_GEOMETRY_URL: 'https://my.domain.org/geom.json',
+          DO_NOT_USE_DEFAULT_SEARCH_PRESET: false,
           SEARCH_PRESET: [
             {
               name: 'filterByOrgs',
@@ -243,6 +245,138 @@ describe('app config utils', () => {
     describe('getOptionalSearchConfig', () => {
       it('returns null', () => {
         expect(getOptionalSearchConfig()).toEqual(null)
+      })
+    })
+  })
+
+  describe('when the configuration file contains new_record_default_language', () => {
+    describe('when set to a valid 2-letter code', () => {
+      beforeEach(async () => {
+        fetchMock.get(
+          'end:default.toml',
+          () =>
+            minimalAppConfigFixture() +
+            `
+[editing]
+new_record_default_language = "fr"
+`
+        )
+        await loadAppConfig()
+      })
+
+      it('stores the language code in editorConfig', () => {
+        expect(getOptionalEditorConfig().NEW_RECORD_DEFAULT_LANGUAGE).toBe('fr')
+      })
+    })
+
+    describe('when set to a 3-letter code', () => {
+      beforeEach(async () => {
+        fetchMock.get(
+          'end:default.toml',
+          () =>
+            minimalAppConfigFixture() +
+            `
+[editing]
+new_record_default_language = "fre"
+`
+        )
+        await loadAppConfig()
+      })
+
+      it('normalizes to the 2-letter equivalent', () => {
+        expect(getOptionalEditorConfig().NEW_RECORD_DEFAULT_LANGUAGE).toBe('fr')
+      })
+    })
+
+    describe('when set to an unrecognized code', () => {
+      beforeEach(async () => {
+        fetchMock.get(
+          'end:default.toml',
+          () =>
+            minimalAppConfigFixture() +
+            `
+[editing]
+new_record_default_language = "xyz"
+`
+        )
+        await loadAppConfig()
+      })
+
+      it('logs a warning', () => {
+        expect(console.warn).toHaveBeenCalledWith(
+          expect.stringMatching(/new_record_default_language.*xyz/)
+        )
+      })
+
+      it('stores undefined in editorConfig', () => {
+        expect(
+          getOptionalEditorConfig().NEW_RECORD_DEFAULT_LANGUAGE
+        ).toBeUndefined()
+      })
+    })
+  })
+
+  describe('when the configuration file contains new_record_standard', () => {
+    describe('when set to iso19139', () => {
+      beforeEach(async () => {
+        fetchMock.get(
+          'end:default.toml',
+          () =>
+            minimalAppConfigFixture() +
+            `
+[editing]
+new_record_standard = "iso19139"
+`
+        )
+        await loadAppConfig()
+      })
+
+      it('stores the standard in editorConfig', () => {
+        expect(getOptionalEditorConfig().NEW_RECORD_STANDARD).toBe('iso19139')
+      })
+    })
+
+    describe('when set to iso19115-3', () => {
+      beforeEach(async () => {
+        fetchMock.get(
+          'end:default.toml',
+          () =>
+            minimalAppConfigFixture() +
+            `
+[editing]
+new_record_standard = "iso19115-3"
+`
+        )
+        await loadAppConfig()
+      })
+
+      it('stores the standard in editorConfig', () => {
+        expect(getOptionalEditorConfig().NEW_RECORD_STANDARD).toBe('iso19115-3')
+      })
+    })
+
+    describe('when set to an unsupported standard', () => {
+      beforeEach(async () => {
+        fetchMock.get(
+          'end:default.toml',
+          () =>
+            minimalAppConfigFixture() +
+            `
+[editing]
+new_record_standard = "dcat"
+`
+        )
+        await loadAppConfig()
+      })
+
+      it('logs a warning', () => {
+        expect(console.warn).toHaveBeenCalledWith(
+          expect.stringMatching(/new_record_standard.*dcat/)
+        )
+      })
+
+      it('stores undefined in editorConfig', () => {
+        expect(getOptionalEditorConfig().NEW_RECORD_STANDARD).toBeUndefined()
       })
     })
   })

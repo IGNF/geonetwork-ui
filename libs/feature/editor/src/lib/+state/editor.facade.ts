@@ -4,11 +4,12 @@ import * as EditorActions from './editor.actions'
 import * as EditorSelectors from './editor.selectors'
 import {
   CatalogRecord,
+  CatalogRecordKeys,
   LanguageCode,
 } from '@geonetwork-ui/common/domain/model/record'
-import { filter } from 'rxjs'
+import { filter, map } from 'rxjs'
 import { Actions, ofType } from '@ngrx/effects'
-import { EditorFieldIdentification } from '../models'
+import { EditorConfig, EditorFieldIdentification } from '../models'
 
 @Injectable()
 export class EditorFacade {
@@ -37,6 +38,10 @@ export class EditorFacade {
   )
   isPublished$ = this.store.pipe(select(EditorSelectors.selectIsPublished))
   canEditRecord$ = this.store.pipe(select(EditorSelectors.selectCanEditRecord))
+  focusedField$ = this.actions$.pipe(
+    ofType(EditorActions.setFocusedField),
+    map(({ model }) => model)
+  )
 
   openRecord(record: CatalogRecord, recordSource: string) {
     this.store.dispatch(
@@ -49,7 +54,11 @@ export class EditorFacade {
   }
 
   saveRecord() {
-    this.store.dispatch(EditorActions.saveRecord())
+    this.store.dispatch(EditorActions.saveRecord({ publish: false }))
+  }
+
+  saveAndPublishRecord() {
+    this.store.dispatch(EditorActions.saveRecord({ publish: true }))
   }
 
   undoRecordDraft() {
@@ -69,8 +78,16 @@ export class EditorFacade {
     )
   }
 
+  setConfiguration(configuration: EditorConfig) {
+    this.store.dispatch(EditorActions.setEditorConfiguration({ configuration }))
+  }
+
   setCurrentPage(page: number) {
     this.store.dispatch(EditorActions.setCurrentPage({ page }))
+  }
+
+  setFocusedField(model: CatalogRecordKeys) {
+    this.store.dispatch(EditorActions.setFocusedField({ model }))
   }
 
   setFieldVisibility(field: EditorFieldIdentification, visible: boolean) {

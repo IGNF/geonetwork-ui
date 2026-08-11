@@ -8,9 +8,8 @@ import {
   datasetRecordsFixture,
   simpleServiceRecordFixture,
 } from '@geonetwork-ui/common/fixtures'
-import { TranslateMessageFormatCompiler } from 'ngx-translate-messageformat-compiler'
-import { TranslateTestingModule } from 'ngx-translate-testing'
 import { MetadataInfoComponent } from './metadata-info.component'
+import { provideTranslateTestingService } from '@geonetwork-ui/util/i18n/test-translate-loader'
 
 describe('MetadataInfoComponent', () => {
   let component: MetadataInfoComponent
@@ -29,19 +28,18 @@ describe('MetadataInfoComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [
-        TranslateTestingModule.withTranslations({
+      providers: [
+        provideTranslateTestingService({
           en: {
             'domain.record.updateFrequency.notPlanned': 'Not planned',
             'domain.record.updateFrequency.month':
               '{count, plural, =0{0 times} one{once} other{{count} times}} per month',
+            'domain.record.keywordType.theme': 'Theme',
+            'domain.record.keywordType.other': 'Keywords',
           },
-        })
-          .withDefaultLanguage('en')
-          .withCompiler(new TranslateMessageFormatCompiler()),
-        MetadataInfoComponent,
+        }),
       ],
-    }).compileComponents()
+    })
   })
 
   describe('abstract', () => {
@@ -111,6 +109,43 @@ describe('MetadataInfoComponent', () => {
           '.metadata-info-keywords'
         )
         expect(displayedElement).toBeFalsy()
+      })
+    })
+    describe('keyword badges', () => {
+      it('renders a keyword badge for every keyword', () => {
+        fixture = TestBed.createComponent(MetadataInfoComponent)
+        component = fixture.componentInstance
+        component.metadata = {
+          ...datasetRecordsFixture()[0],
+          keywords: [
+            { label: 'foo', type: 'theme', hierarchyPath: ['Root', 'foo'] },
+            { label: 'bar', type: 'other' },
+          ],
+        } as DatasetRecord
+        fixture.detectChanges()
+        const badges = fixture.debugElement.queryAll(
+          By.css('gn-ui-keyword-badge')
+        )
+        expect(badges.length).toBe(2)
+      })
+      it('emits the keyword event when a keyword badge is clicked', () => {
+        fixture = TestBed.createComponent(MetadataInfoComponent)
+        component = fixture.componentInstance
+        const keyword = {
+          label: 'foo',
+          type: 'theme',
+          hierarchyPath: ['Root', 'foo'],
+        }
+        component.metadata = {
+          ...datasetRecordsFixture()[0],
+          keywords: [keyword],
+        } as DatasetRecord
+        let emitted
+        component.keyword.subscribe((k) => (emitted = k))
+        fixture.detectChanges()
+        const badge = fixture.debugElement.query(By.css('gn-ui-keyword-badge'))
+        badge.triggerEventHandler('keywordClick', keyword)
+        expect(emitted.label).toBe('foo')
       })
     })
   })
@@ -240,30 +275,6 @@ describe('MetadataInfoComponent', () => {
         expandPanel(fixture, 'details-panel')
         const displayedElement = fixture.debugElement.query(
           By.css('[data-test="details-panel-lineage"]')
-        )
-        expect(displayedElement).toBeTruthy()
-      })
-    })
-    describe('only resourceContact', () => {
-      beforeEach(() => {
-        fixture = TestBed.createComponent(MetadataInfoComponent)
-        component = fixture.componentInstance
-        component.metadata = {
-          ...datasetRecordsFixture()[0],
-          lineage: null,
-          resourceCreated: null,
-          resourcePublished: null,
-          resourceUpdated: null,
-          updateFrequency: null,
-          otherLanguages: [],
-          temporalExtents: [],
-        } as DatasetRecord
-        fixture.detectChanges()
-      })
-      it('should display the resourceContact section', () => {
-        expandPanel(fixture, 'details-panel')
-        const displayedElement = fixture.debugElement.query(
-          By.css('[data-test="details-panel-resource-contact"]')
         )
         expect(displayedElement).toBeTruthy()
       })
@@ -444,6 +455,49 @@ describe('MetadataInfoComponent', () => {
         )
         expect(displayedElement).toBeTruthy()
       })
+    })
+  })
+  describe('contacts panel', () => {
+    beforeEach(() => {
+      fixture = TestBed.createComponent(MetadataInfoComponent)
+      component = fixture.componentInstance
+      component.metadata = {
+        ...datasetRecordsFixture()[0],
+      } as DatasetRecord
+      fixture.detectChanges()
+    })
+    it('should render the contacts panel', () => {
+      const contactsPanel = fixture.debugElement.query(
+        By.css('[data-test="contacts-panel"]')
+      )
+      expect(contactsPanel).toBeTruthy()
+    })
+    it('should group contacts by role', () => {
+      component.metadata = {
+        ...datasetRecordsFixture()[0],
+        contactsForResource: [
+          {
+            email: 'a@org.com',
+            role: 'author',
+            organization: { name: 'Org A' },
+          },
+          {
+            email: 'b@org.com',
+            role: 'author',
+            organization: { name: 'Org B' },
+          },
+          {
+            email: 'c@org.com',
+            role: 'custodian',
+            organization: { name: 'Org C' },
+          },
+        ],
+      } as DatasetRecord
+      expect(component.contactGroups.length).toBe(2)
+      expect(component.contactGroups[0].role).toBe('author')
+      expect(component.contactGroups[0].contacts.length).toBe(2)
+      expect(component.contactGroups[1].role).toBe('custodian')
+      expect(component.contactGroups[1].contacts.length).toBe(1)
     })
   })
   describe('spatial extent panel', () => {

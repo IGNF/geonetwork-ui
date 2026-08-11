@@ -11,6 +11,7 @@ import {
 } from './editor.reducer'
 import { provideMockStore } from '@ngrx/store/testing'
 import { datasetRecordsFixture } from '@geonetwork-ui/common/fixtures'
+import { CatalogRecordKeys } from '@geonetwork-ui/common/domain/model/record'
 
 interface TestSchema {
   editor: EditorState
@@ -61,10 +62,24 @@ describe('EditorFacade', () => {
       expect(spy).toHaveBeenCalledWith(setPage)
     })
 
-    it('saveRecord() should dispatch saveRecord action', () => {
+    it('saveRecord() should dispatch saveRecord action with publish flag set to false', () => {
       const spy = jest.spyOn(store, 'dispatch')
       facade.saveRecord()
-      const action = EditorActions.saveRecord()
+      const action = EditorActions.saveRecord({ publish: false })
+      expect(spy).toHaveBeenCalledWith(action)
+    })
+
+    it('saveAndPublishRecord() should dispatch saveRecord action with publish flag set to true', () => {
+      const spy = jest.spyOn(store, 'dispatch')
+      facade.saveAndPublishRecord()
+      const action = EditorActions.saveRecord({ publish: true })
+      expect(spy).toHaveBeenCalledWith(action)
+    })
+
+    it('undoRecordDraft() should dispatch undoRecordDraft action', () => {
+      const spy = jest.spyOn(store, 'dispatch')
+      facade.undoRecordDraft()
+      const action = EditorActions.undoRecordDraft()
       expect(spy).toHaveBeenCalledWith(action)
     })
 
@@ -77,6 +92,47 @@ describe('EditorFacade', () => {
       })
       expect(spy).toHaveBeenCalledWith(action)
     })
+
+    it('updateRecordLanguages() should dispatch updateRecordLanguages action', () => {
+      const spy = jest.spyOn(store, 'dispatch')
+      facade.updateRecordLanguages('en', ['fr', 'de'])
+      const action = EditorActions.updateRecordLanguages({
+        defaultLanguage: 'en',
+        otherLanguages: ['fr', 'de'],
+      })
+      expect(spy).toHaveBeenCalledWith(action)
+    })
+
+    it('setConfiguration() should dispatch setEditorConfiguration action', () => {
+      const spy = jest.spyOn(store, 'dispatch')
+      const config = {
+        pages: [],
+      }
+      facade.setConfiguration(config)
+      const action = EditorActions.setEditorConfiguration({
+        configuration: config,
+      })
+      expect(spy).toHaveBeenCalledWith(action)
+    })
+
+    it('setCurrentPage() should dispatch setCurrentPage action', () => {
+      const spy = jest.spyOn(store, 'dispatch')
+      facade.setCurrentPage(1)
+      const action = EditorActions.setCurrentPage({ page: 1 })
+      expect(spy).toHaveBeenCalledWith(action)
+    })
+
+    it('setFieldVisibility() should dispatch setFieldVisibility action', () => {
+      const spy = jest.spyOn(store, 'dispatch')
+      const field = { model: 'title' as CatalogRecordKeys }
+      facade.setFieldVisibility(field, false)
+      const action = EditorActions.setFieldVisibility({
+        field,
+        visible: false,
+      })
+      expect(spy).toHaveBeenCalledWith(action)
+    })
+
     it('checkHasRecordChanged() should dispatch hasRecordChangedSinceDraft action', () => {
       const spy = jest.spyOn(store, 'dispatch')
       const record = datasetRecordsFixture()[0]
@@ -84,6 +140,7 @@ describe('EditorFacade', () => {
       const action = EditorActions.hasRecordChangedSinceDraft({ record })
       expect(spy).toHaveBeenCalledWith(action)
     })
+
     it('isPublished() should dispatch isPublished action', () => {
       const spy = jest.spyOn(store, 'dispatch')
       facade.isPublished(false)
@@ -92,6 +149,7 @@ describe('EditorFacade', () => {
       })
       expect(spy).toHaveBeenCalledWith(action)
     })
+
     it('canEditRecord() should dispatch canEditRecord action', () => {
       const spy = jest.spyOn(store, 'dispatch')
       facade.canEditRecord(true)
@@ -99,6 +157,14 @@ describe('EditorFacade', () => {
         canEditRecord: true,
       })
       expect(spy).toHaveBeenCalledWith(action)
+    })
+
+    it('setFocusedField() should dispatch setFocusedField action', () => {
+      const spy = jest.spyOn(store, 'dispatch')
+      facade.setFocusedField('abstract')
+      expect(spy).toHaveBeenCalledWith(
+        EditorActions.setFocusedField({ model: 'abstract' })
+      )
     })
   })
 })

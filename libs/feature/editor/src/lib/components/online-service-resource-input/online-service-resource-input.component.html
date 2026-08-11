@@ -3,13 +3,13 @@
     editor.record.form.field.onlineResource.edit.protocol
   </h3>
   @if (protocolHint) {
-    <span
-      class="material-symbols-outlined m-2 gn-ui-icon-small"
+    <ng-icon
+      name="matHelpOutline"
+      size="16"
+      class="m-2"
       [matTooltip]="protocolHint"
       matTooltipPosition="above"
-    >
-      help
-    </span>
+    ></ng-icon>
   }
 </div>
 <div class="flex flex-row items-center gap-4 h-[48px]">
@@ -20,7 +20,7 @@
     [disabled]="disabled"
     (change)="resetAllFormFields()"
   >
-    @for (protocolOption of protocolOptions; track protocolOption) {
+    @for (protocolOption of availableProtocolOptions; track protocolOption) {
       <mat-radio-button [value]="protocolOption.value">
         {{ protocolOption.label | translate }}
       </mat-radio-button>
@@ -45,6 +45,11 @@
     }
   </gn-ui-url-input>
 
+  @if (loading) {
+    <div class="flex justify-center w-full py-4">
+      <gn-ui-spinning-loader></gn-ui-spinning-loader>
+    </div>
+  }
   @if (errorMessage) {
     <p class="text-sm text-red-500 pl-4" translate>
       editor.record.form.field.onlineResource.edit.identifier.error

@@ -139,6 +139,90 @@ describe('editor form', () => {
       .should('eql', '100%')
   })
 
+  describe('metadata quality panel navigation', () => {
+    beforeEach(() => {
+      cy.get('md-editor-top-toolbar').find('gn-ui-button').eq(2).click()
+      cy.get('gn-ui-metadata-quality-panel').should('be.visible')
+    })
+
+    it('quality panel navigation', () => {
+      // it should highlight and focus the field when clicking an invalid criterion on the current page
+      cy.get('@abstractField').clear()
+      cy.get('gn-ui-metadata-quality-panel')
+        .find('[data-cy="md-quality-btn-editor.record.form.field.abstract"]')
+        .click()
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should(
+        'have.class',
+        'gn-ui-field-focus-glow'
+      )
+      cy.focused()
+        .closest('gn-ui-form-field[ng-reflect-model=abstract]')
+        .should('exist')
+
+      // it should scroll the field back into view when it is off-screen on the current page
+      cy.get('gn-ui-record-form').closest('.overflow-auto').scrollTo('bottom')
+      cy.get('gn-ui-metadata-quality-panel')
+        .find('[data-cy="md-quality-btn-editor.record.form.field.abstract"]')
+        .click()
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should(($el) => {
+        expect($el[0].getBoundingClientRect().top).to.be.within(
+          0,
+          Cypress.config('viewportHeight')
+        )
+      })
+
+      // it should switch page, scroll to and highlight/focus the field when clicking an invalid criterion
+      cy.get('@accessContactPageBtn').click()
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should('not.exist')
+      cy.get('gn-ui-metadata-quality-panel')
+        .find('[data-cy="md-quality-btn-editor.record.form.field.abstract"]')
+        .click()
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should('be.visible')
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should(($el) => {
+        const { top, bottom } = $el[0].getBoundingClientRect()
+        expect(top).to.be.within(0, Cypress.config('viewportHeight'))
+        expect(bottom).to.be.greaterThan(0)
+      })
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should(
+        'have.class',
+        'gn-ui-field-focus-glow'
+      )
+      cy.focused()
+        .closest('gn-ui-form-field[ng-reflect-model=abstract]')
+        .should('exist')
+
+      // it should not navigate nor highlight when clicking a valid criterion
+      cy.get('@accessContactPageBtn').click()
+      cy.get('gn-ui-metadata-quality-panel')
+        .find('[data-cy="md-quality-btn-editor.record.form.field.title"]')
+        .click()
+      cy.get('gn-ui-form-field[ng-reflect-model=abstract]').should('not.exist')
+      cy.get('gn-ui-record-form')
+        .find('gn-ui-form-field.gn-ui-field-focus-glow')
+        .should('not.exist')
+
+      // it should highlight the whole section when the target field is hidden
+      // (toggling a shortcut on then off leaves the emptied field hidden)
+      cy.get('[data-cy=constraints-shortcut-toggles]')
+        .find('gn-ui-check-toggle label')
+        .eq(0)
+        .click()
+      cy.get('[data-cy=constraints-shortcut-toggles]')
+        .find('gn-ui-check-toggle label')
+        .eq(0)
+        .click()
+      cy.get('[data-cy=legalConstraints]').should('not.exist')
+      cy.get('gn-ui-metadata-quality-panel')
+        .find(
+          '[data-cy="md-quality-btn-editor.record.form.field.legalConstraints"]'
+        )
+        .click()
+      cy.get('gn-ui-record-form .gn-ui-field-focus-glow')
+        .find('[data-cy=constraints-shortcut-toggles]')
+        .should('exist')
+    })
+  })
+
   describe('form fields', () => {
     it('about section', () => {
       // TITLE
@@ -480,9 +564,8 @@ describe('editor form', () => {
     it('classification', () => {
       // keywords
       // should show the current keywords
-      cy.get('gn-ui-form-field-keywords')
-        .find('gn-ui-badge')
-        .should('have.length', 41)
+      cy.get('gn-ui-form-field-keywords').find('gn-ui-badge').as('keywords')
+      cy.get('@keywords').should('have.length', 41)
 
       // should add a keyword
       cy.editor_wrapPreviousDraft(recordUuid)
@@ -490,12 +573,8 @@ describe('editor form', () => {
       cy.get('mat-option').first().click()
       cy.editor_publishAndReload(recordUuid)
       cy.get('@saveStatus').should('eq', 'record_up_to_date')
-      cy.get('gn-ui-form-field-keywords')
-        .find('gn-ui-badge')
-        .should('have.length', 42)
-        .last()
-        .find('span')
-        .should('have.text', 'Addresses ')
+      cy.get('@keywords').should('have.length', 42)
+      cy.get('@keywords').last().should('have.text', 'Addresses')
 
       // should close the autocomplete and clear the input after selecting a keyword
       cy.get('gn-ui-form-field-keywords').find('gn-ui-autocomplete').type('a')
@@ -508,22 +587,15 @@ describe('editor form', () => {
 
       // should delete a keyword
       cy.editor_wrapPreviousDraft(recordUuid)
-      cy.get('gn-ui-form-field-keywords')
-        .find('gn-ui-badge')
-        .last()
-        .find('gn-ui-button')
-        .click()
+      cy.get('@keywords').last().find('gn-ui-button').click()
       cy.editor_publishAndReload(recordUuid)
       cy.get('@saveStatus').should('eq', 'record_up_to_date')
-      cy.get('gn-ui-form-field-keywords')
-        .find('gn-ui-badge')
-        .should('have.length', 41)
+      cy.get('@keywords').should('have.length', 41)
 
       // Topics
       // should show the current topics
-      cy.get('gn-ui-form-field-topics')
-        .find('gn-ui-badge')
-        .should('have.length', 1)
+      cy.get('gn-ui-form-field-topics').find('gn-ui-badge').as('topics')
+      cy.get('@topics').should('have.length', 1)
 
       // should add a topic
       cy.editor_wrapPreviousDraft(recordUuid)
@@ -534,25 +606,17 @@ describe('editor form', () => {
       cy.clickOnBody()
       cy.editor_publishAndReload(recordUuid)
       cy.get('@saveStatus').should('eq', 'record_up_to_date')
-      cy.get('gn-ui-form-field-topics')
-        .find('gn-ui-badge')
+      cy.get('@topics')
         .should('have.length', 2)
         .last()
-        .find('span')
         .should('have.text', 'Economy ')
 
       // should delete a topic
       cy.editor_wrapPreviousDraft(recordUuid)
-      cy.get('gn-ui-form-field-topics')
-        .find('gn-ui-badge')
-        .last()
-        .find('gn-ui-button')
-        .click()
+      cy.get('@topics').last().find('gn-ui-button').click()
       cy.editor_publishAndReload(recordUuid)
       cy.get('@saveStatus').should('eq', 'record_up_to_date')
-      cy.get('gn-ui-form-field-topics')
-        .find('gn-ui-badge')
-        .should('have.length', 1)
+      cy.get('@topics').should('have.length', 1)
     })
 
     it('licenses & constraints', () => {

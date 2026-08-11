@@ -110,6 +110,8 @@ export class RecordFormComponent implements AfterViewInit {
         status: 'under_development',
         updateFrequency: 'unknown',
         lineage: '',
+        sourceRecords: [],
+        associatedRecords: [],
         spatialExtents: [],
         temporalExtents: [],
       }

@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: 20.19.0
+  NODE_VERSION: 24
   # a list of apps to build and publish on releases
   APP_NAMES: datahub,metadata-editor
 
@@ -84,8 +84,7 @@ jobs:
 
       - name: Build docker images for affected apps
         if: github.event_name != 'release'
-        # FIXME: excluding data-platform until it has a remote registry to be pushed
-        run: npx nx affected --target=docker-build --exclude=data-platform
+        run: npx nx affected --target=docker-build
 
       - name: Build docker images for tools
         working-directory: tools

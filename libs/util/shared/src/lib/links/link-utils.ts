@@ -171,6 +171,28 @@ export const FORMATS = {
   },
 } as const
 
+marker('downloads.format.csv')
+marker('downloads.format.excel')
+marker('downloads.format.geojson')
+marker('downloads.format.json')
+marker('downloads.format.shp')
+marker('downloads.format.gml')
+marker('downloads.format.kml')
+marker('downloads.format.gpkg')
+marker('downloads.format.zip')
+marker('downloads.format.pdf')
+marker('downloads.format.jpg')
+marker('downloads.format.png')
+marker('downloads.format.tiff')
+marker('downloads.format.svg')
+marker('downloads.format.dxf')
+marker('downloads.format.html')
+marker('downloads.format.xml')
+marker('downloads.format.fgb')
+marker('downloads.format.jsonfg')
+marker('downloads.format.webp')
+marker('downloads.format.postgis')
+
 export type FileFormat = keyof typeof FORMATS
 
 export function getFormatPriority(linkFormat: FileFormat): number {
@@ -266,7 +288,7 @@ export function checkFileFormat(
       new RegExp(`[./]${format}`, 'i').test(link.name.toLowerCase())) ||
     ('url' in link &&
       new RegExp(`[./]${format}`, 'i').test(link.url.toString())) ||
-    ('name' in link && link.name.toLowerCase().includes(format))
+    ('name' in link && new RegExp(`\\b${format}\\b`, 'i').test(link.name))
   )
 }
 
@@ -331,11 +353,15 @@ export async function getLayers(url: string, serviceProtocol: ServiceProtocol) {
     case 'wfs': {
       const endpointWfs = await new WfsEndpoint(url).isReady()
       const featureTypes = await endpointWfs.getFeatureTypes()
-      const layers = await Promise.all(
-        featureTypes.map(async (collection) => {
-          return await endpointWfs.getFeatureTypeFull(collection.name)
-        })
+      const layers = (
+        await Promise.allSettled(
+          featureTypes.map((collection) => {
+            return endpointWfs.getFeatureTypeFull(collection.name)
+          })
+        )
       )
+        .filter((settled) => settled.status === 'fulfilled')
+        .map((fulfilled) => fulfilled.value)
       return layers
     }
     case 'wms': {

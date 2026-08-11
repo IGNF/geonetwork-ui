@@ -1,5 +1,5 @@
-import { Injectable, inject } from '@angular/core'
-import { forkJoin, Observable, of, switchMap } from 'rxjs'
+import { inject, Injectable } from '@angular/core'
+import { Observable, switchMap } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
 import { EditorConfig } from '../models/'
@@ -16,7 +16,8 @@ export class EditorService {
   saveRecord(
     record: CatalogRecord,
     recordSource: string,
-    fieldsConfig: EditorConfig
+    fieldsConfig: EditorConfig,
+    publish: boolean
   ): Observable<[CatalogRecord, string]> {
     const savedRecord = { ...record }
 
@@ -27,22 +28,17 @@ export class EditorService {
     // run onSave processes
     for (const field of fields) {
       if (field.onSaveProcess && field.model) {
-        const evaluator = evaluate(field.onSaveProcess)
+        const { evaluator } = evaluate(field.onSaveProcess)
         savedRecord[field.model] = evaluator({
-          model: field.model,
-          value: record[field.model],
+          globals: {
+            record,
+          },
         })
       }
     }
-    let publishToAll = true
-    // if the record is new, generate a new unique identifier and pass publishToAll as false
-    if (!record.uniqueIdentifier) {
-      savedRecord.uniqueIdentifier = null
-      publishToAll = false
-    }
 
     return this.recordsRepository
-      .saveRecord(savedRecord, recordSource, publishToAll)
+      .saveRecord(savedRecord, recordSource, publish)
       .pipe(
         switchMap((uniqueIdentifier) =>
           this.recordsRepository.openRecordForEdition(uniqueIdentifier)

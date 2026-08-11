@@ -3,6 +3,7 @@ import {
   DatasetRecord,
   Individual,
   LanguageCode,
+  ReuseRecord,
 } from '@geonetwork-ui/common/domain/model/record'
 import {
   allChildrenElement,
@@ -10,6 +11,7 @@ import {
   appendChildTree,
   createChild,
   createElement,
+  createNestedElement,
   findChildElement,
   findChildOrCreate,
   findChildrenElement,
@@ -34,6 +36,7 @@ import {
 } from '../function-utils'
 import {
   appendKeywords,
+  appendSourceRecords,
   appendOnlineResource,
   appendServiceOnlineResources,
   createDistributionInfo,
@@ -561,6 +564,55 @@ export function writeOtherLanguages(record: DatasetRecord, rootEl: XmlElement) {
   appendChildren(
     ...record.otherLanguages.map((lang: LanguageCode) =>
       pipe(createElement('mdb:otherLocale'), writeLocaleElement(lang))
+    )
+  )(rootEl)
+}
+
+export function writeSourceRecords(
+  record: DatasetRecord | ReuseRecord,
+  rootEl: XmlElement
+) {
+  pipe(
+    findNestedChildOrCreate('mdb:resourceLineage', 'mrl:LI_Lineage'),
+    appendSourceRecords(record.sourceRecords)
+  )(rootEl)
+}
+
+export function writeAssociatedRecords(
+  record: DatasetRecord | ReuseRecord,
+  rootEl: XmlElement
+) {
+  pipe(
+    findOrCreateIdentification(),
+    removeChildrenByName('mri:associatedResource'),
+    appendChildren(
+      ...record.associatedRecords
+        .filter((assoc) => assoc.uuid && assoc.associationType)
+        .map((assoc) =>
+          pipe(
+            createNestedElement(
+              'mri:associatedResource',
+              'mri:MD_AssociatedResource'
+            ),
+            appendChildren(
+              pipe(
+                createNestedElement(
+                  'mri:associationType',
+                  'mri:DS_AssociationTypeCode'
+                ),
+                writeAttribute(
+                  'codeList',
+                  'http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#DS_AssociationTypeCode'
+                ),
+                writeAttribute('codeListValue', assoc.associationType)
+              ),
+              pipe(
+                createElement('mri:metadataReference'),
+                writeAttribute('uuidref', assoc.uuid)
+              )
+            )
+          )
+        )
     )
   )(rootEl)
 }

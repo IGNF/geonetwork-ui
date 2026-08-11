@@ -1,25 +1,53 @@
 import {
-  Component,
+  Component, inject,
   OnInit,
   AfterViewInit,
   Renderer2,
-  inject,
   ViewChild,
 } from '@angular/core'
 import { DOCUMENT } from '@angular/common'
 import { getThemeConfig } from '@geonetwork-ui/util/app-config'
-import { ThemeService } from '@geonetwork-ui/util/shared'
+import {
+  handleScrollOnNavigation,
+  ThemeService,
+} from '@geonetwork-ui/util/shared'
+import { SearchRouterContainerDirective } from '@geonetwork-ui/feature/router'
+import { Router, RouterOutlet } from '@angular/router'
+import { CommonModule, ViewportScroller } from '@angular/common'
 import Keycloak from 'keycloak-js'
-import { DsfrModalComponent } from '@edugouvfr/ngx-dsfr'
+import {
+  DsfrHeaderModule,
+  DsfrFooterModule,
+  DsfrToolLinkMenuComponent,
+  DsfrLinkComponent,
+  DsfrModalComponent,
+  DsfrButtonComponent,
+  DsfrButtonsGroupComponent,
+} from '@edugouvfr/ngx-dsfr'
 import { DsfrAnalyticsService } from './services/dsfr-analytics.service'
 
 @Component({
   selector: 'datahub-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  standalone: false,
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    SearchRouterContainerDirective,
+    DsfrHeaderModule,
+    DsfrFooterModule,
+    DsfrToolLinkMenuComponent,
+    DsfrLinkComponent,
+    DsfrModalComponent,
+    DsfrButtonComponent,
+    DsfrButtonsGroupComponent,
+  ],
 })
 export class AppComponent implements OnInit, AfterViewInit {
+  private router = inject(Router)
+  private viewportScroller = inject(ViewportScroller)
+
   private readonly welcomeModalDismissedStorageKey =
     'datahub.welcomeModal.dismissed'
   readonly renderer = inject(Renderer2)
@@ -29,6 +57,19 @@ export class AppComponent implements OnInit, AfterViewInit {
   @ViewChild('welcomeModal') welcomeModalRef: DsfrModalComponent
 
   ngOnInit(): void {
+    // Disable automatic scroll restoration to avoid race conditions
+    this.viewportScroller.setHistoryScrollRestoration('manual')
+    handleScrollOnNavigation(this.router, this.viewportScroller)
+    ThemeService.applyCssVariables(
+      getThemeConfig().PRIMARY_COLOR,
+      getThemeConfig().SECONDARY_COLOR,
+      getThemeConfig().MAIN_COLOR,
+      getThemeConfig().BACKGROUND_COLOR,
+      getThemeConfig().MAIN_FONT || "'Rubik', sans-serif",
+      getThemeConfig().TITLE_FONT || "'Readex Pro', sans-serif",
+      getThemeConfig().FONTS_STYLESHEET_URL || 'assets/css/default-fonts.css'
+    )
+
     const favicon = getThemeConfig().FAVICON
     if (favicon) ThemeService.setFavicon(favicon)
     this.dsfrAnalytics.init()

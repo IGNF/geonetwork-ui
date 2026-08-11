@@ -74,7 +74,10 @@
     --bg-hover: var(--gn-ui-button-bg-hover, var(--color-background));
     --font-size: var(--gn-ui-button-font-size, 1em);
     --color: var(--gn-ui-button-color, var(--color-main));
-    @apply flex flex-row items-center justify-center
+    --disabled-opacity: var(--gn-ui-button-disabled-opacity, 0.5);
+    --justify: var(--gn-ui-button-justify, center);
+    justify-content: var(--justify);
+    @apply flex flex-row items-center
       text-[length:--font-size] leading-none
       text-[color:--color]
       p-[--padding] rounded-[--rounded] w-[--width] h-[--height] overflow-hidden
@@ -82,7 +85,7 @@
       hover:bg-[--bg-hover] focus:bg-[--bg-hover] active:bg-[--background]
       outline-none
       relative
-      disabled:opacity-50 disabled:pointer-events-none
+      disabled:opacity-[--disabled-opacity] disabled:pointer-events-none
       focus:z-10 active:z-10 hover:z-10;
   }
   /* makes sure icons will not make the buttons grow vertically */
@@ -116,6 +119,12 @@
     border-gray-100 focus:ring-4 focus:ring-gray-50;
   }
 
+  .gn-ui-btn-gray-light {
+    @apply gn-ui-btn text-black
+    bg-gray-50 hover:bg-gray-100 focus:bg-gray-100 active:bg-gray-200
+    border-gray-50 focus:ring-4 focus:ring-gray-100;
+  }
+
   .gn-ui-btn-black {
     @apply gn-ui-btn text-white
     bg-black hover:bg-gray-950 focus:bg-gray-950 active:bg-gray-900
@@ -132,6 +141,12 @@
     @apply gn-ui-btn
       hover:bg-gray-50 focus:bg-gray-50 active:bg-gray-100
       bg-white border-white focus:ring-4 focus:ring-gray-300;
+  }
+
+  .gn-ui-btn-primary-light {
+    @apply gn-ui-btn text-primary-darkest
+      bg-primary-white hover:bg-primary focus:bg-primary hover:text-white focus:text-white active:bg-primary-darker
+      border-transparent;
   }
 
   .gn-ui-card-s {
@@ -169,8 +184,17 @@
     --text-color: var(--gn-ui-badge-text-color, var(--color-gray-50));
     --background-color: var(--gn-ui-badge-background-color, black);
     --opacity: var(--gn-ui-badge-opacity, 0.7);
+    text-transform: inherit;
     @apply opacity-[--opacity] p-[--padding] rounded-[--rounded]
       font-[--font-weight] text-[length:--text-size] text-[color:--text-color] bg-[color:--background-color] flex justify-center items-center content-center;
+  }
+  .gn-ui-badge-clickable {
+    @apply gn-ui-badge hover:bg-primary focus:bg-primary active:bg-primary-darker
+    hover:text-white active:text-white focus:text-white
+    transition-all duration-100
+    outline-none
+    relative
+    focus:z-10 active:z-10 hover:z-10;
   }
   /* makes sure icons will not make the badges grow vertically; also make size proportional */
   .gn-ui-badge ng-icon {

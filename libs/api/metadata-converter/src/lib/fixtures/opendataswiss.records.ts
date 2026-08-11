@@ -370,6 +370,8 @@ export const OPENDATASWISS_DATASET_RECORD: DatasetRecord = {
     'http://dcat-ap.ch/vocabulary/themes/geography',
   ],
   lineage: '',
+  sourceRecords: [],
+  associatedRecords: [],
   ownerOrganization: {
     name: 'Bundesamt für Energie',
   },

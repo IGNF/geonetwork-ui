@@ -1,10 +1,11 @@
 import { createAction, props } from '@ngrx/store'
 import {
   CatalogRecord,
+  CatalogRecordKeys,
   LanguageCode,
 } from '@geonetwork-ui/common/domain/model/record'
 import { SaveRecordError } from './editor.models'
-import { EditorFieldIdentification } from '../models'
+import { EditorConfig, EditorFieldIdentification } from '../models'
 
 export const openRecord = createAction(
   '[Editor] Open record',
@@ -28,7 +29,10 @@ export const markRecordAsChanged = createAction(
   '[Editor] Mark record as changed'
 )
 
-export const saveRecord = createAction('[Editor] Save record')
+export const saveRecord = createAction(
+  '[Editor] Save record',
+  props<{ publish: boolean }>()
+)
 export const saveRecordSuccess = createAction('[Editor] Save record success')
 export const saveRecordFailure = createAction(
   '[Editor] Save record failure',
@@ -38,6 +42,11 @@ export const saveRecordFailure = createAction(
 export const draftSaveSuccess = createAction('[Editor] Draft save success')
 
 export const undoRecordDraft = createAction('[Editor] Undo record draft')
+
+export const setEditorConfiguration = createAction(
+  '[Editor] Set editor configuration',
+  props<{ configuration: EditorConfig }>()
+)
 
 export const setCurrentPage = createAction(
   '[Editor] Set current page',
@@ -67,4 +76,9 @@ export const isPublished = createAction(
 export const canEditRecord = createAction(
   '[Editor] User can edit record',
   props<{ canEditRecord: boolean }>()
+)
+
+export const setFocusedField = createAction(
+  '[Editor] Set focused field',
+  props<{ model: CatalogRecordKeys }>()
 )

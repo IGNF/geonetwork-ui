@@ -1,0 +1,27 @@
+<p>
+  Bind your results with some facets with <code>gn-facets</code> web component
+</p>
+<!-- #region source -->
+<div style="display: flex">
+  <div style="width: 320px; shrink: 0; margin: 20px">
+    <gn-facets
+      api-url="https://www.geo2france.fr/geonetwork/srv/api"
+      facet-config='{"tag.default":{"terms":{"field":"tag.default","include":".*","size": 10}}}'
+    ></gn-facets>
+  </div>
+  <div style="grow: 1; margin: 20px">
+    <gn-results-list
+      api-url="https://www.geo2france.fr/geonetwork/srv/api"
+      catalog-url="https://www.geo2france.fr/geonetwork/srv/fre/catalog.search#/metadata/{uuid}"
+      size="5"
+      primary-color="#0f4395"
+      secondary-color="#8bc832"
+      main-color="#555"
+      background-color="#fdfbff"
+      main-font="'Inter', sans-serif"
+      title-font="'DM Serif Display', serif"
+      layout="FEED"
+    ></gn-results-list>
+  </div>
+</div>
+<!-- #endregion source -->

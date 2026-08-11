@@ -21,6 +21,7 @@ import {
 } from '../xml-utils'
 import {
   readAbstract,
+  readAssociatedRecords,
   readContacts,
   readContactsForResource,
   readDefaultLanguage,
@@ -30,6 +31,7 @@ import {
   readLegalConstraints,
   readLicenses,
   readLineage,
+  readSourceRecords,
   readOnlineResources,
   readOtherConstraints,
   readOtherLanguages,
@@ -52,6 +54,7 @@ import {
 } from './read-parts'
 import {
   writeAbstract,
+  writeAssociatedRecords,
   writeContacts,
   writeContactsForResource,
   writeDefaultLanguage,
@@ -62,6 +65,7 @@ import {
   writeLegalConstraints,
   writeLicenses,
   writeLineage,
+  writeSourceRecords,
   writeOnlineResources,
   writeOtherConstraints,
   writeRecordUpdated,
@@ -112,6 +116,8 @@ export class Iso19139Converter extends BaseConverter<string> {
     spatialRepresentation: readSpatialRepresentation,
     overviews: readOverviews,
     lineage: readLineage,
+    sourceRecords: readSourceRecords,
+    associatedRecords: readAssociatedRecords,
     onlineResources: readOnlineResources,
     temporalExtents: readTemporalExtents,
     spatialExtents: readSpatialExtents,
@@ -153,6 +159,8 @@ export class Iso19139Converter extends BaseConverter<string> {
     spatialRepresentation: writeSpatialRepresentation,
     overviews: writeGraphicOverviews,
     lineage: writeLineage,
+    sourceRecords: writeSourceRecords,
+    associatedRecords: writeAssociatedRecords,
     onlineResources: writeOnlineResources,
     temporalExtents: writeTemporalExtents,
     spatialExtents: writeSpatialExtents,
@@ -201,7 +209,7 @@ export class Iso19139Converter extends BaseConverter<string> {
     record.contacts.map((c) => fixLanguages(c.organization))
     record.contactsForResource.map((c) => fixLanguages(c.organization))
     fixLanguages(record.ownerOrganization)
-    if (record.kind === 'dataset') {
+    if (record.kind === 'dataset' || record.kind === 'reuse') {
       record.spatialExtents.map(fixLanguages)
     }
 
@@ -295,6 +303,8 @@ export class Iso19139Converter extends BaseConverter<string> {
       )
       const temporalExtents = this.readers['temporalExtents'](rootEl, tr)
       const lineage = this.readers['lineage'](rootEl, tr)
+      const sourceRecords = this.readers['sourceRecords'](rootEl, tr)
+      const associatedRecords = this.readers['associatedRecords'](rootEl, tr)
       const updateFrequency = this.readers['updateFrequency'](rootEl, tr)
 
       return this.afterRecordRead({
@@ -302,6 +312,8 @@ export class Iso19139Converter extends BaseConverter<string> {
         kind,
         status,
         lineage,
+        ...(sourceRecords && { sourceRecords }),
+        associatedRecords,
         ...(spatialRepresentation && { spatialRepresentation }),
         temporalExtents,
         updateFrequency,
@@ -309,6 +321,8 @@ export class Iso19139Converter extends BaseConverter<string> {
       } as DatasetRecord)
     } else if (kind === 'reuse') {
       const lineage = this.readers['lineage'](rootEl, tr)
+      const sourceRecords = this.readers['sourceRecords'](rootEl, tr)
+      const associatedRecords = this.readers['associatedRecords'](rootEl, tr)
       const temporalExtents = this.readers['temporalExtents'](rootEl, tr)
       const reuseType = this.readers['reuseType'](rootEl, tr)
 
@@ -316,6 +330,8 @@ export class Iso19139Converter extends BaseConverter<string> {
         ...this.readBaseRecord(rootEl, tr),
         kind,
         lineage,
+        ...(sourceRecords && { sourceRecords }),
+        associatedRecords,
         temporalExtents,
         reuseType,
       } as ReuseRecord)
@@ -400,6 +416,8 @@ export class Iso19139Converter extends BaseConverter<string> {
 
     if (record.kind === 'dataset') {
       fieldChanged('status') && this.writers['status'](record, rootEl)
+    }
+    if (record.kind === 'dataset' || record.kind === 'reuse') {
       fieldChanged('updateFrequency') &&
         this.writers['updateFrequency'](record, rootEl)
       fieldChanged('spatialRepresentation') &&
@@ -411,7 +429,12 @@ export class Iso19139Converter extends BaseConverter<string> {
         this.writers['spatialExtents'](record, rootEl)
       ;(fieldChanged('lineage') || fieldChanged('translations')) &&
         this.writers['lineage'](record, rootEl)
+      fieldChanged('sourceRecords') &&
+        this.writers['sourceRecords'](record, rootEl)
+      fieldChanged('associatedRecords') &&
+        this.writers['associatedRecords'](record, rootEl)
     }
+
     fieldChanged('otherLanguages') &&
       this.writers['otherLanguages'](record, rootEl)
 

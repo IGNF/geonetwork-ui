@@ -3,9 +3,10 @@ import {
   HttpErrorResponse,
   HttpHeaders,
 } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable, InjectionToken } from '@angular/core'
 import {
   assertValidXml,
+  BaseConverter,
   findConverterForDocument,
   Gn4Converter,
   Gn4SearchResults,
@@ -57,6 +58,16 @@ const TEMPORARY_ID_PREFIX = 'TEMP-ID-'
 
 export type RecordAsXml = string
 
+export const DISABLE_DRAFT = new InjectionToken<boolean>('gnDisableDraft', {
+  factory: () => false,
+})
+
+export const DEFAULT_RECORD_CONVERTER = new InjectionToken<
+  BaseConverter<string>
+>('defaultRecordConverter', {
+  factory: () => new Iso19139Converter(),
+})
+
 @Injectable()
 export class Gn4Repository implements RecordsRepositoryInterface {
   private httpClient = inject(HttpClient)
@@ -67,6 +78,8 @@ export class Gn4Repository implements RecordsRepositoryInterface {
   private platformService = inject(PlatformServiceInterface)
   private gn4LanguagesApi = inject(LanguagesApiService)
   private settingsService = inject(Gn4SettingsService)
+  private disableDraft = inject(DISABLE_DRAFT, { optional: true }) ?? false
+  private defaultConverter = inject(DEFAULT_RECORD_CONVERTER)
 
   _draftsChanged = new Subject<void>()
   draftsChanged$ = this._draftsChanged.asObservable()
@@ -314,8 +327,10 @@ export class Gn4Repository implements RecordsRepositoryInterface {
     return this.settingsService.allowEditHarvested$.pipe(
       map((allowEditHarvested) => {
         return (
-          record.extras['edit'] &&
-          (!record.extras['isHarvested'] || allowEditHarvested)
+          (this.platformService.supportsAuthentication() &&
+            record.extras?.['edit'] &&
+            (!record.extras?.['isHarvested'] || allowEditHarvested)) ??
+          false
         )
       })
     )
@@ -323,9 +338,10 @@ export class Gn4Repository implements RecordsRepositoryInterface {
 
   private canEdit(record: CatalogRecord, allowEditHarvested: boolean): boolean {
     return (
-      record.kind === 'dataset' &&
-      record.extras['edit'] &&
-      (!record.extras['isHarvested'] || allowEditHarvested)
+      (this.platformService.supportsAuthentication() &&
+        record.extras?.['edit'] &&
+        (!record.extras?.['isHarvested'] || allowEditHarvested)) ??
+      false
     )
   }
 
@@ -347,9 +363,13 @@ export class Gn4Repository implements RecordsRepositoryInterface {
   }
 
   openRecordForEdition(
-    uniqueIdentifier: string
+    uniqueIdentifier: string,
+    disableDraft?: boolean
   ): Observable<[CatalogRecord, string, boolean] | null> {
-    const draft$ = of(this.getRecordFromLocalStorage(uniqueIdentifier))
+    this.disableDraft = disableDraft ?? this.disableDraft
+    const draft$ = this.disableDraft
+      ? of(null)
+      : of(this.getRecordFromLocalStorage(uniqueIdentifier))
     const recordAsXml$ = this.getRecordAsXml(uniqueIdentifier)
 
     return combineLatest([draft$, recordAsXml$]).pipe(
@@ -369,38 +389,52 @@ export class Gn4Repository implements RecordsRepositoryInterface {
   openRecordForDuplication(
     uniqueIdentifier: string
   ): Observable<[CatalogRecord, string, true] | null> {
-    return this.gn4RecordsApi
-      .create(
-        uniqueIdentifier,
-        '2',
-        'METADATA',
-        '',
-        false,
-        undefined,
-        true,
-        false,
-        undefined,
-        'body',
-        false,
-        {
-          httpHeaderAccept: 'application/json',
-          httpContentTypeSelected: 'application/json;charset=UTF-8',
-        }
-      )
-      .pipe(
-        switchMap((uniqueIdentifier) => {
-          return this.getRecordAsXml(uniqueIdentifier)
-        }),
-        switchMap((xml) => {
-          return from(
-            findConverterForDocument(xml)
-              .readRecord(xml)
-              .then((record) => {
-                return [record, xml, true] as [CatalogRecord, string, true]
-              })
+    return this.platformService.getUserPermissionsByGroup().pipe(
+      map((permissions) => {
+        const groupId =
+          permissions.find((p) => p.canApprove)?.groupId?.toString() ??
+          permissions.find((p) => p.canEdit)?.groupId?.toString()
+        if (!groupId)
+          throw new Error(
+            'Current user has no writable group to duplicate into'
           )
-        })
+        return groupId
+      }),
+      switchMap((groupId) =>
+        this.gn4RecordsApi
+          .create(
+            uniqueIdentifier,
+            groupId,
+            'METADATA',
+            '',
+            false,
+            undefined,
+            true,
+            false,
+            undefined,
+            'body',
+            false,
+            {
+              httpHeaderAccept: 'application/json',
+              httpContentTypeSelected: 'application/json;charset=UTF-8',
+            }
+          )
+          .pipe(
+            switchMap((uniqueIdentifier) => {
+              return this.getRecordAsXml(uniqueIdentifier)
+            }),
+            switchMap((xml) => {
+              return from(
+                findConverterForDocument(xml)
+                  .readRecord(xml)
+                  .then((record) => {
+                    return [record, xml, true] as [CatalogRecord, string, true]
+                  })
+              )
+            })
+          )
       )
+    )
   }
 
   saveRecord(
@@ -474,6 +508,7 @@ export class Gn4Repository implements RecordsRepositoryInterface {
     record: CatalogRecord,
     referenceRecordSource?: string
   ): Observable<string> {
+    if (this.disableDraft) return of('')
     return this.serializeRecordToXml(record, referenceRecordSource).pipe(
       tap((recordXml) => {
         this.saveRecordToLocalStorage(recordXml, record.uniqueIdentifier)
@@ -483,16 +518,19 @@ export class Gn4Repository implements RecordsRepositoryInterface {
   }
 
   clearRecordDraft(uniqueIdentifier: string): void {
+    if (this.disableDraft) return
     this.removeRecordFromLocalStorage(uniqueIdentifier)
     this._draftsChanged.next()
   }
 
   recordHasDraft(uniqueIdentifier: string): boolean {
+    if (this.disableDraft) return false
     return this.getRecordFromLocalStorage(uniqueIdentifier) !== null
   }
 
   // generated by copilot
   getAllDrafts(): Observable<CatalogRecord[]> {
+    if (this.disableDraft) return of([])
     const items = { ...window.localStorage }
     const drafts = Object.keys(items)
       .filter((key) => key.startsWith('geonetwork-ui-draft-'))
@@ -508,6 +546,7 @@ export class Gn4Repository implements RecordsRepositoryInterface {
   }
 
   getDraftsCount(): Observable<number> {
+    if (this.disableDraft) return of(0)
     const items = { ...window.localStorage }
     const draftCount = Object.keys(items)
       .filter((key) => key.startsWith('geonetwork-ui-draft-'))
@@ -592,10 +631,10 @@ export class Gn4Repository implements RecordsRepositoryInterface {
     record: CatalogRecord,
     referenceRecordSource?: string
   ): Observable<string> {
-    // if there's a reference record, use that standard; otherwise, use iso19139
+    // if there's a reference record, use that standard; otherwise, use standard based on configuration or default
     const converter = referenceRecordSource
       ? findConverterForDocument(referenceRecordSource)
-      : new Iso19139Converter()
+      : this.defaultConverter
     return from(converter.writeRecord(record, referenceRecordSource))
   }
 

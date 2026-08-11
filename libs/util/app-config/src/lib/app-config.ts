@@ -1,6 +1,8 @@
 import * as TOML from '@ltd/j-toml'
 import {
   checkMetadataLanguage,
+  checkNewRecordDefaultLanguage,
+  checkNewRecordStandard,
   parseConfigSection,
   parseMultiConfigSection,
   parseTranslationsConfigSection,
@@ -8,6 +10,7 @@ import {
 import {
   CustomTranslations,
   CustomTranslationsAllLanguages,
+  EditorConfig,
   GlobalConfig,
   LayerConfig,
   MapConfig,
@@ -15,10 +18,15 @@ import {
   SearchConfig,
   ThemeConfig,
 } from './model'
-import { TranslateCompiler, TranslateLoader } from '@ngx-translate/core'
+import {
+  TranslateCompiler,
+  TranslateLoader,
+  TranslateModuleConfig,
+} from '@ngx-translate/core'
 import { TranslateMessageFormatCompiler } from 'ngx-translate-messageformat-compiler'
-import { HttpClient } from '@angular/common/http'
 import { FileWithOverridesTranslateLoader } from './i18n/file-with-overrides.translate.loader'
+import { TRANSLATE_HTTP_LOADER_CONFIG } from '@ngx-translate/http-loader'
+import { HttpClient } from '@angular/common/http'
 
 const MISSING_CONFIG_ERROR = `Application configuration was not initialized correctly.
 This error might show up in case of an invalid/malformed configuration file.
@@ -51,6 +59,12 @@ export function getOptionalSearchConfig(): SearchConfig | null {
   return searchConfig
 }
 
+let editorConfig: EditorConfig = null
+
+export function getOptionalEditorConfig(): EditorConfig | null {
+  return editorConfig
+}
+
 let metadataQualityConfig: MetadataQualityConfig = null
 export function getMetadataQualityConfig(): MetadataQualityConfig {
   return (
@@ -70,8 +84,11 @@ export function getCustomTranslations(langCode: string): CustomTranslations {
 
 let appConfigLoaded = false
 
-export function loadAppConfig() {
-  return fetch('assets/configuration/default.toml')
+export function loadAppConfig(configUrl = 'assets/configuration/default.toml') {
+  console.log(
+    `[geonetwork-ui] Loading application configuration from ${configUrl}`
+  )
+  return fetch(configUrl)
     .then((resp) => {
       if (!resp.ok) throw new Error('Configuration file could not be loaded')
       return resp.text()
@@ -94,6 +111,7 @@ export function loadAppConfig() {
         ['geonetwork4_api_url'],
         [
           'datahub_url',
+          'edit_url_template',
           'proxy_path',
           'metadata_language',
           'login_url',
@@ -119,6 +137,7 @@ export function loadAppConfig() {
           : ({
               GN4_API_URL: parsedGlobalSection.geonetwork4_api_url,
               DATAHUB_URL: parsedGlobalSection.datahub_url,
+              EDIT_URL_TEMPLATE: parsedGlobalSection.edit_url_template,
               PROXY_PATH: parsedGlobalSection.proxy_path,
               METADATA_LANGUAGE: parsedGlobalSection.metadata_language
                 ? (
@@ -229,6 +248,7 @@ export function loadAppConfig() {
           'record_kind_quick_filter',
           'filter_geometry_data',
           'filter_geometry_url',
+          'do_not_use_default_search_preset',
           'search_preset',
           'advanced_filters',
           'limit',
@@ -252,6 +272,8 @@ export function loadAppConfig() {
                 parsedSearchSection.record_kind_quick_filter,
               FILTER_GEOMETRY_DATA: parsedSearchSection.filter_geometry_data,
               FILTER_GEOMETRY_URL: parsedSearchSection.filter_geometry_url,
+              DO_NOT_USE_DEFAULT_SEARCH_PRESET:
+                !!parsedSearchSection.do_not_use_default_search_preset,
               SEARCH_PRESET: parsedSearchParams.map((param) => ({
                 sort: param.sort,
                 name: param.name,
@@ -277,6 +299,45 @@ export function loadAppConfig() {
               SORTABLE: parsedMetadataQualitySection.sortable,
             } as MetadataQualityConfig)
 
+      let parsedEditingSection = parseConfigSection(
+        parsed,
+        'editing',
+        [],
+        ['new_record_default_language', 'new_record_standard'],
+        warnings,
+        errors
+      )
+      if (
+        parsedEditingSection !== null &&
+        parsedEditingSection.new_record_default_language !== undefined
+      ) {
+        parsedEditingSection = checkNewRecordDefaultLanguage(
+          parsedEditingSection,
+          warnings
+        )
+      }
+      if (
+        parsedEditingSection !== null &&
+        parsedEditingSection.new_record_standard !== undefined
+      ) {
+        parsedEditingSection = checkNewRecordStandard(
+          parsedEditingSection,
+          warnings
+        )
+      }
+      editorConfig =
+        parsedEditingSection === null
+          ? null
+          : ({
+              NEW_RECORD_DEFAULT_LANGUAGE:
+                parsedEditingSection.new_record_default_language as
+                  | string
+                  | undefined,
+              NEW_RECORD_STANDARD: parsedEditingSection.new_record_standard as
+                | EditorConfig['NEW_RECORD_STANDARD']
+                | undefined,
+            } as EditorConfig)
+
       customTranslations = parseTranslationsConfigSection(
         parsed,
         'translations'
@@ -301,19 +362,27 @@ export function isConfigLoaded() {
 export function _reset() {
   globalConfig = null
   themeConfig = null
+  editorConfig = null
   customTranslations = null
 }
 
-export const TRANSLATE_WITH_OVERRIDES_CONFIG = {
+export const TRANSLATE_WITH_OVERRIDES_CONFIG: TranslateModuleConfig = {
   compiler: {
     provide: TranslateCompiler,
     useClass: TranslateMessageFormatCompiler,
   },
-  loader: {
-    provide: TranslateLoader,
-    useFactory: function HttpLoaderFactory(http: HttpClient) {
-      return new FileWithOverridesTranslateLoader(http, './assets/i18n/')
+  loader: [
+    {
+      provide: TRANSLATE_HTTP_LOADER_CONFIG,
+      useValue: {
+        prefix: './assets/i18n/',
+        suffix: '.json',
+      },
     },
-    deps: [HttpClient],
-  },
+    {
+      provide: TranslateLoader,
+      useClass: FileWithOverridesTranslateLoader,
+      deps: [HttpClient, TRANSLATE_HTTP_LOADER_CONFIG],
+    },
+  ],
 }
