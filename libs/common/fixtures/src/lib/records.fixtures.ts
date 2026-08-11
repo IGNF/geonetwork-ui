@@ -3,6 +3,7 @@ import {
   DatasetRecord,
   DatasetSpatialExtent,
   Keyword,
+  ReuseRecord,
   ServiceRecord,
 } from '@geonetwork-ui/common/domain/model/record'
 
@@ -135,6 +136,7 @@ Cette section contient des *caractères internationaux* (ainsi que des "caractè
 
 As such, **it is not very interesting at all.**`,
     sourceRecords: [],
+    associatedRecords: [],
     licenses: [
       {
         text: 'Licence ODbL mai 2013 (basée sur ODbL 1.0)',
@@ -312,6 +314,7 @@ Malgré l'attention portée à la création de ces données, il est rappelé que
     lineage: `Document d’urbanisme numérisé conformément aux prescriptions nationales du CNIG par le Service d'Information Géographique de l'Agglomération de la Région de Compiègne.
 Ce lot de données produit en 2019, a été numérisé à partir du PCI Vecteur de 2019 et contrôlé par le Service d'Information Géographique de l'Agglomération de la Région de Compiègne.`,
     sourceRecords: [],
+    associatedRecords: [],
     legalConstraints: [],
     securityConstraints: [],
     otherConstraints: [],
@@ -364,6 +367,7 @@ export const simpleDatasetRecordFixture = (): DatasetRecord => ({
   spatialExtents: [],
   temporalExtents: [],
   sourceRecords: [],
+  associatedRecords: [],
   onlineResources: [
     {
       type: 'download',
@@ -417,6 +421,7 @@ export const simpleDatasetRecordWithFcatsFixture = (): DatasetRecord => ({
   spatialExtents: [],
   temporalExtents: [],
   sourceRecords: [],
+  associatedRecords: [],
   onlineResources: [],
   updateFrequency: { per: 'month', updatedTimes: 3 },
   translations: {},
@@ -983,6 +988,7 @@ export const multilingualDatasetFixture: () => DatasetRecord = () => ({
   abstract: 'English Abstract',
   lineage: 'English Lineage',
   sourceRecords: [],
+  associatedRecords: [],
   translations: {
     title: { fr: 'Titre Français', de: 'Titel DE' },
     abstract: { fr: 'Résumé Français', de: 'Beschreibung DE' },
@@ -1026,4 +1032,55 @@ export const multilingualDatasetFixture: () => DatasetRecord = () => ({
   overviews: [],
   topics: [],
   recordUpdated: null,
+})
+
+export const simpleReuseRecordFixture = (): ReuseRecord => ({
+  abstract: `Sample reuse record`,
+  kind: 'reuse',
+  reuseType: 'application',
+  recordUpdated: new Date('2023-03-17T07:38:08.875Z'),
+  recordPublished: null,
+  ownerOrganization: null,
+  licenses: [],
+  legalConstraints: [],
+  securityConstraints: [],
+  otherConstraints: [],
+  contacts: [],
+  contactsForResource: [],
+  keywords: [],
+  topics: [],
+  spatialExtents: [],
+  temporalExtents: [],
+  lineage: 'bla',
+  sourceRecords: [],
+  associatedRecords: [],
+  overviews: [],
+  defaultLanguage: null,
+  otherLanguages: [],
+  title: 'Sites de gestion des déchets miniers - Service de visualisation WMS',
+  onlineResources: [
+    {
+      name: 'Rapport de disponibilité du service WMS',
+      description:
+        'Ce service de visualisation WMS permet de consulter la série de couches de données "Sites de gestion des déchets miniers - Série".',
+      mimeType: 'text/html',
+      type: 'link',
+      url: new URL(
+        'https://geoservices.wallonie.be/rapportDisponibilite/wms/sites_de_gestion_des_dechets_miniers_srie.html'
+      ),
+      accessRestricted: false,
+    },
+  ],
+  uniqueIdentifier: '00b22798-ec8e-4500-89e8-90eeeda45919',
+  landingPage: new URL(
+    'http://localhost:4200/geonetwork/srv/fre/catalog.search#/metadata/00b22798-ec8e-4500-89e8-90eeeda45919'
+  ),
+  extras: {
+    isPublishedToAll: true,
+    id: '723',
+    isHarvested: true,
+    ownerInfo: 'admin|admin|admin|Administrator',
+    edit: true,
+  },
+  recordCreated: new Date('2023-03-17T07:38:08.875Z'),
 })

@@ -1252,7 +1252,10 @@ export function appendSourceRecords(
   )
 }
 
-export function writeSourceRecords(record: DatasetRecord, rootEl: XmlElement) {
+export function writeSourceRecords(
+  record: DatasetRecord | ReuseRecord,
+  rootEl: XmlElement
+) {
   pipe(
     findNestedChildOrCreate(
       'gmd:dataQualityInfo',
@@ -1261,6 +1264,49 @@ export function writeSourceRecords(record: DatasetRecord, rootEl: XmlElement) {
       'gmd:LI_Lineage'
     ),
     appendSourceRecords(record.sourceRecords)
+  )(rootEl)
+}
+
+export function writeAssociatedRecords(
+  record: DatasetRecord | ReuseRecord,
+  rootEl: XmlElement
+) {
+  pipe(
+    findOrCreateIdentification(),
+    removeChildrenByName('gmd:aggregationInfo'),
+    appendChildren(
+      ...record.associatedRecords
+        .filter((assoc) => assoc.uuid && assoc.associationType)
+        .map((assoc) =>
+          pipe(
+            createNestedElement(
+              'gmd:aggregationInfo',
+              'gmd:MD_AggregateInformation'
+            ),
+            appendChildren(
+              pipe(
+                createNestedElement(
+                  'gmd:aggregateDataSetIdentifier',
+                  'gmd:MD_Identifier',
+                  'gmd:code'
+                ),
+                writeCharacterString(assoc.uuid)
+              ),
+              pipe(
+                createNestedElement(
+                  'gmd:associationType',
+                  'gmd:DS_AssociationTypeCode'
+                ),
+                writeAttribute(
+                  'codeList',
+                  'http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#DS_AssociationTypeCode'
+                ),
+                writeAttribute('codeListValue', assoc.associationType)
+              )
+            )
+          )
+        )
+    )
   )(rootEl)
 }
 

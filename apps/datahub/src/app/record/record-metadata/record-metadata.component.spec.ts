@@ -1,6 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
+import { MatDialog } from '@angular/material/dialog'
 import { By } from '@angular/platform-browser'
+import type { GroupModel } from '@geonetwork-ui/common/domain/model/user'
+import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
+import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
+import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
+import { datasetRecordsFixture } from '@geonetwork-ui/common/fixtures'
 import { SourcesService } from '@geonetwork-ui/feature/catalog'
+import { NotificationsService } from '@geonetwork-ui/feature/notifications'
+import { REUSE_FORM_URL } from '@geonetwork-ui/feature/notify-reuse'
+import { MdViewFacade } from '@geonetwork-ui/feature/record'
+import { RouterFacade } from '@geonetwork-ui/feature/router'
 import { SearchService } from '@geonetwork-ui/feature/search'
 import {
   ErrorComponent,
@@ -10,19 +20,14 @@ import {
   MetadataContactComponent,
   MetadataInfoComponent,
 } from '@geonetwork-ui/ui/elements'
-import { BehaviorSubject, of } from 'rxjs'
-import { RecordMetadataComponent } from './record-metadata.component'
-import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
-import { datasetRecordsFixture } from '@geonetwork-ui/common/fixtures'
-import { MdViewFacade } from '@geonetwork-ui/feature/record'
-import { MockBuilder } from 'ng-mocks'
-import { RecordDownloadsComponent } from '../record-downloads/record-downloads.component'
-import { RecordOtherlinksComponent } from '../record-otherlinks/record-otherlinks.component'
-import { RecordApisComponent } from '../record-apis/record-apis.component'
-import { RecordInternalLinksComponent } from '../record-internal-links/record-internal-links.component'
 import { provideI18n } from '@geonetwork-ui/util/i18n'
-import { REUSE_FORM_URL } from '../record-data-preview/record-data-preview.component'
-import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
+import { MockBuilder } from 'ng-mocks'
+import { BehaviorSubject, firstValueFrom, of, Subject } from 'rxjs'
+import { RecordApisComponent } from '../record-apis/record-apis.component'
+import { RecordDownloadsComponent } from '../record-downloads/record-downloads.component'
+import { RecordInternalLinksComponent } from '../record-internal-links/record-internal-links.component'
+import { RecordOtherlinksComponent } from '../record-otherlinks/record-otherlinks.component'
+import { RecordMetadataComponent } from './record-metadata.component'
 
 const SAMPLE_RECORD = {
   ...datasetRecordsFixture()[0],
@@ -70,7 +75,65 @@ class PlatformServiceMock {
   getMe = jest.fn(() => of(null))
   getFeedbacksAllowed = jest.fn(() => of(true))
   supportsAuthentication = jest.fn(() => true)
+  _userPermissions$ = new BehaviorSubject<GroupModel[]>([])
+  getUserPermissionsByGroup = jest.fn(() => this._userPermissions$)
 }
+
+class RecordsRepositoryMock {
+  canEditIndexedRecord = jest.fn(() => of(false))
+}
+
+class RouterFacadeMock {
+  setSearch = jest.fn()
+}
+
+class NotificationsServiceMock {
+  showNotification = jest.fn()
+}
+
+class MatDialogMock {
+  _subject = new Subject<boolean>()
+  _closeWithValue = (v: boolean) => this._subject.next(v)
+  open = jest.fn(() => ({
+    afterClosed: () => this._subject,
+  }))
+}
+
+const providers = [
+  provideI18n(),
+  {
+    provide: MdViewFacade,
+    useClass: MdViewFacadeMock,
+  },
+  {
+    provide: SearchService,
+    useClass: SearchServiceMock,
+  },
+  {
+    provide: SourcesService,
+    useClass: SourcesServiceMock,
+  },
+  {
+    provide: OrganizationsServiceInterface,
+    useClass: OrganisationsServiceMock,
+  },
+  {
+    provide: PlatformServiceInterface,
+    useClass: PlatformServiceMock,
+  },
+  {
+    provide: RecordsRepositoryInterface,
+    useClass: RecordsRepositoryMock,
+  },
+  {
+    provide: RouterFacade,
+    useClass: RouterFacadeMock,
+  },
+  {
+    provide: NotificationsService,
+    useClass: NotificationsServiceMock,
+  },
+]
 
 describe('RecordMetadataComponent', () => {
   let component: RecordMetadataComponent
@@ -85,27 +148,7 @@ describe('RecordMetadataComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       providers: [
-        provideI18n(),
-        {
-          provide: MdViewFacade,
-          useClass: MdViewFacadeMock,
-        },
-        {
-          provide: SearchService,
-          useClass: SearchServiceMock,
-        },
-        {
-          provide: SourcesService,
-          useClass: SourcesServiceMock,
-        },
-        {
-          provide: OrganizationsServiceInterface,
-          useClass: OrganisationsServiceMock,
-        },
-        {
-          provide: PlatformServiceInterface,
-          useClass: PlatformServiceMock,
-        },
+        ...providers,
         {
           provide: REUSE_FORM_URL,
           useValue: 'https://example.com/reuse',
@@ -471,47 +514,164 @@ describe('RecordMetadataComponent', () => {
   })
   describe('Reuse Button', () => {
     describe('display rules for reuse button', () => {
+      let userPermissions$: BehaviorSubject<GroupModel[]>
       beforeEach(() => {
-        component.reuseFormUrl = 'https://example.com/reuse'
-        ;(platformService.getMe as jest.Mock).mockReturnValue(of(null))
-        facade.metadata$.next({ ...SAMPLE_RECORD, ...{ kind: 'dataset' } })
-        fixture.detectChanges()
+        const platformService = TestBed.inject(PlatformServiceInterface)
+        userPermissions$ =
+          platformService.getUserPermissionsByGroup() as unknown as BehaviorSubject<
+            GroupModel[]
+          >
+        facade.metadata$.next({ ...SAMPLE_RECORD, kind: 'dataset' })
       })
 
-      it('do not display reuse button when user is not logged in', () => {
-        component.showReuseButton().subscribe((visible) => {
-          expect(visible).toBe(false)
-        })
-      })
-
-      it('do not display reuse button  when kind is not dataset', () => {
-        ;(platformService.getMe as jest.Mock).mockReturnValue(
-          of({ id: 'user1' })
+      it('does not display reuse button when no permission present', async () => {
+        userPermissions$.next([])
+        const visible = await firstValueFrom(
+          component.reuseNotificationAllowed$
         )
+        expect(visible).toBe(false)
+      })
+
+      it('does not display reuse button when user has no write access', async () => {
+        userPermissions$.next([
+          {
+            groupId: 105,
+            groupName: 'Groupe 1',
+            isMember: true,
+            canEdit: false,
+            canApprove: false,
+            canAdministrate: false,
+          },
+          {
+            groupId: 103,
+            groupName: 'Groupe 2',
+            isMember: true,
+            canEdit: false,
+            canApprove: false,
+            canAdministrate: false,
+          },
+        ])
+        const visible = await firstValueFrom(
+          component.reuseNotificationAllowed$
+        )
+        expect(visible).toBe(false)
+      })
+
+      it('does not display reuse button when kind is not dataset', async () => {
         facade.metadata$.next({ ...SAMPLE_RECORD, ...{ kind: 'service' } })
-
-        component.showReuseButton().subscribe((visible) => {
-          expect(visible).toBe(false)
-        })
-      })
-
-      it('do not display reuse button  when reuseFormUrl is not defined', () => {
-        component.reuseFormUrl = null
-        ;(platformService.getMe as jest.Mock).mockReturnValue(
-          of({ id: 'user1' })
+        const visible = await firstValueFrom(
+          component.reuseNotificationAllowed$
         )
-        facade.metadata$.next({ ...SAMPLE_RECORD, ...{ kind: 'dataset' } })
-
-        component.showReuseButton().subscribe((visible) => {
-          expect(visible).toBe(false)
-        })
+        expect(visible).toBe(false)
       })
 
-      it('display reuse button when all conditions are met', () => {
-        component.showReuseButton().subscribe((visible) => {
-          expect(visible).toBe(true)
-        })
+      it('does not display reuse button when reuseFormUrl is not defined', async () => {
+        TestBed.resetTestingModule()
+        await TestBed.configureTestingModule({
+          providers: [
+            ...providers,
+            {
+              provide: REUSE_FORM_URL,
+              useValue: null,
+            },
+          ],
+        }).compileComponents()
+        fixture = TestBed.createComponent(RecordMetadataComponent)
+        component = fixture.componentInstance
+        userPermissions$.next([
+          {
+            groupId: 105,
+            groupName: 'Groupe Reviewers',
+            isMember: true,
+            canEdit: true,
+            canApprove: true,
+            canAdministrate: false,
+          },
+        ])
+        const visible = await firstValueFrom(
+          component.reuseNotificationAllowed$
+        )
+        expect(visible).toBe(false)
       })
+
+      it('displays reuse button when all conditions are met', async () => {
+        userPermissions$.next([
+          {
+            groupId: 105,
+            groupName: 'Groupe Reviewers',
+            isMember: true,
+            canEdit: true,
+            canApprove: true,
+            canAdministrate: false,
+          },
+          {
+            groupId: 103,
+            groupName: 'Groupe Editors',
+            isMember: true,
+            canEdit: true,
+            canApprove: false,
+            canAdministrate: false,
+          },
+        ])
+        const visible = await firstValueFrom(
+          component.reuseNotificationAllowed$
+        )
+        expect(visible).toBe(true)
+      })
+    })
+  })
+
+  describe('Edit and delete reuse buttons', () => {
+    let recordsRepository: RecordsRepositoryMock
+    let routerFacade: RouterFacadeMock
+    let notificationsService: NotificationsServiceMock
+    let dialog: MatDialogMock
+
+    beforeEach(() => {
+      recordsRepository = TestBed.inject(
+        RecordsRepositoryInterface
+      ) as unknown as RecordsRepositoryMock
+      routerFacade = TestBed.inject(RouterFacade) as unknown as RouterFacadeMock
+      notificationsService = TestBed.inject(
+        NotificationsService
+      ) as unknown as NotificationsServiceMock
+      dialog = new MatDialogMock()
+      ;(component as unknown as { dialog: MatDialog }).dialog =
+        dialog as unknown as MatDialog
+      component.reuseFormUrl = 'https://example.com/reuse'
+    })
+
+    it('does not display when kind is not reuse', () => {
+      recordsRepository.canEditIndexedRecord.mockReturnValue(of(true))
+      facade.metadata$.next({ ...SAMPLE_RECORD, kind: 'dataset' })
+      let visible: boolean
+      component.showEditDeleteReuseButtons$.subscribe((v) => (visible = v))
+      expect(visible).toBe(false)
+    })
+
+    it('does not display when reuseFormUrl is not set', () => {
+      component.reuseFormUrl = null
+      recordsRepository.canEditIndexedRecord.mockReturnValue(of(true))
+      facade.metadata$.next({ ...SAMPLE_RECORD, kind: 'reuse' })
+      let visible: boolean
+      component.showEditDeleteReuseButtons$.subscribe((v) => (visible = v))
+      expect(visible).toBe(false)
+    })
+
+    it('does not display when user has no edit rights', () => {
+      recordsRepository.canEditIndexedRecord.mockReturnValue(of(false))
+      facade.metadata$.next({ ...SAMPLE_RECORD, kind: 'reuse' })
+      let visible: boolean
+      component.showEditDeleteReuseButtons$.subscribe((v) => (visible = v))
+      expect(visible).toBe(false)
+    })
+
+    it('displays when kind is reuse, edit rights and reuseFormUrl set', () => {
+      recordsRepository.canEditIndexedRecord.mockReturnValue(of(true))
+      facade.metadata$.next({ ...SAMPLE_RECORD, kind: 'reuse' })
+      let visible: boolean
+      component.showEditDeleteReuseButtons$.subscribe((v) => (visible = v))
+      expect(visible).toBe(true)
     })
   })
 

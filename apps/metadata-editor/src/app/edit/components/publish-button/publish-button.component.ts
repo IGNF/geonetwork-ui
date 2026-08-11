@@ -6,11 +6,11 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  inject,
   OnDestroy,
   TemplateRef,
   ViewChild,
   ViewContainerRef,
-  inject,
 } from '@angular/core'
 import { MatMenuTrigger } from '@angular/material/menu'
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
@@ -82,6 +82,7 @@ export class PublishButtonComponent implements OnDestroy {
   )
 
   record$ = this.facade.record$
+  recordKind$ = this.record$.pipe(map((record) => record.kind))
 
   @ViewChild(MatMenuTrigger) trigger: MatMenuTrigger
 
@@ -98,7 +99,7 @@ export class PublishButtonComponent implements OnDestroy {
   }
 
   confirmPublish() {
-    this.saveRecord()
+    this.saveAndPublishRecord()
     this.closeMenu()
   }
 
@@ -156,7 +157,7 @@ export class PublishButtonComponent implements OnDestroy {
           this.publishWarning = hasChanged
           this.openConfirmationMenu()
         } else {
-          this.saveRecord()
+          this.saveAndPublishRecord()
         }
       })
 
@@ -170,8 +171,8 @@ export class PublishButtonComponent implements OnDestroy {
       .subscribe()
   }
 
-  saveRecord() {
-    this.facade.saveRecord()
+  saveAndPublishRecord() {
+    this.facade.saveAndPublishRecord()
     this.facade.saveSuccess$
       .pipe(
         take(1),

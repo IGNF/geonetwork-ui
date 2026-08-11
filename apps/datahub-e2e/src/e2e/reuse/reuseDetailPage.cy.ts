@@ -105,5 +105,48 @@ describe('reuse pages', () => {
     // Score is 87% (for a dataset that is classified as a reuse)
     cy.visit('/reuse/c6ba473c-2fe7-4fe8-bf3e-055c8f69df67')
     scoreIs87Percent()
+
+    // Edit and delete reuse buttons
+    // the edit and delete buttons only show when the reuse form is configured and the
+    // logged-in user (admin) has edit rights on the reuse
+    cy.login()
+    cy.intercept('GET', '/assets/configuration/default.toml', {
+      fixture: 'config-with-reuse-form.toml',
+    })
+    cy.visit('/reuse/7eb795c2-d612-4b5e-b15e-d985b0f4e697')
+    cy.get('[data-cy="editReuseButton"]').should('be.visible')
+    cy.get('[data-cy="deleteReuseButton"]').should('be.visible')
+
+    // stub window.open so navigating to the editor doesn't leave the page
+    cy.window().then((win) => cy.stub(win, 'open').as('windowOpen'))
+
+    // clicking on the edit button should open the editor
+    cy.get('[data-cy="editReuseButton"]').find('button').click()
+    cy.get('@windowOpen').should(
+      'be.calledWith',
+      'http://my-metadata-editor/light-edit/7eb795c2-d612-4b5e-b15e-d985b0f4e697?redirect_on_leave=http%3A%2F%2Flocalhost%3A4200%2Freuse%2F7eb795c2-d612-4b5e-b15e-d985b0f4e697',
+      '_self'
+    )
+
+    // deletion is confirmed through a dialog first
+    // on error: stay on the reuse page and show an error notification
+    // (the DELETE is stubbed so the seeded record is never actually removed)
+    cy.intercept('DELETE', '**/api/records/*', { statusCode: 500 }).as(
+      'deleteFail'
+    )
+    cy.get('[data-cy="deleteReuseButton"]').find('button').click()
+    cy.get('[data-cy="confirm-button"]').click()
+    cy.wait('@deleteFail')
+    cy.get('gn-ui-notification').should('contain.text', 'Error deleting reuse')
+    cy.url().should('include', '/reuse/7eb795c2-d612-4b5e-b15e-d985b0f4e697')
+
+    // on success: navigate to the search page
+    cy.intercept('DELETE', '**/api/records/*', { statusCode: 204 }).as(
+      'deleteOk'
+    )
+    cy.get('[data-cy="deleteReuseButton"]').find('button').click()
+    cy.get('[data-cy="confirm-button"]').click()
+    cy.wait('@deleteOk')
+    cy.url().should('include', '/search')
   })
 })

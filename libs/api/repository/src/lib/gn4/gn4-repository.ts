@@ -3,7 +3,7 @@ import {
   HttpErrorResponse,
   HttpHeaders,
 } from '@angular/common/http'
-import { Injectable, InjectionToken, inject } from '@angular/core'
+import { inject, Injectable, InjectionToken } from '@angular/core'
 import {
   assertValidXml,
   BaseConverter,
@@ -327,8 +327,10 @@ export class Gn4Repository implements RecordsRepositoryInterface {
     return this.settingsService.allowEditHarvested$.pipe(
       map((allowEditHarvested) => {
         return (
-          record.extras['edit'] &&
-          (!record.extras['isHarvested'] || allowEditHarvested)
+          (this.platformService.supportsAuthentication() &&
+            record.extras?.['edit'] &&
+            (!record.extras?.['isHarvested'] || allowEditHarvested)) ??
+          false
         )
       })
     )
@@ -336,10 +338,10 @@ export class Gn4Repository implements RecordsRepositoryInterface {
 
   private canEdit(record: CatalogRecord, allowEditHarvested: boolean): boolean {
     return (
-      this.platformService.supportsAuthentication() &&
-      record.kind === 'dataset' &&
-      record.extras['edit'] &&
-      (!record.extras['isHarvested'] || allowEditHarvested)
+      (this.platformService.supportsAuthentication() &&
+        record.extras?.['edit'] &&
+        (!record.extras?.['isHarvested'] || allowEditHarvested)) ??
+      false
     )
   }
 
@@ -361,8 +363,10 @@ export class Gn4Repository implements RecordsRepositoryInterface {
   }
 
   openRecordForEdition(
-    uniqueIdentifier: string
+    uniqueIdentifier: string,
+    disableDraft?: boolean
   ): Observable<[CatalogRecord, string, boolean] | null> {
+    this.disableDraft = disableDraft ?? this.disableDraft
     const draft$ = this.disableDraft
       ? of(null)
       : of(this.getRecordFromLocalStorage(uniqueIdentifier))

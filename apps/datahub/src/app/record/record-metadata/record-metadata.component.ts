@@ -1,51 +1,59 @@
+import { CommonModule } from '@angular/common'
 import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  inject,
   Input,
   ViewChild,
-  inject,
 } from '@angular/core'
+import { MatDialogModule } from '@angular/material/dialog'
+import { MatTabsModule } from '@angular/material/tabs'
+import {
+  CatalogRecord,
+  Keyword,
+  Organization,
+} from '@geonetwork-ui/common/domain/model/record'
+import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
+import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
+import { RecordsRepositoryInterface } from '@geonetwork-ui/common/domain/repository/records-repository.interface'
 import { SourcesService } from '@geonetwork-ui/feature/catalog'
+import {
+  EditDeleteReuseButtonsComponent,
+  NotifyReuseFormComponent,
+  REUSE_FORM_URL,
+} from '@geonetwork-ui/feature/notify-reuse'
+import { MdViewFacade } from '@geonetwork-ui/feature/record'
 import { SearchService } from '@geonetwork-ui/feature/search'
 import {
   ErrorComponent,
   ErrorType,
   MetadataCatalogComponent,
   MetadataContactComponent,
+  MetadataDoiComponent,
   MetadataInfoComponent,
   MetadataQualityComponent,
   ServiceCapabilitiesComponent,
 } from '@geonetwork-ui/ui/elements'
-import { combineLatest, Observable } from 'rxjs'
-import { filter, map, mergeMap, startWith } from 'rxjs/operators'
-import { OrganizationsServiceInterface } from '@geonetwork-ui/common/domain/organizations.service.interface'
-import {
-  Keyword,
-  Organization,
-} from '@geonetwork-ui/common/domain/model/record'
-import { MdViewFacade } from '@geonetwork-ui/feature/record'
-import { CommonModule } from '@angular/common'
-import { MatTabsModule } from '@angular/material/tabs'
-import { RecordUserFeedbacksComponent } from '../record-user-feedbacks/record-user-feedbacks.component'
-import { RecordDownloadsComponent } from '../record-downloads/record-downloads.component'
-import { RecordApisComponent } from '../record-apis/record-apis.component'
-import { RecordOtherlinksComponent } from '../record-otherlinks/record-otherlinks.component'
-import { RecordInternalLinksComponent } from '../record-internal-links/record-internal-links.component'
-import {
-  RecordDataPreviewComponent,
-  REUSE_FORM_URL,
-} from '../record-data-preview/record-data-preview.component'
 import { ButtonComponent } from '@geonetwork-ui/ui/inputs'
 import { NgIcon, provideIcons, provideNgIconsConfig } from '@ng-icons/core'
-import { matChatOutline } from '@ng-icons/material-icons/outline'
 import { iconoirAppWindow } from '@ng-icons/iconoir'
-import { RecordFeatureCatalogComponent } from '../record-feature-catalog/record-feature-catalog.component'
+import {
+  matChatOutline,
+  matDeleteOutline,
+  matEditOutline,
+} from '@ng-icons/material-icons/outline'
 import { TranslateDirective, TranslatePipe } from '@ngx-translate/core'
+import { combineLatest, Observable, of } from 'rxjs'
+import { filter, map, mergeMap, startWith, switchMap } from 'rxjs/operators'
+import { RecordApisComponent } from '../record-apis/record-apis.component'
+import { RecordDataPreviewComponent } from '../record-data-preview/record-data-preview.component'
+import { RecordDownloadsComponent } from '../record-downloads/record-downloads.component'
+import { RecordFeatureCatalogComponent } from '../record-feature-catalog/record-feature-catalog.component'
+import { RecordInternalLinksComponent } from '../record-internal-links/record-internal-links.component'
 import { RecordLinkedRecordsComponent } from '../record-linked-records/record-linked-records.component'
-import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.service.interface'
-import { UserModel } from '@geonetwork-ui/common/domain/model/user'
-import { MetadataDoiComponent } from '@geonetwork-ui/ui/elements'
+import { RecordOtherlinksComponent } from '../record-otherlinks/record-otherlinks.component'
+import { RecordUserFeedbacksComponent } from '../record-user-feedbacks/record-user-feedbacks.component'
 
 @Component({
   selector: 'datahub-record-metadata',
@@ -68,16 +76,24 @@ import { MetadataDoiComponent } from '@geonetwork-ui/ui/elements'
     RecordInternalLinksComponent,
     RecordDataPreviewComponent,
     ButtonComponent,
-    NgIcon,
     ServiceCapabilitiesComponent,
     RecordFeatureCatalogComponent,
     RecordLinkedRecordsComponent,
     TranslateDirective,
     TranslatePipe,
     MetadataDoiComponent,
+    NotifyReuseFormComponent,
+    EditDeleteReuseButtonsComponent,
+    NgIcon,
+    MatDialogModule,
   ],
   viewProviders: [
-    provideIcons({ matChatOutline, iconoirAppWindow }),
+    provideIcons({
+      matChatOutline,
+      iconoirAppWindow,
+      matEditOutline,
+      matDeleteOutline,
+    }),
     provideNgIconsConfig({
       size: '1.5em',
     }),
@@ -89,7 +105,10 @@ export class RecordMetadataComponent {
   private sourceService = inject(SourcesService)
   private orgsService = inject(OrganizationsServiceInterface)
   private readonly platformServiceInterface = inject(PlatformServiceInterface)
+  private recordsRepository = inject(RecordsRepositoryInterface)
   reuseFormUrl = inject(REUSE_FORM_URL, { optional: true })
+
+  errorTypes = ErrorType
 
   @Input() metadataQualityDisplay: boolean
   @ViewChild('userFeedbacks') userFeedbacks: ElementRef<HTMLElement>
@@ -115,7 +134,6 @@ export class RecordMetadataComponent {
       api: (links) => links?.length > 0,
     },
   }
-  activeUser$: Observable<UserModel>
 
   private getDisplayCondition(
     kind: 'dataset' | 'service' | 'reuse',
@@ -241,15 +259,36 @@ export class RecordMetadataComponent {
 
   feedbacksAllowed$ = this.platformServiceInterface.getFeedbacksAllowed()
 
-  errorTypes = ErrorType
-
-  constructor() {
-    this.activeUser$ = this.platformServiceInterface.getMe()
-  }
-
   get isAuthDisabled(): boolean {
     return !this.platformServiceInterface.supportsAuthentication()
   }
+
+  writableGroupId$: Observable<string | null> = this.platformServiceInterface
+    .getUserPermissionsByGroup()
+    .pipe(
+      map(
+        (permissions) =>
+          permissions.find((p) => p.canApprove)?.groupId?.toString() ??
+          permissions.find((p) => p.canEdit)?.groupId?.toString() ??
+          null
+      )
+    )
+
+  reuseNotificationAllowed$: Observable<boolean> = this.reuseFormUrl
+    ? combineLatest([this.writableGroupId$, this.kind$]).pipe(
+        map(([groupId, kind]) => groupId !== null && kind === 'dataset')
+      )
+    : of(false)
+
+  showEditDeleteReuseButtons$: Observable<boolean> =
+    this.metadataViewFacade.metadata$.pipe(
+      switchMap((record) =>
+        record?.kind === 'reuse' && this.reuseFormUrl
+          ? // keeping it simple here for now, as edit and delete use the same conditions
+            this.recordsRepository.canEditIndexedRecord(record as CatalogRecord)
+          : of(false)
+      )
+    )
 
   onInfoKeywordClick(keyword: Keyword) {
     this.searchService.updateFilters({ any: keyword.label })
@@ -267,25 +306,5 @@ export class RecordMetadataComponent {
         behavior: 'smooth',
       })
     }
-  }
-
-  showReuseButton(): Observable<boolean> {
-    return combineLatest([
-      this.activeUser$.pipe(startWith(null)),
-      this.kind$.pipe(startWith(null)),
-    ]).pipe(
-      map(([activeUser, kind]) => {
-        return activeUser?.id && this.reuseFormUrl && kind === 'dataset'
-      }),
-      startWith(false)
-    )
-  }
-
-  navigateToReuseForm() {
-    this.metadataUuid$.subscribe((uuid) => {
-      if (uuid && this.reuseFormUrl) {
-        window.open(`${this.reuseFormUrl}/${uuid}`, '_blank')
-      }
-    })
   }
 }
