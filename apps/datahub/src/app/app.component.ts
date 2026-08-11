@@ -1,5 +1,6 @@
 import {
-  Component, inject,
+  Component,
+  inject,
   OnInit,
   AfterViewInit,
   Renderer2,
@@ -89,6 +90,23 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.keycloakCheckAuth()
     this.welcomeModalGeoservices()
     ;(window as any).dsfr?.start?.()
+
+    // Workaround: when DSFR runs in `mode: 'angular'` (set in index.html), it
+    // intentionally skips copying the desktop tools-links to the mobile menu.
+    // DsfrHeaderComponent relies on that initial DSFR JS copy to fire its
+    // internal MutationObserver (duplicateToolsLinksMobile). Since the copy
+    // never happens, we manually add a child element to the mobile container
+    // after Angular and effects are fully initialized, which triggers the
+    // observer and causes DsfrHeaderComponent to properly populate the mobile menu.
+    setTimeout(() => {
+      const menuLinks = this.document.querySelector(
+        '.fr-header .fr-header__menu-links'
+      )
+      if (menuLinks && !menuLinks.children.length) {
+        const dummy = this.document.createElement('span')
+        menuLinks.appendChild(dummy)
+      }
+    }, 0)
   }
 
   keycloakCheckAuth(): void {

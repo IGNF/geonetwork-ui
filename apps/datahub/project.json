@@ -4,16 +4,11 @@
   "projectType": "application",
   "sourceRoot": "apps/datahub/src",
   "prefix": "datahub",
-  "tags": [
-    "type:app",
-    "published"
-  ],
+  "tags": ["type:app", "published"],
   "targets": {
     "build": {
       "executor": "@angular-devkit/build-angular:browser",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/datahub",
         "index": "apps/datahub/src/index.html",
@@ -152,15 +147,11 @@
           "apps/datahub/src/**/*.html"
         ]
       },
-      "outputs": [
-        "{options.outputFile}"
-      ]
+      "outputs": ["{options.outputFile}"]
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/apps/datahub"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/apps/datahub"],
       "options": {
         "jestConfig": "apps/datahub/jest.config.ts",
         "tsConfig": "apps/datahub/tsconfig.spec.json"

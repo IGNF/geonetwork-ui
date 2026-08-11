@@ -49,17 +49,17 @@ gn-ui-autocomplete .gn-ui-text-input {
 }
 
 /* Datahub IGN adaptation */
-gn-ui-autocomplete>span {
+gn-ui-autocomplete > span {
   background-color: white !important;
 }
 
-gn-ui-internal-link-card>a,
-gn-ui-external-link-card>a {
+gn-ui-internal-link-card > a,
+gn-ui-external-link-card > a {
   background-image: none !important;
 }
 
-gn-ui-internal-link-card>[target='_blank']::after,
-gn-ui-external-link-card>[target='_blank']::after {
+gn-ui-internal-link-card > [target='_blank']::after,
+gn-ui-external-link-card > [target='_blank']::after {
   content: none;
 }
 
@@ -83,13 +83,13 @@ gn-ui-favorite-star {
   display: none;
 }
 
-a>ng-icon[name='matOpenInNew'],
-a>ng-icon[name='iconoirOpenNewWindow'] {
+a > ng-icon[name='matOpenInNew'],
+a > ng-icon[name='iconoirOpenNewWindow'] {
   display: none;
 }
 
 .hover\:underline:hover,
-.markdown-body>p>a:hover {
+.markdown-body > p > a:hover {
   text-decoration-line: none !important;
 }
 
@@ -106,14 +106,12 @@ a>ng-icon[name='iconoirOpenNewWindow'] {
   padding: 0 0.375rem 0 0 !important;
 }
 
-.fr-modal>.fr-container,
-.fr-modal>.fr-container-md {
+.fr-modal > .fr-container,
+.fr-modal > .fr-container-md {
   max-width: 1000px !important;
-  padding-right: unset !important;
-  padding-left: unset !important;
 }
 
-#welcomeModal>.fr-container>.fr-grid-row>.fr-col-lg-6 {
+#welcomeModal > .fr-container > .fr-grid-row > .fr-col-lg-6 {
   flex: unset !important;
   max-width: unset !important;
   width: unset !important;

@@ -98,7 +98,7 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
   bucketPromisesCrs: Choice[]
   defaultEditionDate: [any, any]
 
-  constructor(protected http: HttpClient) { }
+  constructor(protected http: HttpClient) {}
 
   @Input() set apiLink(value: DatasetServiceDistribution) {
     this.apiBaseUrl = value ? value.url.href : undefined
@@ -304,18 +304,22 @@ export class GpfApiDlComponent implements OnInit, AfterViewInit {
     tempZone.unshift({ value: 'null', label: 'ZONE' })
     this.bucketPromisesZone = tempZone
 
-    const tempFormat = this.choices.format.map((bucket: GpfApiDlTermBucket) => ({
-      value: bucket.term,
-      label: bucket.label,
-    }))
+    const tempFormat = this.choices.format.map(
+      (bucket: GpfApiDlTermBucket) => ({
+        value: bucket.term,
+        label: bucket.label,
+      })
+    )
     tempFormat.sort((a: Choice, b: Choice) => (a.label > b.label ? 1 : -1))
     tempFormat.unshift({ value: 'null', label: 'FORMAT' })
     this.bucketPromisesFormat = tempFormat
 
-    const tempCrs = this.choices.categories.map((bucket: GpfApiDlTermBucket) => ({
-      value: bucket.term,
-      label: bucket.label,
-    }))
+    const tempCrs = this.choices.categories.map(
+      (bucket: GpfApiDlTermBucket) => ({
+        value: bucket.term,
+        label: bucket.label,
+      })
+    )
     tempCrs.sort((a: Choice, b: Choice) => (a.label > b.label ? 1 : -1))
     tempCrs.unshift({ value: 'null', label: 'CRS' })
     this.bucketPromisesCrs = tempCrs
