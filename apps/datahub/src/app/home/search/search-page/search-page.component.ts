@@ -49,7 +49,7 @@ export class SearchPageComponent implements OnInit {
 
   ngOnInit() {
     this.searchFacade.setResultsLayout('ROW')
-    this.searchFacade.setSortBy(['desc', 'changeDate'])
+    this.searchFacade.setSortBy(['desc', '_score'])
 
     const metadataQualityConfig: MetadataQualityConfig =
       getMetadataQualityConfig() || ({} as MetadataQualityConfig)
