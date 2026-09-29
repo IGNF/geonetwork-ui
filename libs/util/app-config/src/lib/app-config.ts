@@ -252,6 +252,9 @@ export function loadAppConfig(configUrl = 'assets/configuration/default.toml') {
           'search_preset',
           'advanced_filters',
           'limit',
+          'spatial_extent_max_file_size',
+          'geocoding_provider',
+          'geocoding_provider_options',
         ],
         warnings,
         errors
@@ -261,6 +264,14 @@ export function loadAppConfig(configUrl = 'assets/configuration/default.toml') {
         'search_preset',
         ['name'],
         ['sort', 'filters'],
+        warnings,
+        errors
+      )
+      const parsedCustomFilters = parseMultiConfigSection(
+        parsed,
+        'custom_filter',
+        ['name', 'base_filter'],
+        ['exclude_values', 'include_values', 'label_key'],
         warnings,
         errors
       )
@@ -280,7 +291,21 @@ export function loadAppConfig(configUrl = 'assets/configuration/default.toml') {
                 filters: param.filters,
               })),
               ADVANCED_FILTERS: parsedSearchSection.advanced_filters,
+              CUSTOM_FILTERS: (parsedCustomFilters ?? []).map(
+                (customFilter) => ({
+                  name: customFilter.name,
+                  baseFilter: customFilter.base_filter,
+                  excludeValues: customFilter.exclude_values,
+                  includeValues: customFilter.include_values,
+                  labelKey: customFilter.label_key,
+                })
+              ),
               LIMIT: parsedSearchSection.limit,
+              SPATIAL_EXTENT_MAX_FILE_SIZE:
+                parsedSearchSection.spatial_extent_max_file_size,
+              GEOCODING_PROVIDER: parsedSearchSection.geocoding_provider,
+              GEOCODING_PROVIDER_OPTIONS:
+                parsedSearchSection.geocoding_provider_options,
             } as SearchConfig)
 
       const parsedMetadataQualitySection = parseConfigSection(

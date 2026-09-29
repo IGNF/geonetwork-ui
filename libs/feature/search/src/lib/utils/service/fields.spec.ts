@@ -2,6 +2,7 @@ import { lastValueFrom, of } from 'rxjs'
 import {
   AbstractSearchField,
   AvailableServicesField,
+  BoundingBoxSearchField,
   DateRangeSearchField,
   FullTextSearchField,
   IsSpatialSearchField,
@@ -9,6 +10,7 @@ import {
   MultilingualSearchField,
   OrganizationSearchField,
   RecordKindField,
+  ResourceCreationRevisionDateSearchField,
   SimpleSearchField,
   TranslatedSearchField,
   UserSearchField,
@@ -27,6 +29,7 @@ import { PlatformServiceInterface } from '@geonetwork-ui/common/domain/platform.
 
 class ElasticsearchServiceMock {
   registerRuntimeField = jest.fn()
+  registerFieldAlias = jest.fn()
 }
 
 class RecordsRepositoryMock {
@@ -436,6 +439,102 @@ describe('search fields implementations', () => {
     })
   })
 
+  describe('ResourceCreationRevisionDateSearchField', () => {
+    beforeEach(() => {
+      searchField = new ResourceCreationRevisionDateSearchField(
+        injector,
+        'desc'
+      )
+    })
+    it('registers date runtime fields for the min and max of creation/revision dates', () => {
+      expect(esService.registerRuntimeField).toHaveBeenCalledWith(
+        'resourceCreationRevisionDateMin',
+        expect.any(String),
+        'date'
+      )
+      expect(esService.registerRuntimeField).toHaveBeenCalledWith(
+        'resourceCreationRevisionDateMax',
+        expect.any(String),
+        'date'
+      )
+    })
+    it('is of type dateRange', () => {
+      expect(searchField.getType()).toEqual('dateRange')
+    })
+    describe('#getFiltersForValues', () => {
+      let filter
+      beforeEach(async () => {
+        filter = await lastValueFrom(
+          searchField.getFiltersForValues([
+            { start: new Date('2020-01-01'), end: new Date('2020-12-31') },
+          ])
+        )
+      })
+      it('returns appropriate filters', () => {
+        expect(filter).toEqual({
+          resourceCreationRevisionDate: {
+            start: new Date('2020-01-01'),
+            end: new Date('2020-12-31'),
+          },
+        })
+      })
+    })
+  })
+
+  describe('BoundingBoxSearchField (SimpleSearchField with a bounding box)', () => {
+    beforeEach(() => {
+      searchField = new BoundingBoxSearchField('spatialExtent', injector)
+    })
+    describe('#getAvailableValues', () => {
+      let values
+      beforeEach(async () => {
+        values = await lastValueFrom(searchField.getAvailableValues())
+      })
+      it('returns an empty list of values', () => {
+        expect(values).toEqual([])
+      })
+    })
+    describe('#getFiltersForValues', () => {
+      let filter
+      beforeEach(async () => {
+        filter = await lastValueFrom(
+          searchField.getFiltersForValues([1, 2, 3, 4])
+        )
+      })
+      it('returns the bounding box as the filter value', () => {
+        expect(filter).toEqual({
+          spatialExtent: [1, 2, 3, 4],
+        })
+      })
+    })
+    describe('#getValuesForFilter', () => {
+      let values
+      beforeEach(async () => {
+        values = await lastValueFrom(
+          searchField.getValuesForFilter({
+            spatialExtent: [1, 2, 3, 4],
+          })
+        )
+      })
+      it('returns the bounding box values', () => {
+        expect(values).toEqual([1, 2, 3, 4])
+      })
+    })
+    describe('#getValuesForFilter with no filter present', () => {
+      let values
+      beforeEach(async () => {
+        values = await lastValueFrom(
+          searchField.getValuesForFilter({
+            somethingElse: { entirely: true },
+          })
+        )
+      })
+      it('returns an empty array', () => {
+        expect(values).toEqual([])
+      })
+    })
+  })
+
   describe('TranslatedSearchField', () => {
     describe('sort by key', () => {
       beforeEach(() => {
@@ -579,6 +678,148 @@ describe('search fields implementations', () => {
           },
         })
       })
+    })
+  })
+
+  describe('#clone', () => {
+    let baseField: SimpleSearchField
+    beforeEach(() => {
+      baseField = new SimpleSearchField('format', injector, 'asc')
+      searchField = baseField.clone()
+      ;(searchField as SimpleSearchField).setFieldIdentifier('myOrg:myFilter')
+    })
+    it('does not register an alias for a field that is not cloned', () => {
+      expect(esService.registerFieldAlias).toHaveBeenCalledTimes(1)
+    })
+    it('registers its identifier as an alias of the base ES field', () => {
+      expect(esService.registerFieldAlias).toHaveBeenCalledWith(
+        'myOrg:myFilter',
+        'format'
+      )
+    })
+    it('keeps the type of the base field', () => {
+      expect(
+        new DateRangeSearchField('myDate', injector).clone().getType()
+      ).toEqual('dateRange')
+    })
+    describe('#getFiltersForValues', () => {
+      it('uses its own identifier as filter key', async () => {
+        expect(
+          await lastValueFrom(searchField.getFiltersForValues(['value1']))
+        ).toEqual({ 'myOrg:myFilter': { value1: true } })
+      })
+      it('leaves the filter key of the base field unchanged', async () => {
+        expect(
+          await lastValueFrom(baseField.getFiltersForValues(['value1']))
+        ).toEqual({ format: { value1: true } })
+      })
+    })
+    describe('#getValuesForFilter', () => {
+      it('only reads its own filter key', async () => {
+        expect(
+          await lastValueFrom(
+            searchField.getValuesForFilter({
+              format: { value1: true },
+              'myOrg:myFilter': { value2: true },
+            })
+          )
+        ).toEqual(['value2'])
+      })
+      it('returns no value when its filter key is absent', async () => {
+        expect(
+          await lastValueFrom(
+            searchField.getValuesForFilter({ format: { value1: true } })
+          )
+        ).toEqual([])
+      })
+    })
+    describe('#getAvailableValues', () => {
+      it('aggregates on the base ES field under its own identifier', async () => {
+        await lastValueFrom(searchField.getAvailableValues())
+        expect(repository.aggregate).toHaveBeenCalledWith({
+          'myOrg:myFilter': {
+            type: 'terms',
+            limit: 1000,
+            field: 'format',
+            sort: ['asc', 'key'],
+          },
+        })
+      })
+      describe('with include and exclude values', () => {
+        beforeEach(async () => {
+          const clone = searchField as SimpleSearchField
+          clone.includeValues = ['value1', 'value2']
+          clone.excludeValues = ['value3']
+          await lastValueFrom(searchField.getAvailableValues())
+        })
+        it('restricts the aggregated values', () => {
+          expect(repository.aggregate).toHaveBeenCalledWith({
+            'myOrg:myFilter': {
+              type: 'terms',
+              limit: 1000,
+              field: 'format',
+              sort: ['asc', 'key'],
+              includeValues: ['value1', 'value2'],
+              excludeValues: ['value3'],
+            },
+          })
+        })
+        it('does not restrict the values of the base field', async () => {
+          await lastValueFrom(baseField.getAvailableValues())
+          expect(repository.aggregate).toHaveBeenLastCalledWith({
+            format: {
+              type: 'terms',
+              limit: 1000,
+              field: 'format',
+              sort: ['asc', 'key'],
+            },
+          })
+        })
+      })
+    })
+    describe('when cloning a field that has its own behaviour', () => {
+      beforeEach(() => {
+        searchField = new TranslatedSearchField(
+          'myField',
+          injector,
+          'asc'
+        ).clone()
+        ;(searchField as SimpleSearchField).setFieldIdentifier('myOrg:myFilter')
+      })
+      it('keeps the translated labels and sorting of the base field', async () => {
+        // translated by the base field, then sorted alphabetically by label
+        expect(await lastValueFrom(searchField.getAvailableValues())).toEqual([
+          { count: 12, label: 'Bla (12)', value: 'Third value' },
+          { count: 1, label: 'Fourth value (1)', value: 'Fourth value' },
+          { count: 3, label: 'Hello (3)', value: 'Second value' },
+          {
+            count: 5,
+            label: 'Translated first value (5)',
+            value: 'First value',
+          },
+        ])
+      })
+    })
+  })
+
+  // in its own block because the METADATA_LANGUAGE token is only read once,
+  // when the first field is created
+  describe('#clone with a metadata language', () => {
+    beforeEach(() => {
+      currentMetadataLanguage = 'swe'
+      const clone = new MultilingualSearchField(
+        'tag',
+        injector,
+        'desc',
+        'count'
+      ).clone()
+      clone.setFieldIdentifier('myOrg:myFilter')
+    })
+    it('registers the alias on the localized field', () => {
+      expect(esService.registerFieldAlias).toHaveBeenCalledWith(
+        'myOrg:myFilter',
+        'tag.langswe'
+      )
     })
   })
 

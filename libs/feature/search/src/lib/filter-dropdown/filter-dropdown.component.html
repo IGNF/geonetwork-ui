@@ -1,11 +1,19 @@
 @if (fieldType === 'dateRange') {
   <gn-ui-date-range-dropdown
     [title]="title"
-    [startDate]="(selectedDateRange$ | async)?.start"
-    [endDate]="(selectedDateRange$ | async)?.end"
-    (startDateChange)="onStartDateChange($event)"
-    (endDateChange)="onEndDateChange($event)"
+    [dateRange]="(selectedDateRange$ | async) ?? {}"
+    (dateRangeChange)="onDateRangeChange($event)"
+    [attr.data-cy-field]="fieldName"
   ></gn-ui-date-range-dropdown>
+} @else if (fieldType === 'spatialExtent') {
+  <gn-ui-spatial-extent-dropdown
+    [title]="title"
+    [initialBbox]="(selectedBoundingBox$ | async) ?? null"
+    [maxFileSizeMb]="spatialExtentMaxFileSize"
+    (bboxChange)="onBboxChange($event)"
+    (errorChange)="onSpatialExtentError($event)"
+    [attr.data-cy-field]="fieldName"
+  ></gn-ui-spatial-extent-dropdown>
 } @else {
   <gn-ui-dropdown-multiselect
     class="w-full"

@@ -7,6 +7,7 @@ import { EsSearchParams } from '@geonetwork-ui/api/metadata-converter'
 import { TestBed } from '@angular/core/testing'
 import { METADATA_LANGUAGE } from '../../metadata-language.token'
 import { TranslateService } from '@ngx-translate/core'
+import { bboxToPolygon } from '@geonetwork-ui/util/shared'
 
 class TranslateServiceMock {
   getCurrentLang = () => 'en'
@@ -40,6 +41,21 @@ describe('ElasticsearchService', () => {
   })
 
   describe('#Sort', () => {
+    it('Null sort', () => {
+      const sort = service['buildPayloadSort'](null)
+      expect(sort).toBeUndefined()
+    })
+
+    it('Undefined sort', () => {
+      const sort = service['buildPayloadSort'](undefined)
+      expect(sort).toBeUndefined()
+    })
+
+    it('Empty sort array', () => {
+      const sort = service['buildPayloadSort']([])
+      expect(sort).toBeUndefined()
+    })
+
     it('One sort and default direction', () => {
       const sort = service['buildPayloadSort'](['asc', '_score'])
       expect(sort).toEqual([{ _score: 'asc' }])
@@ -50,12 +66,42 @@ describe('ElasticsearchService', () => {
       expect(sort).toEqual([{ changeDate: 'desc' }])
     })
 
+    it('One nested ".date" sort and DESC direction', () => {
+      const sort = service['buildPayloadSort'](['desc', 'resourceDate.date'])
+      expect(sort).toEqual([
+        {
+          'resourceDate.date': {
+            order: 'desc',
+            mode: 'max',
+            missing: '_last',
+            nested: {
+              path: 'resourceDate',
+            },
+          },
+        },
+      ])
+    })
+
     it('Multiple sorts', () => {
       const sort = service['buildPayloadSort']([
         ['asc', '_score'],
         ['desc', 'changeDate'],
+        ['desc', 'resourceDate.date'],
       ])
-      expect(sort).toEqual([{ _score: 'asc' }, { changeDate: 'desc' }])
+      expect(sort).toEqual([
+        { _score: 'asc' },
+        { changeDate: 'desc' },
+        {
+          'resourceDate.date': {
+            order: 'desc',
+            mode: 'max',
+            missing: '_last',
+            nested: {
+              path: 'resourceDate',
+            },
+          },
+        },
+      ])
     })
   })
   describe('#stateFiltersToQueryString', () => {
@@ -335,6 +381,104 @@ describe('ElasticsearchService', () => {
         },
       })
     })
+    it('handles several simultaneous date range filters', () => {
+      const query = service['buildPayloadQuery'](
+        {
+          changeDate: {
+            start: new Date('2019-01-01'),
+          },
+          otherDate: {
+            end: new Date('2020-12-31'),
+          },
+        },
+        {}
+      )
+      expect(query.bool.filter).toContainEqual({
+        range: {
+          changeDate: {
+            gte: '2019-01-01',
+            format: 'yyyy-MM-dd',
+          },
+        },
+      })
+      expect(query.bool.filter).toContainEqual({
+        range: {
+          otherDate: {
+            lte: '2020-12-31',
+            format: 'yyyy-MM-dd',
+          },
+        },
+      })
+    })
+    it('builds an interval-intersection query for a field with registered Min/Max runtime fields', () => {
+      service.registerRuntimeField('intervalDateMin', 'emit(1)', 'date')
+      service.registerRuntimeField('intervalDateMax', 'emit(2)', 'date')
+      const query = service['buildPayloadQuery'](
+        {
+          intervalDate: {
+            start: new Date('2026-03-15'),
+            end: new Date('2026-04-15'),
+          },
+        },
+        {}
+      )
+      expect(query.bool.filter).toContainEqual({
+        bool: {
+          filter: [
+            {
+              range: {
+                intervalDateMax: { gte: '2026-03-15', format: 'yyyy-MM-dd' },
+              },
+            },
+            {
+              range: {
+                intervalDateMin: { lte: '2026-04-15', format: 'yyyy-MM-dd' },
+              },
+            },
+          ],
+        },
+      })
+    })
+    it('builds an intersection query for a field ending with DateRange', () => {
+      const query = service['buildPayloadQuery'](
+        {
+          myDateRange: {
+            start: new Date('2026-03-15'),
+            end: new Date('2026-04-15'),
+          },
+        },
+        {}
+      )
+      expect(query.bool.filter).toContainEqual({
+        range: {
+          myDateRange: {
+            gte: '2026-03-15',
+            lte: '2026-04-15',
+            format: 'yyyy-MM-dd',
+            relation: 'intersects',
+          },
+        },
+      })
+    })
+    it('builds an open-ended intersection query for a field ending with DateRange', () => {
+      const query = service['buildPayloadQuery'](
+        {
+          myDateRange: {
+            start: new Date('2026-03-15'),
+          },
+        },
+        {}
+      )
+      expect(query.bool.filter).toContainEqual({
+        range: {
+          myDateRange: {
+            gte: '2026-03-15',
+            format: 'yyyy-MM-dd',
+            relation: 'intersects',
+          },
+        },
+      })
+    })
     it('add any and other fields query_strings and limit search payload by ids (also if id array is empty)', () => {
       const query = service['buildPayloadQuery'](
         {
@@ -571,6 +715,121 @@ describe('ElasticsearchService', () => {
           ],
         },
       })
+    })
+    it('ignores an unset spatial filter (empty array) alongside other filters', () => {
+      const query = service['buildPayloadQuery'](
+        {
+          producerOrg: { 'Some Org': true },
+          spatialExtent: [],
+        },
+        {},
+        []
+      )
+      expect(query).toMatchObject({
+        bool: {
+          filter: [
+            {
+              terms: {
+                isTemplate: ['n'],
+              },
+            },
+            {
+              query_string: {
+                query: 'producerOrg:("Some Org")',
+              },
+            },
+            {
+              ids: { values: [] },
+            },
+          ],
+        },
+      })
+    })
+    it('handles spatial filter special case', () => {
+      const query = service['buildPayloadQuery'](
+        {
+          spatialExtent: [1, 2, 3, 4],
+        },
+        {},
+        []
+      )
+      expect(query).toMatchObject({
+        bool: {
+          filter: [
+            {
+              terms: {
+                isTemplate: ['n'],
+              },
+            },
+            {
+              geo_shape: {
+                geom: {
+                  shape: {
+                    type: 'envelope',
+                    coordinates: [
+                      [1, 4],
+                      [3, 2],
+                    ],
+                  },
+                  relation: 'intersects',
+                },
+              },
+            },
+            {
+              ids: { values: [] },
+            },
+          ],
+        },
+      })
+    })
+    it('boosts using the spatial filter geometry instead of the preference geometry when both are set', () => {
+      const geojsonPolygon = {
+        coordinates: [
+          [
+            [3.017921158755172, 50.65759907920972],
+            [3.017921158755172, 50.613483610573155],
+            [3.1098886148436122, 50.613483610573155],
+            [3.017921158755172, 50.65759907920972],
+          ],
+        ],
+        type: 'Polygon' as const,
+      }
+      const query = service['buildPayloadQuery'](
+        {
+          spatialExtent: [1, 2, 3, 4],
+        },
+        {},
+        undefined,
+        geojsonPolygon
+      )
+      expect(query.bool.should).toEqual([
+        {
+          geo_shape: {
+            geom: {
+              shape: bboxToPolygon([1, 2, 3, 4]),
+              relation: 'within',
+            },
+            boost: 5.0,
+          },
+        },
+        {
+          geo_shape: {
+            geom: {
+              shape: bboxToPolygon([1, 2, 3, 4]),
+              relation: 'intersects',
+            },
+            boost: 2.0,
+          },
+        },
+        {
+          distance_feature: {
+            boost: 5,
+            field: 'location',
+            origin: [2, 3],
+            pivot: expect.any(String),
+          },
+        },
+      ])
     })
     describe('any has special characters', () => {
       let query
@@ -810,13 +1069,14 @@ describe('ElasticsearchService', () => {
       uuid = '132132132132321'
       payload = service.getMetadataByIdsPayload([uuid])
     })
-    it('returns ES payload', () => {
+    it('returns ES payload sized to the number of ids', () => {
       expect(payload).toEqual({
         query: {
           ids: {
             values: [uuid],
           },
         },
+        size: 1,
       })
     })
   })
@@ -1034,9 +1294,85 @@ Cette section contient des *caractères internationaux* (ainsi que des "caractè
         expect(query.runtime_mappings).toBeUndefined()
       })
     })
+    describe('when a date-typed runtime field is used in a range filter', () => {
+      beforeEach(() => {
+        service.registerRuntimeField('myDateField', 'emit(123)', 'date')
+        query = service.getSearchRequestBody(
+          undefined,
+          10,
+          0,
+          null,
+          undefined,
+          {
+            myDateField: {
+              start: new Date('2020-01-01'),
+              end: new Date('2020-12-31'),
+            },
+          }
+        )
+      })
+      it('includes the field as a date runtime mapping', () => {
+        expect(query.runtime_mappings.myDateField).toEqual({
+          script: 'emit(123)',
+          type: 'date',
+        })
+      })
+    })
+  })
+
+  describe('#registerFieldAlias', () => {
+    const getFilterQuery = (filters) =>
+      service['buildPayloadQuery'](filters, {}).bool.filter.find(
+        (part) => 'query_string' in part
+      )?.query_string.query
+
+    beforeEach(() => {
+      service.registerFieldAlias('myOrg:myFilter', 'tag.default')
+    })
+
+    it('queries the ES field registered for the filter key', () => {
+      expect(getFilterQuery({ 'myOrg:myFilter': { B: true } })).toEqual(
+        'tag.default:("B")'
+      )
+    })
+    it('keeps an aliased filter independent from its ES field', () => {
+      expect(
+        getFilterQuery({
+          'tag.default': { A: true },
+          'myOrg:myFilter': { B: true },
+        })
+      ).toEqual('tag.default:("A") AND tag.default:("B")')
+    })
+    it('leaves a filter key without alias untouched', () => {
+      expect(getFilterQuery({ format: { A: true } })).toEqual('format:("A")')
+    })
   })
 
   describe('#buildAggregationsPayload', () => {
+    it('passes the include/exclude values of a terms aggregation', () => {
+      expect(
+        service.buildAggregationsPayload({
+          myTerm: {
+            type: 'terms',
+            sort: ['asc', 'key'],
+            field: 'tag.default',
+            limit: 30,
+            includeValues: ['value1', 'value2'],
+            excludeValues: ['value3'],
+          },
+        })
+      ).toStrictEqual({
+        myTerm: {
+          terms: {
+            field: 'tag.default',
+            order: { _key: 'asc' },
+            size: 30,
+            include: ['value1', 'value2'],
+            exclude: ['value3'],
+          },
+        },
+      })
+    })
     it('transforms to ES syntax', () => {
       expect(
         service.buildAggregationsPayload({
