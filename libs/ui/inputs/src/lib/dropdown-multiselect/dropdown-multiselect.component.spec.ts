@@ -117,6 +117,24 @@ describe('DropdownMultiselectComponent', () => {
     })
   })
 
+  describe('when search is disabled', () => {
+    beforeEach(() => {
+      jest.useFakeTimers()
+      component.choices = [{ label: 'First Choice', value: 'choice1' }]
+      component.allowSearch = false
+      fixture.detectChanges()
+    })
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+    it('opens the overlay without throwing', () => {
+      component.openOverlay()
+      fixture.detectChanges()
+      expect(() => jest.runAllTimers()).not.toThrow()
+      expect(component.overlayOpen).toBe(true)
+    })
+  })
+
   describe('keyboard events', () => {
     let triggerBtn: HTMLElement
 
@@ -235,7 +253,9 @@ describe('DropdownMultiselectComponent', () => {
     })
     describe('when no item selected', () => {
       it('is not displayed', () => {
-        const clearBtn = fixture.debugElement.query(By.css('.clear-btn'))
+        const clearBtn = fixture.debugElement.query(
+          By.css('[data-test="dropdown-clear"] ng-icon')
+        )
         expect(clearBtn).toBeFalsy()
       })
     })
@@ -245,7 +265,9 @@ describe('DropdownMultiselectComponent', () => {
         fixture.detectChanges()
       })
       it('is displayed', () => {
-        const clearBtn = fixture.debugElement.query(By.css('.clear-btn'))
+        const clearBtn = fixture.debugElement.query(
+          By.css('[data-test="dropdown-clear"] ng-icon')
+        )
         expect(clearBtn).toBeTruthy()
       })
     })
@@ -254,7 +276,9 @@ describe('DropdownMultiselectComponent', () => {
         component.selected = ['choice2']
         jest.spyOn(component.selectValues, 'emit')
         fixture.detectChanges()
-        const clearBtn = fixture.debugElement.query(By.css('.clear-btn'))
+        const clearBtn = fixture.debugElement.query(
+          By.css('[data-test="dropdown-clear"] ng-icon')
+        )
         clearBtn.nativeElement.click()
       })
       it('is displayed', () => {

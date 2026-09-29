@@ -12,6 +12,7 @@ import {
 import {
   malformedConfigFixture,
   minimalAppConfigFixture,
+  customFilterMissingMandatoryConfigFixture,
   missingMandatoryConfigFixture,
   okAppConfigFixture,
   unrecognizedKeysConfigFixture,
@@ -75,6 +76,20 @@ describe('app config utils', () => {
       it('throws an error', async () => {
         await loadAppConfig().catch(() => {}) // eslint-disable-line
         expect(() => getGlobalConfig()).toThrowError('not initialized')
+      })
+    })
+  })
+  describe('when a custom filter misses a mandatory key', () => {
+    beforeEach(() => {
+      fetchMock.get('end:default.toml', () =>
+        customFilterMissingMandatoryConfigFixture()
+      )
+    })
+    describe('loadAppConfig', () => {
+      it('throws an error naming the missing key', async () => {
+        await expect(loadAppConfig()).rejects.toThrow(
+          /(?=.*\[custom_filter])(?=.*base_filter)/s
+        )
       })
     })
   })
@@ -183,7 +198,30 @@ describe('app config utils', () => {
             'inspireKeyword',
             'topic',
             'license',
+            'myOrg:firstCustomFilter',
+            'myOrg:secondCustomFilter',
           ],
+          CUSTOM_FILTERS: [
+            {
+              name: 'myOrg:firstCustomFilter',
+              baseFilter: 'keyword',
+              excludeValues: ['my keyword 1', 'my keyword 2'],
+              includeValues: undefined,
+              labelKey: 'myOrg.firstCustomFilter',
+            },
+            {
+              name: 'myOrg:secondCustomFilter',
+              baseFilter: 'keyword',
+              excludeValues: undefined,
+              includeValues: ['my keyword 3', 'my keyword 4'],
+              labelKey: 'myOrg.secondCustomFilter',
+            },
+          ],
+          GEOCODING_PROVIDER: 'geoplateforme',
+          GEOCODING_PROVIDER_OPTIONS: {
+            category: 'administratif',
+            limit: 5,
+          },
         })
       })
     })
@@ -245,6 +283,33 @@ describe('app config utils', () => {
     describe('getOptionalSearchConfig', () => {
       it('returns null', () => {
         expect(getOptionalSearchConfig()).toEqual(null)
+      })
+    })
+  })
+
+  describe('when the configuration file contains geocoding_provider', () => {
+    describe('when set without geocoding_provider_options', () => {
+      beforeEach(async () => {
+        fetchMock.get(
+          'end:default.toml',
+          () =>
+            minimalAppConfigFixture() +
+            `
+[search]
+geocoding_provider = "geoadmin"
+`
+        )
+        await loadAppConfig()
+      })
+
+      it('stores the provider in searchConfig', () => {
+        expect(getOptionalSearchConfig().GEOCODING_PROVIDER).toBe('geoadmin')
+      })
+
+      it('leaves the provider options undefined', () => {
+        expect(
+          getOptionalSearchConfig().GEOCODING_PROVIDER_OPTIONS
+        ).toBeUndefined()
       })
     })
   })

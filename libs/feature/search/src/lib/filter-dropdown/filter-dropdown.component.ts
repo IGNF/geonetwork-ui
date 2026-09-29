@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  InjectionToken,
   Input,
   OnInit,
   inject,
@@ -9,6 +10,8 @@ import {
   Choice,
   DateRangeDropdownComponent,
   DropdownMultiselectComponent,
+  SpatialExtentDropdownComponent,
+  SpatialExtentDropdownError,
 } from '@geonetwork-ui/ui/inputs'
 import { Observable, of, switchMap } from 'rxjs'
 import { catchError, filter, map, startWith } from 'rxjs/operators'
@@ -22,6 +25,15 @@ import {
 } from '../utils/service/fields'
 import { DateRange } from '@geonetwork-ui/api/repository'
 import { CommonModule } from '@angular/common'
+import { BoundingBox } from '@geonetwork-ui/util/shared'
+import { NotificationsService } from '@geonetwork-ui/feature/notifications'
+import { TranslateService } from '@ngx-translate/core'
+
+// in MB, null means no limit
+export const SPATIAL_EXTENT_MAX_FILE_SIZE = new InjectionToken<number | null>(
+  'spatialExtentMaxFileSize',
+  { factory: () => null }
+)
 
 @Component({
   selector: 'gn-ui-filter-dropdown',
@@ -33,18 +45,22 @@ import { CommonModule } from '@angular/common'
     CommonModule,
     DateRangeDropdownComponent,
     DropdownMultiselectComponent,
+    SpatialExtentDropdownComponent,
   ],
 })
 export class FilterDropdownComponent implements OnInit {
   private searchFacade = inject(SearchFacade)
   private searchService = inject(SearchService)
   private fieldsService = inject(FieldsService)
+  private notificationsService = inject(NotificationsService)
+  private translateService = inject(TranslateService)
 
   @Input() fieldName: string
   @Input() title: string
 
+  spatialExtentMaxFileSize = inject(SPATIAL_EXTENT_MAX_FILE_SIZE)
+
   fieldType: FieldType
-  dateRange: DateRange
   choices$: Observable<Choice[]>
   selected$ = this.searchFacade.searchFilters$.pipe(
     switchMap((filters) =>
@@ -57,13 +73,52 @@ export class FilterDropdownComponent implements OnInit {
   ) as Observable<FieldValue[]>
 
   selectedDateRange$ = this.selected$.pipe(
-    map((selectedDateRange) => selectedDateRange as DateRange)
+    map((selected) => (Array.isArray(selected) ? {} : (selected as DateRange)))
   ) as Observable<DateRange>
+
+  selectedBoundingBox$ = this.selected$.pipe(
+    map((selected) =>
+      Array.isArray(selected) && selected.length > 0
+        ? (selected as BoundingBox)
+        : null
+    )
+  ) as Observable<BoundingBox | null>
 
   onSelectedValues(values: unknown[]) {
     this.fieldsService
       .buildFiltersFromFieldValues({ [this.fieldName]: values as FieldValue[] })
       .subscribe((filters) => this.searchService.updateFilters(filters))
+  }
+
+  private spatialExtentErrorNotificationId: number | null = null
+
+  onBboxChange(bbox: BoundingBox | null) {
+    this.fieldsService
+      .buildFiltersFromFieldValues({
+        [this.fieldName]: bbox,
+      })
+      .subscribe((filters) => this.searchService.updateFilters(filters))
+    this.clearSpatialExtentErrorNotification()
+  }
+
+  onSpatialExtentError(error: SpatialExtentDropdownError) {
+    this.clearSpatialExtentErrorNotification()
+    this.spatialExtentErrorNotificationId =
+      this.notificationsService.showNotification({
+        type: 'error',
+        title: this.translateService.instant(
+          'search.filters.spatialExtent.error.title'
+        ),
+        text: this.translateService.instant(error.key, error.params),
+      })
+  }
+
+  private clearSpatialExtentErrorNotification() {
+    if (this.spatialExtentErrorNotificationId === null) return
+    this.notificationsService.removeNotificationById(
+      this.spatialExtentErrorNotificationId
+    )
+    this.spatialExtentErrorNotificationId = null
   }
 
   ngOnInit() {
@@ -80,22 +135,11 @@ export class FilterDropdownComponent implements OnInit {
     )
   }
 
-  onStartDateChange(start: Date) {
-    if (!start) return
-    this.dateRange = { ...this.dateRange, start }
-  }
-
-  onEndDateChange(end: Date) {
-    if (!end) return
-    this.dateRange = { ...this.dateRange, end }
-    if (this.dateRange.start && this.dateRange.end) {
-      this.fieldsService
-        .buildFiltersFromFieldValues({
-          [this.fieldName]: this.dateRange,
-        })
-        .subscribe((filters) => {
-          return this.searchService.updateFilters(filters)
-        })
-    }
+  onDateRangeChange(dateRange: DateRange) {
+    this.fieldsService
+      .buildFiltersFromFieldValues({
+        [this.fieldName]: dateRange,
+      })
+      .subscribe((filters) => this.searchService.updateFilters(filters))
   }
 }

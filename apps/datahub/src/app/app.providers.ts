@@ -7,6 +7,7 @@ import { getGeometryFromGeoJSON, PROXY_PATH } from '@geonetwork-ui/util/shared'
 import {
   getGlobalConfig,
   getMapContextLayerFromConfig,
+  getOptionalEditorConfig,
   getOptionalMapConfig,
   getOptionalSearchConfig,
   getThemeConfig,
@@ -24,10 +25,15 @@ import {
 import { THUMBNAIL_PLACEHOLDER } from '@geonetwork-ui/ui/elements'
 import { LANGUAGES_LIST } from '@geonetwork-ui/ui/catalog'
 import {
+  CUSTOM_FIELDS,
+  DEFAULT_GEOCODING_PROVIDER,
   FILTER_GEOMETRY,
+  GEOCODING_PROVIDER,
+  GeocodingProvider,
   RECORD_DATASET_URL_TOKEN,
   RECORD_REUSE_URL_TOKEN,
   RECORD_SERVICE_URL_TOKEN,
+  SPATIAL_EXTENT_MAX_FILE_SIZE,
 } from '@geonetwork-ui/feature/search'
 import {
   DefaultRouterModule,
@@ -49,7 +55,10 @@ import {
   MAP_VIEW_CONSTRAINTS,
 } from '@geonetwork-ui/ui/map'
 import { MAX_FEATURE_COUNT } from './record/record-data-preview/record-data-preview.component'
-import { REUSE_FORM_URL } from '@geonetwork-ui/feature/notify-reuse'
+import {
+  NEW_RECORD_DEFAULT_LANGUAGE,
+  REUSE_FORM_URL,
+} from '@geonetwork-ui/feature/notify-reuse'
 import { DatahubRouterService } from './router/datahub-router.service'
 import { SearchPageComponent } from './home/search/search-page/search-page.component'
 import { RecordPageComponent } from './record/record-page/record-page.component'
@@ -124,6 +133,10 @@ export const DATAHUB_CONFIG_PROVIDERS: Array<Provider> = [
     },
   },
   {
+    provide: CUSTOM_FIELDS,
+    useFactory: () => getOptionalSearchConfig()?.CUSTOM_FILTERS ?? [],
+  },
+  {
     provide: RECORD_DATASET_URL_TOKEN,
     useValue: `${ROUTER_ROUTE_DATASET}/\${uuid}`,
   },
@@ -175,5 +188,27 @@ export const DATAHUB_CONFIG_PROVIDERS: Array<Provider> = [
   {
     provide: REUSE_FORM_URL,
     useFactory: () => getGlobalConfig().REUSE_FORM_URL,
+  },
+  {
+    provide: NEW_RECORD_DEFAULT_LANGUAGE,
+    useFactory: () => getOptionalEditorConfig()?.NEW_RECORD_DEFAULT_LANGUAGE,
+  },
+  {
+    provide: SPATIAL_EXTENT_MAX_FILE_SIZE,
+    useFactory: () =>
+      getOptionalSearchConfig()?.SPATIAL_EXTENT_MAX_FILE_SIZE ?? null,
+  },
+  {
+    provide: GEOCODING_PROVIDER,
+    useFactory: (): GeocodingProvider => {
+      const config = getOptionalSearchConfig()
+      if (!config?.GEOCODING_PROVIDER) {
+        return DEFAULT_GEOCODING_PROVIDER
+      }
+      return [
+        config.GEOCODING_PROVIDER,
+        config.GEOCODING_PROVIDER_OPTIONS ?? {},
+      ] as GeocodingProvider
+    },
   },
 ]

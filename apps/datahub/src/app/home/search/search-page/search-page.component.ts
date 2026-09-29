@@ -23,6 +23,7 @@ import {
   DEFAULT_RESULTS_LAYOUT_CONFIG,
   RESULTS_LAYOUT_CONFIG,
 } from '@geonetwork-ui/ui/search'
+import { NotificationsContainerComponent } from '@geonetwork-ui/feature/notifications'
 
 @Component({
   selector: 'datahub-search-page',
@@ -35,6 +36,7 @@ import {
     SearchFiltersComponent,
     ResultsHitsContainerComponent,
     ResultsListContainerComponent,
+    NotificationsContainerComponent,
   ],
   providers: [
     { provide: RESULTS_LAYOUT_CONFIG, useValue: DEFAULT_RESULTS_LAYOUT_CONFIG },
@@ -55,6 +57,7 @@ export class SearchPageComponent implements OnInit {
     this.metadataQualityDisplay = metadataQualityConfig.ENABLED
 
     const searchConfig: SearchConfig = getOptionalSearchConfig()
+    if (searchConfig?.LIMIT) this.searchFacade.setPageSize(searchConfig.LIMIT)
     this.displayRecordKindFilter =
       searchConfig?.RECORD_KIND_QUICK_FILTER !== false
   }

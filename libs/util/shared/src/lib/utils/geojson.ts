@@ -38,6 +38,30 @@ export function getGeometryFromGeoJSON(
 // FIXME: this type should be more generic across the project
 export type BoundingBox = [number, number, number, number]
 
+export function isBoundingBox(value: unknown): value is BoundingBox {
+  return (
+    Array.isArray(value) &&
+    value.length === 4 &&
+    value.every((item) => typeof item === 'number')
+  )
+}
+
+/**
+ * Checks that a bounding box's coordinates stay within the valid
+ * longitude (-180/180) and latitude (-90/90) ranges.
+ */
+export function isBoundingBoxWithinWorldExtent(bbox: BoundingBox): boolean {
+  const [minX, minY, maxX, maxY] = bbox
+  return (
+    minX >= -180 &&
+    maxX <= 180 &&
+    minY >= -90 &&
+    maxY <= 90 &&
+    minX <= maxX &&
+    minY <= maxY
+  )
+}
+
 export function getGeometryBoundingBox(geometry: Geometry): BoundingBox {
   // use the bounding box if specified in the GeoJSON object
   if (geometry.bbox) {

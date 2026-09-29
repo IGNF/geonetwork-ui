@@ -204,14 +204,78 @@ The filters should be provided as an array, for instance:
 advanced_filters = ['organization', 'inspireKeyword', 'keyword', 'topic']
 ```
 
+An entry holding a prefix (e.g. `'myOrg:myFilter'`) does not refer to a search field but to a custom filter,
+which has to be declared in a `[[custom_filter]]` section (see below); entries without a matching
+`[[custom_filter]]` section are ignored.
+
 ⚠️ **WARNING**: `'resourceType'` filter has been deprecated, please use `'recordKind'` instead. Using both filters is not recommended as it may imply some inconsistencies in the page results. `'resourceType'` filter will fetch records of all type (instead of `featureCatalog`), whereas `'recordKind'` filter will fetch `datasets` (wich are `datasets`, `featureCatalog` that are `datasets`, and `series`), `services` and `reuse` (`application` and all kind of `map`).
 For a detailed explanation on the classification system, see [this documentation page](../guide/record-kind.md).
 
 ⚠️ **Breaking change**: Record of type featureCatalog are not retrieved anymore.
 
+- `[[custom_filter]]` (multiple, optional)
+
+  Custom filters allow customizing default search filters by changing some parameters to them.
+  They can be referenced by their name in the `advanced_filters` setting of the `[search]` section.
+
+  Every custom filter is composed of:
+
+  - `name` (mandatory): name of the filter as it should appear in the `advanced_filters` setting; custom filters must have a prefix separated by a colon in their name, e.g.: "myOrg:myOrgKeywords"; case sensitive
+  - `base_filter` (mandatory): the search field the filter is based on; supported values are `'format'`, `'representationType'`, `'publicationYear'`, `'topic'`, `'inspireKeyword'`, `'keyword'`, `'documentStandard'`, `'producerOrg'`, `'publisherOrg'` and `'user'`
+  - `exclude_values` (optional): an array of values of the base filter which should not be offered to the user in the UI (e.g. dropdowns); it does not have any effect when cutom filter fields are used in the URL
+  - `include_values` (optional): an array of values of the base filter which should be the only ones offered to the user in the UI (e.g. dropdowns); it does not have any effect when cutom filter fields are used in the URL
+  - `label_key` (optional): a translation key used as the label of the filter; it can be defined in the
+    `[translations]` sections. Defaults to the label of the base filter.
+
+  For instance:
+
+```toml
+advanced_filters = ['organization', 'myOrg:firstCustomFilter', 'myOrg:secondCustomFilter']
+
+[[custom_filter]]
+name = 'myOrg:firstCustomFilter'
+base_filter = 'keyword'
+exclude_values = ['my keyword 1', 'my keyword 2']
+label_key = 'myOrg.firstCustomFilter'
+
+[[custom_filter]]
+name = 'myOrg:secondCustomFilter'
+base_filter = 'keyword'
+include_values = ['my keyword 3', 'my keyword 4']
+label_key = 'myOrg.secondCustomFilter'
+
+[translations.en]
+'myOrg.firstCustomFilter' = 'My first filter'
+'myOrg.secondCustomFilter' = 'My second filter'
+```
+
 - `do_not_use_default_search_preset` (optional)
 
   If set to `true`, the two default pre-configured search badges ("The latest" and "The most popular") will not be shown under the main search bar. Defaults to `false`. Note that the "My favorites" badge cannot be disabled by configuration.
+
+- `geocoding_provider` (optional)
+
+  Selects the geocoding service used for location search (searching for a place name to move the map to). Defaults to `'geonames'`. One of:
+
+  - `'geoadmin'`: the [Swiss Federal Geoportal search service](https://api3.geo.admin.ch/services/sdiservices.html#search)
+  - `'geonames'`: the [GeoNames search webservice](http://www.geonames.org/export/geonames-search.html)
+  - `'geoplateforme'`: the [French IGN Géoplateforme geocoding service](https://cartes.gouv.fr/aide/fr/guides-utilisateur/utiliser-les-services-de-la-geoplateforme/geocodage/)
+
+- `geocoding_provider_options` (optional)
+
+  Options passed to the selected `geocoding_provider`; supported options depend on the provider, see the `@geospatial-sdk/geocoding` API reference:
+
+  - [`GeoadminOptions`](https://camptocamp.github.io/geospatial-sdk/docs/api/📦-geocoding/interfaces/GeoadminOptions.html)
+  - [`GeonamesOptions`](https://camptocamp.github.io/geospatial-sdk/docs/api/📦-geocoding/interfaces/GeonamesOptions.html)
+  - [`GeoplateformeOptions`](https://camptocamp.github.io/geospatial-sdk/docs/api/📦-geocoding/interfaces/GeoplateformeOptions.html)
+
+  For example:
+
+  ```toml
+  geocoding_provider = "geoplateforme"
+  geocoding_provider_options.category = "administratif"
+  geocoding_provider_options.limit = 5
+  ```
 
 - `[[search_preset]]` (multiple, optional)
 
@@ -222,7 +286,7 @@ For a detailed explanation on the classification system, see [this documentation
   - a name for the preset, which can be a translation key (mandatory)
   - a sort criteria (prepend the field name with - to do a descending sort):
 
-    - `-revisionDateForResource,-publicationDateForResource,-creationDateForResource` (resource dates)
+    - `-resourceDate.date`
     - `-userSavedcount`
     - `-qualityScore`
     - `-_score`
@@ -247,7 +311,7 @@ For a detailed explanation on the classification system, see [this documentation
   filters.publicationYear = ['2023', '2022']
   filters.isSpatial = ['yes']
   filters.license = ['unknown']
-  sort = '-revisionDateForResource,-publicationDateForResource,-creationDateForResource'
+  sort = '-resourceDate.date'
 
   [[search_preset]]
   name = 'otherFilter'

@@ -1,7 +1,8 @@
-import { Injectable, Injector, inject } from '@angular/core'
+import { inject, Injectable, InjectionToken, Injector } from '@angular/core'
 import {
   AbstractSearchField,
   AvailableServicesField,
+  BoundingBoxSearchField,
   DateRangeSearchField,
   FieldValue,
   FullTextSearchField,
@@ -10,10 +11,11 @@ import {
   MultilingualSearchField,
   OrganizationSearchField,
   OwnerSearchField,
+  RecordKindField,
+  ResourceCreationRevisionDateSearchField,
   ResourceTypeLegacyField,
   SimpleSearchField,
   TranslatedSearchField,
-  RecordKindField,
   UserSearchField,
 } from './fields'
 import { forkJoin, Observable, of } from 'rxjs'
@@ -42,14 +44,30 @@ marker('search.filters.producerOrg')
 marker('search.filters.publisherOrg')
 marker('search.filters.user')
 marker('search.filters.changeDate')
+marker('search.filters.resourceCreationRevisionDate')
+marker('search.filters.temporalExtent')
+marker('search.filters.spatialExtent')
+marker('search.filters.documentStandard')
 
+export interface CustomSearchField {
+  name: string
+  baseFilter: string
+  excludeValues?: string[]
+  includeValues?: string[]
+}
+
+export const CUSTOM_FIELDS = new InjectionToken<CustomSearchField[]>(
+  'custom-fields'
+)
 @Injectable({
   providedIn: 'root',
 })
 export class FieldsService {
   protected injector = inject(Injector)
+  private customFields =
+    inject<CustomSearchField[]>(CUSTOM_FIELDS, { optional: true }) ?? []
 
-  protected fields = {
+  private baseFields: Record<string, AbstractSearchField> = {
     organization: new OrganizationSearchField(this.injector),
     format: new SimpleSearchField('format', this.injector, 'asc'),
     resourceType: new ResourceTypeLegacyField(this.injector), // Deprecated, use `recordKind` instead
@@ -94,8 +112,44 @@ export class FieldsService {
     ),
     user: new UserSearchField(this.injector),
     changeDate: new DateRangeSearchField('changeDate', this.injector, 'desc'),
+    resourceCreationRevisionDate: new ResourceCreationRevisionDateSearchField(
+      this.injector,
+      'desc'
+    ),
+    temporalExtent: new DateRangeSearchField(
+      'resourceTemporalExtentDateRange',
+      this.injector,
+      'desc'
+    ),
     availableServices: new AvailableServicesField(this.injector),
-  } as Record<string, AbstractSearchField>
+    spatialExtent: new BoundingBoxSearchField('spatialExtent', this.injector),
+  }
+
+  protected fields: Record<string, AbstractSearchField>
+
+  constructor() {
+    this.fields = { ...this.baseFields }
+    for (const customField of this.customFields) {
+      const baseField = this.baseFields[customField.baseFilter]
+      if (!(baseField instanceof SimpleSearchField)) {
+        console.warn(
+          `The custom field '${customField.name}' relies on a base field '${
+            customField.baseFilter
+          }' that is not supported. This field will be ignored.`
+        )
+        continue
+      }
+      const newField = baseField.clone()
+      newField.setFieldIdentifier(customField.name)
+      if (customField.includeValues) {
+        newField.includeValues = customField.includeValues
+      }
+      if (customField.excludeValues) {
+        newField.excludeValues = customField.excludeValues
+      }
+      this.fields[customField.name] = newField
+    }
+  }
 
   get supportedFields() {
     return Object.keys(this.fields)

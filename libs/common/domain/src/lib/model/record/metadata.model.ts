@@ -260,12 +260,50 @@ export interface SourceRecord {
   href?: string
 }
 
+marker('domain.record.associationType.crossReference')
+marker('domain.record.associationType.largerWorkCitation')
+marker('domain.record.associationType.partOfSeamlessDatabase')
+marker('domain.record.associationType.stereoMate')
+marker('domain.record.associationType.isComposedOf')
+marker('domain.record.associationType.collectiveTitle')
+marker('domain.record.associationType.series')
+marker('domain.record.associationType.dependency')
+marker('domain.record.associationType.revisionOf')
+
+// DS_AssociationTypeCode values of the ISO19115-3 codelist, any unrecognized value
+// being mapped to 'crossReference'
+export const associationTypeValues = [
+  'crossReference',
+  'largerWorkCitation',
+  'partOfSeamlessDatabase',
+  'stereoMate',
+  'isComposedOf',
+  'collectiveTitle',
+  'series',
+  'dependency',
+  'revisionOf',
+] as const
+
+export type AssociationType = (typeof associationTypeValues)[number]
+
 /**
  * Represents another record associated with this one (e.g. a parent/sibling dataset).
  */
 export interface AssociatedRecord {
-  uuid: string
-  associationType: string
+  uniqueIdentifier: string
+  associationType: AssociationType
+}
+
+/**
+ * Nature of the link between a record and another one; the association type is
+ * only known for 'sibling' relations, as it is held by the declaring record.
+ */
+export type RecordRelation = 'source' | 'sourceOf' | 'sibling' | 'associated'
+
+export interface LinkedRecord {
+  record: CatalogRecord
+  relation: RecordRelation
+  associationType?: AssociationType
 }
 
 export interface DatasetRecord extends BaseRecord {

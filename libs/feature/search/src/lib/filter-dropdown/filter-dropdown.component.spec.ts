@@ -14,7 +14,12 @@ import { FilterDropdownComponent } from './filter-dropdown.component'
 import {
   DateRangeDropdownComponent,
   DropdownMultiselectComponent,
+  SpatialExtentDropdownComponent,
 } from '@geonetwork-ui/ui/inputs'
+import { NotificationsService } from '@geonetwork-ui/feature/notifications'
+import { provideI18n } from '@geonetwork-ui/util/i18n'
+import { BoundingBox } from '@geonetwork-ui/util/shared'
+import { MockProvider } from 'ng-mocks'
 
 class SearchFacadeMock {
   searchFilters$ = new BehaviorSubject<any>({})
@@ -49,6 +54,7 @@ describe('FilterDropdownComponent', () => {
   let component: FilterDropdownComponent
   let dropdown: DropdownMultiselectComponent
   let dateRangeDropdown: DateRangeDropdownComponent
+  let spatialExtentDropdown: SpatialExtentDropdownComponent
   let searchService: SearchService
   let fieldsService: FieldsService
   let fixture: ComponentFixture<FilterDropdownComponent>
@@ -59,9 +65,11 @@ describe('FilterDropdownComponent', () => {
         FilterDropdownComponent,
         DropdownMultiselectComponent,
         DateRangeDropdownComponent,
+        SpatialExtentDropdownComponent,
       ],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
+        provideI18n(),
         {
           provide: SearchFacade,
           useClass: SearchFacadeMock,
@@ -74,6 +82,7 @@ describe('FilterDropdownComponent', () => {
           provide: FieldsService,
           useClass: FieldsServiceMock,
         },
+        MockProvider(NotificationsService),
       ],
     })
       .overrideComponent(FilterDropdownComponent, {
@@ -117,6 +126,19 @@ describe('FilterDropdownComponent', () => {
       ).toBeFalsy()
       expect(
         fixture.debugElement.query(By.directive(DateRangeDropdownComponent))
+      ).toBeTruthy()
+    })
+    it('displays spatial-extent-dropdown for fields of type spatialExtent', () => {
+      component.fieldType = 'spatialExtent'
+      fixture.detectChanges()
+      expect(
+        fixture.debugElement.query(By.directive(DropdownMultiselectComponent))
+      ).toBeFalsy()
+      expect(
+        fixture.debugElement.query(By.directive(DateRangeDropdownComponent))
+      ).toBeFalsy()
+      expect(
+        fixture.debugElement.query(By.directive(SpatialExtentDropdownComponent))
       ).toBeTruthy()
     })
   })
@@ -254,28 +276,131 @@ describe('FilterDropdownComponent', () => {
         By.directive(DateRangeDropdownComponent)
       ).componentInstance
     })
-    it('updates the start date', () => {
-      dateRangeDropdown.startDateChange.emit(start)
-      expect(component.dateRange).toEqual({ start })
+    it('hands the range read from the filters to the dropdown', () => {
+      fieldsService.readFieldValuesFromFilters = () =>
+        of({ someDateField: { start, end } }) as any
+      facade.searchFilters$.next({ someDateField: 'anything' })
+      fixture.detectChanges()
+      expect(dateRangeDropdown.dateRange).toEqual({ start, end })
     })
-    it('updates the end date', () => {
-      dateRangeDropdown.endDateChange.emit(end)
-      expect(component.dateRange).toEqual({ end })
-    })
-    it('calls buildFiltersFromFieldValues with dates', () => {
-      dateRangeDropdown.startDateChange.emit(start)
-      dateRangeDropdown.endDateChange.emit(end)
+    it('calls buildFiltersFromFieldValues with the emitted range', () => {
+      dateRangeDropdown.dateRangeChange.emit({ start, end })
       expect(fieldsService.buildFiltersFromFieldValues).toHaveBeenCalledWith({
         someDateField: { start, end },
       })
     })
     it('calls updateSearch on the search service', () => {
-      dateRangeDropdown.startDateChange.emit(start)
-      dateRangeDropdown.endDateChange.emit(end)
+      dateRangeDropdown.dateRangeChange.emit({ start, end })
       expect(searchService.updateFilters).toHaveBeenCalledWith({
         'converted from values': {
           someDateField: { start, end },
         },
+      })
+    })
+    it('applies an open interval with only a start date', () => {
+      dateRangeDropdown.dateRangeChange.emit({ start })
+      expect(fieldsService.buildFiltersFromFieldValues).toHaveBeenCalledWith({
+        someDateField: { start },
+      })
+      expect(searchService.updateFilters).toHaveBeenCalledWith({
+        'converted from values': {
+          someDateField: { start },
+        },
+      })
+    })
+    it('applies an open interval with only an end date', () => {
+      dateRangeDropdown.dateRangeChange.emit({ end })
+      expect(fieldsService.buildFiltersFromFieldValues).toHaveBeenCalledWith({
+        someDateField: { end },
+      })
+      expect(searchService.updateFilters).toHaveBeenCalledWith({
+        'converted from values': {
+          someDateField: { end },
+        },
+      })
+    })
+    it('removes the filter when the range is cleared', () => {
+      dateRangeDropdown.dateRangeChange.emit({})
+      expect(searchService.updateFilters).toHaveBeenCalledWith({
+        'converted from values': {
+          someDateField: {},
+        },
+      })
+    })
+  })
+
+  describe('#spatial-extent-dropdown', () => {
+    const bbox: BoundingBox = [1, 2, 3, 4]
+
+    beforeEach(() => {
+      component.fieldType = 'spatialExtent'
+      component.fieldName = 'someGeometryField'
+      fixture.detectChanges()
+      spatialExtentDropdown = fixture.debugElement.query(
+        By.directive(SpatialExtentDropdownComponent)
+      ).componentInstance
+    })
+
+    describe('initial bounding box', () => {
+      it('hands no bounding box to the dropdown initially', () => {
+        expect(spatialExtentDropdown.bbox).toBeNull()
+      })
+      it('hands the bounding box read from the filters to the dropdown', () => {
+        fieldsService.readFieldValuesFromFilters = () =>
+          of({ someGeometryField: bbox }) as any
+        facade.searchFilters$.next({ someGeometryField: 'anything' })
+        fixture.detectChanges()
+        expect(spatialExtentDropdown.bbox).toEqual(bbox)
+      })
+      it('hands no bounding box when the field value is an empty array', () => {
+        fieldsService.readFieldValuesFromFilters = () =>
+          of({ someGeometryField: [] }) as any
+        facade.searchFilters$.next({ someGeometryField: 'anything' })
+        fixture.detectChanges()
+        expect(spatialExtentDropdown.bbox).toBeNull()
+      })
+      it('hands no bounding box when the field value is not an array', () => {
+        fieldsService.readFieldValuesFromFilters = () =>
+          of({ someGeometryField: { start: new Date() } }) as any
+        facade.searchFilters$.next({ someGeometryField: 'anything' })
+        fixture.detectChanges()
+        expect(spatialExtentDropdown.bbox).toBeNull()
+      })
+    })
+
+    describe('when a bounding box is emitted', () => {
+      beforeEach(fakeAsync(() => {
+        spatialExtentDropdown.bboxChange.emit(bbox)
+        tick()
+      }))
+      it('converts the bounding box to filters', () => {
+        expect(fieldsService.buildFiltersFromFieldValues).toHaveBeenCalledWith({
+          someGeometryField: bbox,
+        })
+      })
+      it('calls updateFilters on the search service', () => {
+        expect(searchService.updateFilters).toHaveBeenCalledWith({
+          'converted from values': {
+            someGeometryField: bbox,
+          },
+        })
+      })
+    })
+
+    describe('when the bounding box is cleared', () => {
+      beforeEach(fakeAsync(() => {
+        spatialExtentDropdown.bboxChange.emit(null)
+        tick()
+      }))
+      it('removes the filter', () => {
+        expect(fieldsService.buildFiltersFromFieldValues).toHaveBeenCalledWith({
+          someGeometryField: null,
+        })
+        expect(searchService.updateFilters).toHaveBeenCalledWith({
+          'converted from values': {
+            someGeometryField: null,
+          },
+        })
       })
     })
   })

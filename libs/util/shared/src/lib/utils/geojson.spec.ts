@@ -2,6 +2,8 @@ import {
   bboxToPolygon,
   getGeometryBoundingBox,
   getGeometryFromGeoJSON,
+  isBoundingBox,
+  isBoundingBoxWithinWorldExtent,
   spatialExtentsToFeatureCollection,
   spatialExtentToGeometry,
 } from './geojson'
@@ -162,6 +164,33 @@ describe('geojson utils', () => {
       }
       const bbox = getGeometryBoundingBox(geom)
       expect(bbox).toEqual([-100, -200, 130, 20])
+    })
+  })
+
+  describe('isBoundingBox', () => {
+    it('returns true for a bounding box', () => {
+      expect(isBoundingBox([0, 0, 1, 1])).toBe(true)
+    })
+    it('returns false for an array with the wrong length', () => {
+      expect(isBoundingBox([0, 0, 1])).toBe(false)
+    })
+    it('returns false for an array containing non-numbers', () => {
+      expect(isBoundingBox([0, 0, 1, '1'])).toBe(false)
+    })
+    it('returns false for a non-array value', () => {
+      expect(isBoundingBox({ start: 0, end: 1 })).toBe(false)
+    })
+  })
+
+  describe('isBoundingBoxWithinWorldExtent', () => {
+    it('returns true for a bounding box within world bounds', () => {
+      expect(isBoundingBoxWithinWorldExtent([-180, -90, 180, 90])).toBe(true)
+    })
+    it('returns false when the longitude exceeds -180/180', () => {
+      expect(isBoundingBoxWithinWorldExtent([-181, -10, 10, 10])).toBe(false)
+    })
+    it('returns false when the latitude exceeds -90/90', () => {
+      expect(isBoundingBoxWithinWorldExtent([-10, -10, 10, 91])).toBe(false)
     })
   })
 

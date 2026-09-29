@@ -11,6 +11,7 @@ import {
   AggregationsParams,
   FieldFilter,
   FieldFilters,
+  FieldSort,
   FilterQuery,
   FiltersAggregationParams,
   SortByField,
@@ -33,7 +34,12 @@ import {
   LanguageCode,
 } from '@geonetwork-ui/common/domain/model/record'
 import { TranslateService } from '@ngx-translate/core'
-import { getGeometryBoundingBox } from '@geonetwork-ui/util/shared'
+import {
+  bboxToPolygon,
+  BoundingBox,
+  getGeometryBoundingBox,
+  isBoundingBox,
+} from '@geonetwork-ui/util/shared'
 import { getLength as getGeodesicLength } from 'ol/sphere.js'
 import { LineString } from 'ol/geom.js'
 
@@ -48,7 +54,12 @@ export class ElasticsearchService {
 
   // runtime fields are computed using a Painless script
   // see: https://www.elastic.co/guide/en/elasticsearch/reference/current/runtime-mapping-fields.html
-  private runtimeFields: Record<string, string> = {}
+  private runtimeFields: Record<
+    string,
+    { script: string; type: 'keyword' | 'date' }
+  > = {}
+
+  private fieldAliases: Record<string, string> = {}
 
   // we're using getters in case the defined languages change over time
   private get metadataLang(): LanguageCode {
@@ -90,8 +101,8 @@ export class ElasticsearchService {
     const addMapping = (fieldName: string) => {
       if (!payload.runtime_mappings) payload.runtime_mappings = {}
       payload.runtime_mappings[fieldName] = {
-        type: 'keyword',
-        script: this.runtimeFields[fieldName],
+        type: this.runtimeFields[fieldName].type,
+        script: this.runtimeFields[fieldName].script,
       }
     }
     const lookForField = (node: unknown) => {
@@ -113,6 +124,14 @@ export class ElasticsearchService {
           addMapping(runtimeField)
         }
         if (
+          runtimeField in node &&
+          typeof node[runtimeField] === 'object' &&
+          node[runtimeField] !== null &&
+          ('gte' in node[runtimeField] || 'lte' in node[runtimeField])
+        ) {
+          addMapping(runtimeField)
+        }
+        if (
           'query' in node &&
           typeof node.query === 'string' &&
           node.query.indexOf(runtimeField + ':') > -1
@@ -130,8 +149,16 @@ export class ElasticsearchService {
     return payload
   }
 
-  registerRuntimeField(fieldName: string, expression: string) {
-    this.runtimeFields[fieldName] = expression
+  registerRuntimeField(
+    fieldName: string,
+    expression: string,
+    type: 'keyword' | 'date' = 'keyword'
+  ) {
+    this.runtimeFields[fieldName] = { script: expression, type }
+  }
+
+  registerFieldAlias(fieldIdentifier: string, esFieldName: string) {
+    this.fieldAliases[fieldIdentifier] = esFieldName
   }
 
   getMetadataByIdsPayload(uuids: string[]): EsSearchParams {
@@ -141,6 +168,7 @@ export class ElasticsearchService {
           values: uuids,
         },
       },
+      size: uuids.length,
     }
   }
 
@@ -199,9 +227,27 @@ export class ElasticsearchService {
   }
 
   private buildPayloadSort(sortBy: SortByField): SortParams {
-    if (sortBy === null) return undefined
-    const fields = Array.isArray(sortBy[0]) ? sortBy : [sortBy]
-    return fields.map((field) => ({ [field[1]]: field[0] }))
+    if (!sortBy || sortBy.length === 0) return undefined
+    const fields = Array.isArray(sortBy[0])
+      ? (sortBy as FieldSort[])
+      : [sortBy as FieldSort]
+    return fields.map((field) => {
+      // Sort by nested array of dates only works with the explicit syntax
+      if (field[1].endsWith('.date')) {
+        const nestedPath = field[1].slice(0, field[1].lastIndexOf('.date'))
+        return {
+          [field[1]]: {
+            order: field[0] as 'desc' | 'asc',
+            mode: field[0] === 'desc' ? 'max' : 'min',
+            missing: '_last',
+            nested: {
+              path: nestedPath,
+            },
+          },
+        }
+      }
+      return { [field[1]]: field[0] }
+    })
   }
 
   private injectLangInQueryStringFields(
@@ -244,8 +290,68 @@ export class ElasticsearchService {
     return this.metadataLang === 'current'
   }
 
-  private filtersToQuery(
+  private findSpatialFilterExtent(
     filters: FieldFilters | FiltersAggregationParams | string
+  ): BoundingBox | undefined {
+    if (typeof filters === 'string') {
+      return undefined
+    }
+    return Object.values(filters).find(isBoundingBox)
+  }
+
+  // builds a query matching records whose dates intersect the filter range
+  private buildDateRangeQuery(searchField: string, dateRange: DateRange) {
+    // fields ending with 'DateRange' maps as ES range type
+    if (searchField.endsWith('DateRange')) {
+      return {
+        range: {
+          [searchField]: {
+            ...(dateRange.start && { gte: formatDate(dateRange.start) }),
+            ...(dateRange.end && { lte: formatDate(dateRange.end) }),
+            format: 'yyyy-MM-dd',
+            relation: 'intersects',
+          },
+        },
+      }
+    }
+    const minField = `${searchField}Min`
+    const maxField = `${searchField}Max`
+    if (minField in this.runtimeFields && maxField in this.runtimeFields) {
+      // min/max runtime fields form an interval per record; match if it intersects the filter range
+      const filter = [
+        dateRange.start && {
+          range: {
+            [maxField]: {
+              gte: formatDate(dateRange.start),
+              format: 'yyyy-MM-dd',
+            },
+          },
+        },
+        dateRange.end && {
+          range: {
+            [minField]: {
+              lte: formatDate(dateRange.end),
+              format: 'yyyy-MM-dd',
+            },
+          },
+        },
+      ].filter(Boolean)
+      return { bool: { filter } }
+    }
+    return {
+      range: {
+        [searchField]: {
+          ...(dateRange.start && { gte: formatDate(dateRange.start) }),
+          ...(dateRange.end && { lte: formatDate(dateRange.end) }),
+          format: 'yyyy-MM-dd',
+        },
+      },
+    }
+  }
+
+  private filtersToQuery(
+    filters: FieldFilters | FiltersAggregationParams | string,
+    spatialFilterExtent = this.findSpatialFilterExtent(filters)
   ): FilterQuery {
     const addQuote = (key: string) => (/^\/.+\/$/.test(key) ? key : `"${key}"`)
     const makeQuery = (filter: FieldFilter): string => {
@@ -266,50 +372,49 @@ export class ElasticsearchService {
         ? filters
         : Object.keys(filters)
             .filter((fieldname) => fieldname !== 'gn-ui-crossFieldFilter')
+            .filter((fieldname) => !isBoundingBox(filters[fieldname]))
             .filter((fieldname) => !isDateRange(filters[fieldname]))
+            .filter((fieldname) => !Array.isArray(filters[fieldname]))
             .filter(
               (fieldname) =>
                 filters[fieldname] &&
                 JSON.stringify(filters[fieldname]) !== '{}'
             )
             .map(
-              (fieldname) => `${fieldname}:(${makeQuery(filters[fieldname])})`
+              (fieldname) =>
+                `${this.fieldAliases[fieldname] ?? fieldname}:(${makeQuery(filters[fieldname])})`
             )
             .join(' AND ')
     if (filters['gn-ui-crossFieldFilter']) {
       queryString = `${queryString} AND (${filters['gn-ui-crossFieldFilter']})`
     }
-    const queryRange = Object.entries(filters)
-      .filter(([, value]) => isDateRange(value))
-      .map(([searchField, dateRange]) => {
-        return {
-          searchField,
-          dateRange,
-        } as {
-          searchField: string
-          dateRange: DateRange
-        }
-      })[0]
+    const queryRanges = Object.entries(filters).filter(([, value]) =>
+      isDateRange(value)
+    ) as [string, DateRange][]
     const queryParts = [
       queryString && {
         query_string: {
           query: queryString,
         },
       },
-      queryRange &&
-        queryRange.dateRange && {
-          range: {
-            [queryRange.searchField]: {
-              ...(queryRange.dateRange.start && {
-                gte: formatDate(queryRange.dateRange.start),
-              }),
-              ...(queryRange.dateRange.end && {
-                lte: formatDate(queryRange.dateRange.end),
-              }),
-              format: 'yyyy-MM-dd',
+      ...queryRanges.map(([searchField, dateRange]) =>
+        this.buildDateRangeQuery(searchField, dateRange)
+      ),
+      spatialFilterExtent && {
+        geo_shape: {
+          geom: {
+            shape: {
+              type: 'envelope',
+              // spatialFilterExtent is [minX, minY, maxX, maxY]; envelope coordinates are [top-left, bottom-right]
+              coordinates: [
+                [spatialFilterExtent[0], spatialFilterExtent[3]],
+                [spatialFilterExtent[2], spatialFilterExtent[1]],
+              ],
             },
+            relation: 'intersects',
           },
         },
+      },
     ].filter(Boolean)
     return queryParts.length > 0 ? (queryParts as FilterQuery) : undefined
   }
@@ -348,7 +453,12 @@ export class ElasticsearchService {
         },
       })
     }
-    const queryFilters = this.filtersToQuery(fieldSearchFilters)
+    // a spatial extent filter takes precedence over the preference geometry for boosting
+    const spatialFilterExtent = this.findSpatialFilterExtent(fieldSearchFilters)
+    const queryFilters = this.filtersToQuery(
+      fieldSearchFilters,
+      spatialFilterExtent
+    )
     if (queryFilters) {
       filter.push(...queryFilters)
     }
@@ -359,7 +469,10 @@ export class ElasticsearchService {
         },
       })
     }
-    if (geometry) {
+    const boostGeometry = spatialFilterExtent
+      ? bboxToPolygon(spatialFilterExtent)
+      : geometry
+    if (boostGeometry) {
       // boosts applied using the filter geometry:
       // * records completely within the geometry receive a boost of 5
       // * records intersecting the geometry receive a boost of 2
@@ -369,7 +482,7 @@ export class ElasticsearchService {
         {
           geo_shape: {
             geom: {
-              shape: geometry,
+              shape: boostGeometry,
               relation: 'within',
             },
             boost: 5.0,
@@ -378,7 +491,7 @@ export class ElasticsearchService {
         {
           geo_shape: {
             geom: {
-              shape: geometry,
+              shape: boostGeometry,
               relation: 'intersects',
             },
             boost: 2.0,
@@ -389,7 +502,7 @@ export class ElasticsearchService {
       // this will boost the results variably depending on their distance from the given geometry
       // note: this takes into account the `location` field of a record; this is generally the center of all spatial extents
       // combined, and thus the actual size/coverage of the record spatial extent isn't relevant here
-      const bbox = getGeometryBoundingBox(geometry)
+      const bbox = getGeometryBoundingBox(boostGeometry)
       const center = [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2]
       const northToCenter = new LineString([
         [center[0], bbox[3]],
@@ -615,6 +728,12 @@ export class ElasticsearchService {
               order: {
                 [`_${aggregation.sort[1]}`]: aggregation.sort[0],
               },
+              ...(aggregation.includeValues && {
+                include: aggregation.includeValues,
+              }),
+              ...(aggregation.excludeValues && {
+                exclude: aggregation.excludeValues,
+              }),
             },
           }
         case 'histogram':
