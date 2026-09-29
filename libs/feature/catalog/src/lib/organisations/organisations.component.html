@@ -1,0 +1,26 @@
+<gn-ui-organisations-sort
+  (sortBy)="setSortBy($event)"
+></gn-ui-organisations-sort>
+<div
+  class="grid grid-cols-1 mt-6 gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3"
+>
+  <gn-ui-content-ghost
+    class="h-[300px]"
+    ghostClass="h-full mb-36"
+    *ngFor="let organisation of organisations$ | async; trackBy: trackByIndex"
+    [showContent]="!!organisation.name"
+  >
+    <gn-ui-organisation-preview
+      [organisation]="organisation"
+      [organisationUrl]="getOrganisationUrl(organisation)"
+      (clickedOrganisation)="orgSelect.emit($event)"
+    ></gn-ui-organisation-preview>
+  </gn-ui-content-ghost>
+</div>
+<div class="py-20">
+  <gn-ui-pagination
+    [currentPage]="currentPage$ | async"
+    [nPages]="totalPages"
+    (newCurrentPageEvent)="setCurrentPage($event)"
+  ></gn-ui-pagination>
+</div>
