@@ -7,7 +7,7 @@ import {
   ViewChild,
 } from '@angular/core'
 import { DOCUMENT } from '@angular/common'
-import { getThemeConfig } from '@geonetwork-ui/util/app-config'
+import { getGlobalConfig, getThemeConfig } from '@geonetwork-ui/util/app-config'
 import {
   handleScrollOnNavigation,
   ThemeService,
@@ -113,13 +113,12 @@ export class AppComponent implements OnInit, AfterViewInit {
     const authContainer = document.getElementById('header-auth')
     if (!authContainer) return
 
-    const client_id = 'cartes-gouv-public'
-    let sso_url
-    if (encodeURIComponent(window.location.href).includes('mut-dev')) {
-      sso_url = 'sso-qua.priv.geopf.fr'
-    } else {
-      sso_url = 'sso.geopf.fr'
-    }
+    const config = getGlobalConfig()
+    const client_id = config.CLIENT_ID || 'cartes-gouv-public'
+    const sso_url = (config.SSO_URL || 'https://sso.geopf.fr').replace(
+      /\/+$/,
+      ''
+    )
 
     const renderLoggedOut = () => {
       document.querySelectorAll('.login-btn').forEach((btn) => {
@@ -168,7 +167,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                                     </li>
                                     <li>
                                         <div style="text-align: center;">
-                                            <a href="https://${sso_url}/realms/geoplateforme/protocol/openid-connect/logout?post_logout_redirect_uri=${currentUrl}&client_id=${client_id}&id_token_hint=${id_token}"
+                                            <a href="${sso_url}/realms/geoplateforme/protocol/openid-connect/logout?post_logout_redirect_uri=${currentUrl}&client_id=${encodeURIComponent(client_id)}&id_token_hint=${id_token}"
                                                 class="fr-icon-logout-box-r-line fr-icon--sm custom-center-btn fr-btn fr-btn--tertiary fr-btn--sm fr-mt-3v fr-mx-2w" style="width: 14rem; justify-content: center;">
                                                 Se déconnecter
                                             </a>
@@ -193,7 +192,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     const keycloak = new Keycloak({
-      url: `https://${sso_url}`,
+      url: sso_url,
       realm: 'geoplateforme',
       clientId: client_id,
     })

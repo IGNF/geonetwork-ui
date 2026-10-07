@@ -27,6 +27,15 @@ Notice how the `GN4_API_URL` and `PROXY_PATH` variables are used to override any
 
 The application will be available on http://localhost:8080/application/.
 
+For Datahub Keycloak authentication, `SSO_URL` and `CLIENT_ID` override the
+`sso_url` and `client_id` settings in the `[global]` TOML section at container
+startup, using the same mechanism as `GN4_API_URL`. `SSO_URL` must be a full URL
+including the protocol, for example `https://sso-qua.priv.geopf.fr`.
+The defaults are `https://sso.geopf.fr` and `cartes-gouv-public`.
+The SSO server is no longer selected automatically from the application hostname.
+For the NGINX image, a custom configuration file takes precedence over environment
+variables; set these keys directly in that file when using one.
+
 ### Specifying a custom configuration file
 
 If the `GN4_API_URL` and `PROXY_PATH` environment variables are not enough and you want to specify a full configuration file,

@@ -31,6 +31,21 @@ else
     echo "[INFO] Replacing proxy path in conf with: ${PROXY_PATH}..."
     sed -i "s%proxy_path = \".*\"%proxy_path = \"${PROXY_PATH}\"%" ${APP_FILES_PATH}${CONFIG_FILE_PATH}${CONFIG_FILE_NAME}
   fi
+  for config_key in sso_url client_id
+  do
+    case "${config_key}" in
+      sso_url) config_value=${SSO_URL} ;;
+      client_id) config_value=${CLIENT_ID} ;;
+    esac
+    if [ -n "${config_value}" ]; then
+      escaped_value=$(printf '%s' "${config_value}" | sed 's/[\\"&%]/\\&/g')
+      if grep -q "^${config_key} = " "${APP_FILES_PATH}${CONFIG_FILE_PATH}${CONFIG_FILE_NAME}"; then
+        sed -i "s%^${config_key} = .*%${config_key} = \"${escaped_value}\"%" "${APP_FILES_PATH}${CONFIG_FILE_PATH}${CONFIG_FILE_NAME}"
+      else
+        sed -i "/^\[global\]/a ${config_key} = \"${escaped_value}\"" "${APP_FILES_PATH}${CONFIG_FILE_PATH}${CONFIG_FILE_NAME}"
+      fi
+    fi
+  done
 fi
 
 ## 2. COPY ASSETS

@@ -2,6 +2,8 @@ import { Geometry } from 'geojson'
 
 export interface GlobalConfig {
   GN4_API_URL: string
+  SSO_URL?: string
+  CLIENT_ID?: string
   DATAHUB_URL?: string
   EDIT_URL_TEMPLATE?: string
   PROXY_PATH?: string

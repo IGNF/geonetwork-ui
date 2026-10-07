@@ -25,6 +25,22 @@ describe('app config utils', () => {
     fetchMock.mockReset()
     _reset()
   })
+  it('loads the SSO URL and client ID from the global configuration', async () => {
+    fetchMock.get('end:default.toml', () =>
+      minimalAppConfigFixture().replace(
+        '[global]',
+        '[global]\nsso_url = "https://sso-qua.priv.geopf.fr"\nclient_id = "custom-client"'
+      )
+    )
+
+    await loadAppConfig()
+
+    expect(getGlobalConfig()).toMatchObject({
+      SSO_URL: 'https://sso-qua.priv.geopf.fr',
+      CLIENT_ID: 'custom-client',
+    })
+    expect(console.warn).not.toHaveBeenCalled()
+  })
   describe('when the configuration file is missing', () => {
     beforeEach(() => {
       fetchMock.get('end:default.toml', () => ({ status: 404 }))

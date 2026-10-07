@@ -110,6 +110,8 @@ export function loadAppConfig(configUrl = 'assets/configuration/default.toml') {
         'global',
         ['geonetwork4_api_url'],
         [
+          'sso_url',
+          'client_id',
           'datahub_url',
           'edit_url_template',
           'proxy_path',
@@ -136,6 +138,8 @@ export function loadAppConfig(configUrl = 'assets/configuration/default.toml') {
           ? null
           : ({
               GN4_API_URL: parsedGlobalSection.geonetwork4_api_url,
+              SSO_URL: parsedGlobalSection.sso_url,
+              CLIENT_ID: parsedGlobalSection.client_id,
               DATAHUB_URL: parsedGlobalSection.datahub_url,
               EDIT_URL_TEMPLATE: parsedGlobalSection.edit_url_template,
               PROXY_PATH: parsedGlobalSection.proxy_path,

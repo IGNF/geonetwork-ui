@@ -6,6 +6,8 @@
 [global]
 # This URL (relative or absolute) must point to the API endpoint of a GeoNetwork4 instance
 geonetwork4_api_url = "https://data.geopf.fr/catalog"
+sso_url = "https://sso.geopf.fr"
+client_id = "cartes-gouv-public-dev"
 
 # deprecated - not used currently
 datahub_url = "/rechercher-une-donnee"
