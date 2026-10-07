@@ -28,6 +28,25 @@
     </script>
     <script type="module" src="assets/dsfr/dsfr.module.min.js"></script>
     <script type="module" src="assets/dsfr/analytics.module.min.js"></script>
+    <!-- Matomo -->
+    <script type="text/javascript">
+      var _paq = (window._paq = window._paq || [])
+      /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+      _paq.push(['trackPageView'])
+      _paq.push(['enableLinkTracking'])
+      _paq.push(['setDocumentTitle', '[Rechercher] ' + document.title])
+      ;(function () {
+        var u = 'https://matomo.ign.fr/'
+        _paq.push(['setTrackerUrl', u + 'matomo.php'])
+        _paq.push(['setSiteId', '11'])
+        var d = document,
+          g = d.createElement('script'),
+          s = d.getElementsByTagName('script')[0]
+        g.async = true
+        g.src = u + 'matomo.js'
+        s.parentNode.insertBefore(g, s)
+      })()
+    </script>
     <!--
       Add more preload links here to reduce the time to initial page render!
       Example:
