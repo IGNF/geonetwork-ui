@@ -93,6 +93,19 @@ describe('DatahubTemplatePageTitleStrategy', () => {
           'My Entity | Custom Pattern'
         )
       })
+
+      it('should track the entity title after it becomes available', () => {
+        const matomoQueue: unknown[][] = []
+        ;(window as Window & { _paq?: unknown[][] })._paq = matomoQueue
+
+        service.updateTitle(RouterStateSnapshotMock as RouterStateSnapshot)
+        titleSubject.next('Updated Entity')
+
+        expect(matomoQueue).toEqual([
+          ['setDocumentTitle', '[Rechercher] Updated Entity'],
+          ['trackPageView'],
+        ])
+      })
     })
 
     describe('when pageTitle is defined (not "entityTitle")', () => {
@@ -134,6 +147,21 @@ describe('DatahubTemplatePageTitleStrategy', () => {
         it('should set formatted title using custom pattern', () => {
           service.updateTitle(RouterStateSnapshotMock as RouterStateSnapshot)
 
+          expect(titleService.setTitle).toHaveBeenCalledWith(
+            'Home Page | Custom App'
+          )
+        })
+
+        it('should send the page title to Matomo without changing its browser title', () => {
+          const matomoQueue: unknown[][] = []
+          ;(window as Window & { _paq?: unknown[][] })._paq = matomoQueue
+
+          service.updateTitle(RouterStateSnapshotMock as RouterStateSnapshot)
+
+          expect(matomoQueue).toEqual([
+            ['setDocumentTitle', '[Rechercher] Home Page'],
+            ['trackPageView'],
+          ])
           expect(titleService.setTitle).toHaveBeenCalledWith(
             'Home Page | Custom App'
           )
