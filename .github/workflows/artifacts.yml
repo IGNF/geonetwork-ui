@@ -1,0 +1,107 @@
+name: Artifacts
+run-name: 📦 Generate artifacts for ${{ github.event_name == 'issue_comment' && 'PR' || (github.event_name == 'release' && '🏷' || '🌱') }} ${{github.event_name == 'issue_comment' && github.event.issue.number || github.ref_name}}
+
+# This workflow runs whenever the "build affected docker images" checkbox is checked (for PR)
+# and also whenever a commit is pushed on main or a tag is pushed
+on:
+  push:
+    branches:
+      - main
+      - develop
+  release:
+    types: [published]
+  issue_comment:
+    types:
+      - edited
+
+concurrency:
+  group: artifacts-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 18.16.1
+  # a list of apps to build and publish on releases
+  APP_NAMES: datafeeder,datahub,metadata-editor
+
+jobs:
+  checks:
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+    name: Check whether a deploy was requested on a PR
+    runs-on: ubuntu-latest
+    outputs:
+      shouldRun: ${{ github.event_name != 'issue_comment' || (contains(github.event.changes.body.from, '- [ ] 📦 Build and push affected docker images') && contains(github.event.comment.body, '- [x] 📦 Build and push affected docker images')) || '' }}
+      ref: ${{ github.event_name == 'issue_comment' && steps.comment-branch.outputs.head_ref || '' }}
+
+    steps:
+      - uses: xt0rted/pull-request-comment-branch@v1
+        if: github.event_name == 'issue_comment'
+        id: comment-branch
+
+  build-archive-docker:
+    needs: checks
+    if: github.event_name != 'issue_comment' || needs.checks.outputs.shouldRun
+    name: Build docker images and archives
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.checks.outputs.ref }} # use the PR head ref if applicable; otherwise keep default behaviour
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v2
+        with:
+          main-branch-name: 'main'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all applications and produce archives
+        if: github.event_name == 'release'
+        run: |
+          npx nx run-many --projects=${{ env.APP_NAMES }} --target=build
+          tools/make-archive.sh ${{env.APP_NAMES}}
+
+      - name: Upload archives to release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/archives/*
+          file_glob: true
+          tag: ${{ github.ref }}
+          overwrite: true
+
+      - name: Build all docker images
+        if: github.event_name == 'release'
+        run: npx nx run-many --projects=${{ env.APP_NAMES }} --target=docker-build
+
+      - name: Build affected docker images
+        if: github.event_name != 'release'
+        # FIXME: excluding data-platform until it has a remote registry to be pushed
+        run: npx nx affected --target=docker-build --exclude=data-platform
+
+      - name: Tag all docker images on main also as latest
+        if: github.event_name == 'push' # only happens when pushing on the main branch
+        run: docker image ls --format 'docker tag {{.Repository}}:{{.Tag}} {{.Repository}}:latest' --filter=reference='geonetwork/*' | bash -
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Push all docker images
+        # list all docker images, keep only the ones in the geonetwork org, and call docker push for each of them
+        run: |
+          docker image ls --format '{{.Repository}}:{{.Tag}}' --filter=reference='geonetwork/*' | \
+          xargs -r -L1 docker push $1

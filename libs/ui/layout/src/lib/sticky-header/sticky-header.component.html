@@ -1,0 +1,16 @@
+<div
+  #outerContainer
+  class="sticky pointer-events-none z-50 top-0"
+  [style.height]="fullHeightPx + 'px'"
+>
+  <div
+    #innerContainer
+    class="relative pointer-events-auto"
+    [style.height]="fullHeightPx + 'px'"
+  >
+    <ng-container
+      [ngTemplateOutlet]="template"
+      [ngTemplateOutletContext]="{ $implicit: expandRatio }"
+    ></ng-container>
+  </div>
+</div>

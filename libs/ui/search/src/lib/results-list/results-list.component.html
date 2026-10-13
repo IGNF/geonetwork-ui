@@ -1,0 +1,32 @@
+<ng-container>
+  <div [ngClass]="layoutConfig.containerClass">
+    <div
+      [ngClass]="layoutConfig.itemClass"
+      [style]="layoutConfig.itemStyle"
+      *ngFor="let record of records"
+    >
+      <gn-ui-results-list-item
+        [record]="record"
+        [layoutConfig]="layoutConfig"
+        [metadataQualityDisplay]="metadataQualityDisplay"
+        (mdSelect)="mdSelect.emit($event)"
+        [favoriteTemplate]="favoriteTemplate"
+        [linkHref]="recordUrlGetter(record)"
+      ></gn-ui-results-list-item>
+    </div>
+  </div>
+</ng-container>
+
+<!--
+<ng-template #block>
+  <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
+    <gn-ui-record-preview-card
+      *ngFor="let record of records"
+      [record]="record"
+      (mdSelect)="mdSelect.emit($event)"
+      linkTarget="_blank"
+      style="height: 24em"
+    ></gn-ui-record-preview-card>
+  </div>
+</ng-template>
+-->
