@@ -35,7 +35,7 @@ else
   do
     case "${config_key}" in
       sso_url) config_value=${SSO_URL} ;;
-      client_id) config_value=${CLIENT_ID} ;;
+      client_id) config_value=${SSO_CLIENT_ID:-${CLIENT_ID}} ;;
     esac
     if [ -n "${config_value}" ]; then
       escaped_value=$(printf '%s' "${config_value}" | sed 's/[\\"&%]/\\&/g')
