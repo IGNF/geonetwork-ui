@@ -15,7 +15,7 @@ import { CdkAccordionModule } from '@angular/cdk/accordion'
   standalone: true,
   imports: [
     CommonModule,
-    TranslateDirective,
+    //TranslateDirective,
     TranslatePipe,
     NgIcon,
     CdkAccordionModule,

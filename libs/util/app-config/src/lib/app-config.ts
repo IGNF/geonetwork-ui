@@ -119,24 +119,24 @@ function parseGlobalSection(
   return parsedGlobalSection === null
     ? null
     : ({
-      GN4_API_URL: parsedGlobalSection.geonetwork4_api_url,
-      SSO_URL: parsedGlobalSection.sso_url,
-      CLIENT_ID: parsedGlobalSection.client_id,
-      DATAHUB_URL: parsedGlobalSection.datahub_url,
-      EDIT_URL_TEMPLATE: parsedGlobalSection.edit_url_template,
-      PROXY_PATH: parsedGlobalSection.proxy_path,
-      METADATA_LANGUAGE: parsedGlobalSection.metadata_language
-        ? (parsedGlobalSection.metadata_language as string).toLowerCase()
-        : undefined,
-      LOGIN_URL: parsedGlobalSection.login_url,
-      LOGOUT_URL: parsedGlobalSection.logout_url,
-      SETTINGS_URL: parsedGlobalSection.settings_url,
-      WEB_COMPONENT_EMBEDDER_URL:
-        parsedGlobalSection.web_component_embedder_url,
-      LANGUAGES: parsedGlobalSection.languages,
-      CONTACT_EMAIL: parsedGlobalSection.contact_email,
-      REUSE_FORM_URL: parsedGlobalSection.reuse_form_url,
-    } as GlobalConfig)
+        GN4_API_URL: parsedGlobalSection.geonetwork4_api_url,
+        SSO_URL: parsedGlobalSection.sso_url,
+        CLIENT_ID: parsedGlobalSection.client_id,
+        DATAHUB_URL: parsedGlobalSection.datahub_url,
+        EDIT_URL_TEMPLATE: parsedGlobalSection.edit_url_template,
+        PROXY_PATH: parsedGlobalSection.proxy_path,
+        METADATA_LANGUAGE: parsedGlobalSection.metadata_language
+          ? (parsedGlobalSection.metadata_language as string).toLowerCase()
+          : undefined,
+        LOGIN_URL: parsedGlobalSection.login_url,
+        LOGOUT_URL: parsedGlobalSection.logout_url,
+        SETTINGS_URL: parsedGlobalSection.settings_url,
+        WEB_COMPONENT_EMBEDDER_URL:
+          parsedGlobalSection.web_component_embedder_url,
+        LANGUAGES: parsedGlobalSection.languages,
+        CONTACT_EMAIL: parsedGlobalSection.contact_email,
+        REUSE_FORM_URL: parsedGlobalSection.reuse_form_url,
+      } as GlobalConfig)
 }
 
 function parseMapSection(
@@ -171,28 +171,28 @@ function parseMapSection(
   return parsedMapSection === null || parsedLayersSections === null
     ? null
     : ({
-      MAX_ZOOM: parsedMapSection.max_zoom,
-      DO_NOT_TILE_WMS: parsedMapSection.do_not_tile_wms,
-      MAX_EXTENT: parsedMapSection.max_extent,
-      MAX_FEATURE_COUNT: parsedMapSection.max_feature_count,
-      EXTERNAL_VIEWER_URL_TEMPLATE:
-        parsedMapSection.external_viewer_url_template,
-      EXTERNAL_VIEWER_OPEN_NEW_TAB:
-        parsedMapSection.external_viewer_open_new_tab,
-      DO_NOT_USE_DEFAULT_BASEMAP:
-        !!parsedMapSection.do_not_use_default_basemap,
-      MAP_LAYERS: parsedLayersSections.map(
-        (map_layer) =>
-          ({
-            TYPE: map_layer.type,
-            URL: map_layer.url,
-            NAME: map_layer.name,
-            DATA: map_layer.data,
-            STYLE_URL: map_layer.styleUrl,
-            ACCESS_TOKEN: map_layer.accessToken,
-          }) as LayerConfig
-      ),
-    } as MapConfig)
+        MAX_ZOOM: parsedMapSection.max_zoom,
+        DO_NOT_TILE_WMS: parsedMapSection.do_not_tile_wms,
+        MAX_EXTENT: parsedMapSection.max_extent,
+        MAX_FEATURE_COUNT: parsedMapSection.max_feature_count,
+        EXTERNAL_VIEWER_URL_TEMPLATE:
+          parsedMapSection.external_viewer_url_template,
+        EXTERNAL_VIEWER_OPEN_NEW_TAB:
+          parsedMapSection.external_viewer_open_new_tab,
+        DO_NOT_USE_DEFAULT_BASEMAP:
+          !!parsedMapSection.do_not_use_default_basemap,
+        MAP_LAYERS: parsedLayersSections.map(
+          (map_layer) =>
+            ({
+              TYPE: map_layer.type,
+              URL: map_layer.url,
+              NAME: map_layer.name,
+              DATA: map_layer.data,
+              STYLE_URL: map_layer.styleUrl,
+              ACCESS_TOKEN: map_layer.accessToken,
+            }) as LayerConfig
+        ),
+      } as MapConfig)
 }
 
 function parseThemeSection(
@@ -218,18 +218,18 @@ function parseThemeSection(
   return parsedThemeSection === null
     ? null
     : ({
-      PRIMARY_COLOR: parsedThemeSection.primary_color,
-      SECONDARY_COLOR: parsedThemeSection.secondary_color,
-      MAIN_COLOR: parsedThemeSection.main_color,
-      BACKGROUND_COLOR: parsedThemeSection.background_color,
-      HEADER_FOREGROUND_COLOR: parsedThemeSection.header_foreground_color,
-      THUMBNAIL_PLACEHOLDER: parsedThemeSection.thumbnail_placeholder,
-      HEADER_BACKGROUND: parsedThemeSection.header_background,
-      TITLE_FONT: parsedThemeSection.title_font,
-      MAIN_FONT: parsedThemeSection.main_font,
-      FONTS_STYLESHEET_URL: parsedThemeSection.fonts_stylesheet_url,
-      FAVICON: parsedThemeSection.favicon,
-    } as ThemeConfig)
+        PRIMARY_COLOR: parsedThemeSection.primary_color,
+        SECONDARY_COLOR: parsedThemeSection.secondary_color,
+        MAIN_COLOR: parsedThemeSection.main_color,
+        BACKGROUND_COLOR: parsedThemeSection.background_color,
+        HEADER_FOREGROUND_COLOR: parsedThemeSection.header_foreground_color,
+        THUMBNAIL_PLACEHOLDER: parsedThemeSection.thumbnail_placeholder,
+        HEADER_BACKGROUND: parsedThemeSection.header_background,
+        TITLE_FONT: parsedThemeSection.title_font,
+        MAIN_FONT: parsedThemeSection.main_font,
+        FONTS_STYLESHEET_URL: parsedThemeSection.fonts_stylesheet_url,
+        FAVICON: parsedThemeSection.favicon,
+      } as ThemeConfig)
 }
 
 function parseSearchSection(
@@ -274,43 +274,43 @@ function parseSearchSection(
   )
   const parsedGeocodingProviderLabels =
     parsedSearchSection?.geocoding_provider_labels as
-    | Record<string, string>
-    | undefined
+      | Record<string, string>
+      | undefined
   return parsedSearchSection === null
     ? null
     : ({
-      RECORD_KIND_QUICK_FILTER: parsedSearchSection.record_kind_quick_filter,
-      FILTER_GEOMETRY_DATA: parsedSearchSection.filter_geometry_data,
-      FILTER_GEOMETRY_URL: parsedSearchSection.filter_geometry_url,
-      DO_NOT_USE_DEFAULT_SEARCH_PRESET:
-        !!parsedSearchSection.do_not_use_default_search_preset,
-      SEARCH_PRESET: parsedSearchParams.map((param) => ({
-        sort: param.sort,
-        name: param.name,
-        filters: param.filters,
-      })),
-      ADVANCED_FILTERS: parsedSearchSection.advanced_filters,
-      CUSTOM_FILTERS: (parsedCustomFilters ?? []).map((customFilter) => ({
-        name: customFilter.name,
-        baseFilter: customFilter.base_filter,
-        excludeValues: customFilter.exclude_values,
-        includeValues: customFilter.include_values,
-        labelKey: customFilter.label_key,
-      })),
-      LIMIT: parsedSearchSection.limit,
-      SPATIAL_EXTENT_MAX_FILE_SIZE:
-        parsedSearchSection.spatial_extent_max_file_size,
-      GEOCODING_PROVIDER: parsedSearchSection.geocoding_provider,
-      GEOCODING_PROVIDER_OPTIONS:
-        parsedSearchSection.geocoding_provider_options,
-      GEOCODING_PROVIDER_LABELS: parsedGeocodingProviderLabels
-        ? {
-          MAIN: parsedGeocodingProviderLabels.main,
-          SECONDARY: parsedGeocodingProviderLabels.secondary,
-          TERTIARY: parsedGeocodingProviderLabels.tertiary,
-        }
-        : undefined,
-    } as SearchConfig)
+        RECORD_KIND_QUICK_FILTER: parsedSearchSection.record_kind_quick_filter,
+        FILTER_GEOMETRY_DATA: parsedSearchSection.filter_geometry_data,
+        FILTER_GEOMETRY_URL: parsedSearchSection.filter_geometry_url,
+        DO_NOT_USE_DEFAULT_SEARCH_PRESET:
+          !!parsedSearchSection.do_not_use_default_search_preset,
+        SEARCH_PRESET: parsedSearchParams.map((param) => ({
+          sort: param.sort,
+          name: param.name,
+          filters: param.filters,
+        })),
+        ADVANCED_FILTERS: parsedSearchSection.advanced_filters,
+        CUSTOM_FILTERS: (parsedCustomFilters ?? []).map((customFilter) => ({
+          name: customFilter.name,
+          baseFilter: customFilter.base_filter,
+          excludeValues: customFilter.exclude_values,
+          includeValues: customFilter.include_values,
+          labelKey: customFilter.label_key,
+        })),
+        LIMIT: parsedSearchSection.limit,
+        SPATIAL_EXTENT_MAX_FILE_SIZE:
+          parsedSearchSection.spatial_extent_max_file_size,
+        GEOCODING_PROVIDER: parsedSearchSection.geocoding_provider,
+        GEOCODING_PROVIDER_OPTIONS:
+          parsedSearchSection.geocoding_provider_options,
+        GEOCODING_PROVIDER_LABELS: parsedGeocodingProviderLabels
+          ? {
+              MAIN: parsedGeocodingProviderLabels.main,
+              SECONDARY: parsedGeocodingProviderLabels.secondary,
+              TERTIARY: parsedGeocodingProviderLabels.tertiary,
+            }
+          : undefined,
+      } as SearchConfig)
 }
 
 function parseMetadataQualitySection(
@@ -328,9 +328,9 @@ function parseMetadataQualitySection(
   return parsedMetadataQualitySection === null
     ? null
     : ({
-      ENABLED: parsedMetadataQualitySection.enabled,
-      SORTABLE: parsedMetadataQualitySection.sortable,
-    } as MetadataQualityConfig)
+        ENABLED: parsedMetadataQualitySection.enabled,
+        SORTABLE: parsedMetadataQualitySection.sortable,
+      } as MetadataQualityConfig)
 }
 
 function parseEditingSection(
@@ -366,14 +366,14 @@ function parseEditingSection(
   return parsedEditingSection === null
     ? null
     : ({
-      NEW_RECORD_DEFAULT_LANGUAGE:
-        parsedEditingSection.new_record_default_language as
-        | string
-        | undefined,
-      NEW_RECORD_STANDARD: parsedEditingSection.new_record_standard as
-        | EditorConfig['NEW_RECORD_STANDARD']
-        | undefined,
-    } as EditorConfig)
+        NEW_RECORD_DEFAULT_LANGUAGE:
+          parsedEditingSection.new_record_default_language as
+            | string
+            | undefined,
+        NEW_RECORD_STANDARD: parsedEditingSection.new_record_standard as
+          | EditorConfig['NEW_RECORD_STANDARD']
+          | undefined,
+      } as EditorConfig)
 }
 
 const SECTION_PARSERS: {

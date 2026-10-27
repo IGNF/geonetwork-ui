@@ -81,7 +81,8 @@
           "@xmldom/xmldom",
           "jsonld",
           "buffer",
-          "readable-stream"
+          "readable-stream",
+          "jsonpointer"
         ]
       },
       "configurations": {

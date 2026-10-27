@@ -59,7 +59,7 @@ marker('datahub.header.popularRecords')
     TranslateDirective,
     HeaderBadgeButtonComponent,
     RouterLink,
-    NavigationMenuComponent,
+    //NavigationMenuComponent,
     LanguageSwitcherComponent,
     FuzzySearchComponent,
   ],

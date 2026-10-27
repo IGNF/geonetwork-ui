@@ -114,7 +114,7 @@ favicon = "/rechercher-une-donnee/assets/img/favicon.ico"
 # WARNING: 'resourceType' filter has been deprecated, please use 'recordKind' instead. Breaking change: 'resourceType' filter won't retrieve featureCatalog anymore.
 # An entry holding a prefix (e.g. 'myOrg:myFilter') refers to a custom filter declared in a [[custom_filter]] section (see below).
 # The 'spatialExtent' filter offers both a GeoJSON file import and a location search through the geocoding provider (see below).
-advanced_filters = ['topic', 'organization', 'publicationYear', 'format', 'license']
+advanced_filters = ['topic', 'organization', 'spatialExtent', 'resourceCreationRevisionDate', 'temporalExtent', 'keyword', 'license']
 
 # Optional; if true, the default pre-configured searches ("The latest" and "The most popular")
 # will not be shown under the main search bar. Defaults to false.

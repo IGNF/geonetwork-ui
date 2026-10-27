@@ -46,7 +46,7 @@ export type ResultsListShowMoreStrategy = 'auto' | 'button' | 'none'
     ViewportIntersectorComponent,
     SpinningLoaderComponent,
     ErrorComponent,
-    FavoriteStarComponent,
+    //FavoriteStarComponent,
     TranslateDirective,
   ],
 })
