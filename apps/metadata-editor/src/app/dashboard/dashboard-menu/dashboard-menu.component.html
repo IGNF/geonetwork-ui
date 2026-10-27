@@ -1,0 +1,50 @@
+<div class="flex flex-col gap-3">
+  <a
+    class="menu-item"
+    routerLink="/records/my-org"
+    routerLinkActive="btn-active"
+    #rlaMyOrg="routerLinkActive"
+  >
+    <mat-icon class="material-symbols-outlined">home</mat-icon>
+    <span translate="">dashboard.records.myOrg</span>
+  </a>
+
+  <a
+    class="menu-item"
+    routerLink="/records/all"
+    routerLinkActive="btn-active"
+    #rlaAll="routerLinkActive"
+  >
+    <mat-icon class="material-symbols-outlined">work_outline</mat-icon>
+    <span translate="">dashboard.records.all</span>
+  </a>
+
+  <div class="menu-title" translate="">dashboard.labels.mySpace</div>
+  <a
+    class="menu-item"
+    routerLink="/records/my-records"
+    routerLinkActive="btn-active"
+    #rlaMyRecords="routerLinkActive"
+  >
+    <mat-icon class="material-symbols-outlined">post_add</mat-icon>
+    <span translate="">dashboard.records.myRecords</span>
+  </a>
+  <a
+    class="menu-item"
+    routerLink="/records/my-draft"
+    routerLinkActive="btn-active"
+    #rlaMyDraft="routerLinkActive"
+  >
+    <mat-icon class="material-symbols-outlined">edit_note</mat-icon>
+    <span translate="">dashboard.records.myDraft</span>
+  </a>
+  <a
+    class="menu-item"
+    routerLink="/records/my-library"
+    routerLinkActive="btn-active"
+    #rlaMyLibrary="routerLinkActive"
+  >
+    <mat-icon class="material-symbols-outlined">bookmark_border</mat-icon>
+    <span translate="">dashboard.records.myLibrary</span>
+  </a>
+</div>
