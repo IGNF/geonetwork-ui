@@ -5,11 +5,13 @@ import {
   findNestedElements,
   findParent,
   readAttribute,
+  readText,
   XmlElement,
 } from '../xml-utils'
 import {
   ChainableFunction,
   combine,
+  fallback,
   filterArray,
   flattenArray,
   getAtIndex,
@@ -32,6 +34,9 @@ import {
 } from '../iso19139/read-parts'
 import {
   AssociatedRecord,
+  DatasetFeatureAttribute,
+  DatasetFeatureAttributeValue,
+  DatasetFeatureType,
   Individual,
   LanguageCode,
   SourceRecord,
@@ -408,6 +413,111 @@ export function readOtherLanguages(rootEl: XmlElement): LanguageCode[] {
     mapArray(readLocaleElement()),
     map((languages) =>
       languages.filter((lang): lang is LanguageCode => lang !== null)
+    )
+  )(rootEl)
+}
+
+function extractCharacterStringOrText(): ChainableFunction<XmlElement, string> {
+  return fallback(extractCharacterString(), readText())
+}
+
+function extractListedValue(): ChainableFunction<
+  XmlElement,
+  DatasetFeatureAttributeValue
+> {
+  return pipe(
+    combine(
+      pipe(findChildElement('gfc:code', false), extractCharacterString()),
+      pipe(findChildElement('gfc:label', false), extractCharacterString()),
+      pipe(findChildElement('gfc:definition', false), extractCharacterString())
+    ),
+    map(([code, label, description]) => ({
+      value: code ?? '',
+      ...(label && { label }),
+      ...(description && { description }),
+    }))
+  )
+}
+
+function extractFeatureAttribute(): ChainableFunction<
+  XmlElement,
+  DatasetFeatureAttribute
+> {
+  return pipe(
+    combine(
+      pipe(
+        findChildElement('gfc:memberName', false),
+        extractCharacterStringOrText()
+      ),
+      pipe(
+        findChildElement('gfc:designation', false),
+        extractCharacterString()
+      ),
+      pipe(findChildElement('gfc:definition', false), extractCharacterString()),
+      pipe(findChildElement('gfc:code', false), extractCharacterString()),
+      pipe(
+        findNestedElement('gfc:valueType', 'gco:TypeName', 'gco:aName'),
+        extractCharacterString()
+      ),
+      pipe(
+        findNestedElements('gfc:listedValue', 'gfc:FC_ListedValue'),
+        mapArray(extractListedValue()),
+        filterArray((value) => !!(value.value || value.label))
+      )
+    ),
+    map(([name, label, description, code, type, values]) => ({
+      name: name ?? '',
+      ...(label && { label }),
+      ...(description && { description }),
+      ...(code && { code }),
+      ...(type && { type }),
+      ...(values.length > 0 && { values }),
+    }))
+  )
+}
+
+export function readFeatureTypeDescriptions(
+  rootEl: XmlElement
+): Array<DatasetFeatureType> {
+  return pipe(
+    findNestedElements(
+      'mdb:contentInfo',
+      'mrc:MD_FeatureCatalogue',
+      'mrc:featureCatalogue',
+      'gfc:FC_FeatureCatalogue',
+      'gfc:featureType',
+      'gfc:FC_FeatureType'
+    ),
+    mapArray(
+      pipe(
+        combine(
+          pipe(
+            findChildElement('gfc:typeName', false),
+            extractCharacterStringOrText()
+          ),
+          pipe(
+            findChildElement('gfc:designation', false),
+            extractCharacterString()
+          ),
+          pipe(
+            findChildElement('gfc:definition', false),
+            extractCharacterString()
+          ),
+          pipe(
+            findNestedElements(
+              'gfc:carrierOfCharacteristics',
+              'gfc:FC_FeatureAttribute'
+            ),
+            mapArray(extractFeatureAttribute())
+          )
+        ),
+        map(([name, label, description, attributes]) => ({
+          name: name ?? '',
+          ...(label && { label }),
+          ...(description && { description }),
+          attributes,
+        }))
+      )
     )
   )(rootEl)
 }
