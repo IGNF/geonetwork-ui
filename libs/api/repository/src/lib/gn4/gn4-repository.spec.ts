@@ -6,6 +6,7 @@ import {
 import {
   RecordsApiService,
   SearchApiService,
+  TagsApiService,
 } from '@geonetwork-ui/data-access/gn4'
 import {
   BehaviorSubject,
@@ -100,6 +101,9 @@ class RecordsApiServiceMock {
       </gmd:fileIdentifier>
     </gmd:MD_Metadata>`).pipe(map((xml) => ({ body: xml })))
   )
+  getRecordTags = jest.fn(() => of(new Set()))
+  tagRecord = jest.fn(() => of({}))
+  deleteTags = jest.fn(() => of({}))
   insert = jest.fn(() =>
     of({
       metadataInfos: {
@@ -145,6 +149,82 @@ class Gn4SettingsServiceMock {
   allowEditHarvested$ = new BehaviorSubject(false)
 }
 
+class TagsApiServiceMock {
+  tags$ = new BehaviorSubject([
+    {
+      name: 'maps',
+      id: 1,
+      label: {
+        ara: 'Maps & graphics',
+        fre: 'Cartes & graphiques',
+        arm: 'Maps & graphics',
+        eng: 'Maps & graphics',
+      },
+    },
+    {
+      name: 'datasets',
+      id: 2,
+      label: {
+        ara: 'Datasets',
+        fre: 'Jeux de données',
+        arm: 'Datasets',
+        eng: 'Datasets',
+      },
+    },
+    {
+      name: 'interactiveResources',
+      id: 3,
+      label: {
+        ara: 'Interactive resources',
+        fre: 'Ressources interactives',
+        arm: 'Interactive resources',
+        eng: 'Interactive resources',
+      },
+    },
+    {
+      name: 'applications',
+      id: 4,
+      label: {
+        ara: 'Applications',
+        fre: 'Applications',
+        arm: 'Applications',
+        eng: 'Applications',
+      },
+    },
+    {
+      name: 'caseStudies',
+      id: 5,
+      label: {
+        ara: 'Case studies, best practices',
+        fre: 'Etude de cas, meilleures pratiques',
+        arm: 'Case studies, best practices',
+        eng: 'Case studies, best practices',
+      },
+    },
+    {
+      name: 'proceedings',
+      id: 6,
+      label: {
+        ara: 'Conference proceedings',
+        fre: 'Conférences',
+        arm: 'Conference proceedings',
+        eng: 'Conference proceedings',
+      },
+    },
+    {
+      name: 'geonetwork-ui-flag:IS_REFERENCE_DATASET',
+      id: 100,
+      label: {
+        ara: 'Reference datasets',
+        fre: 'Reference datasets',
+        arm: 'Reference datasets',
+        eng: 'Reference datasets',
+      },
+    },
+  ])
+  getTags = jest.fn(() => this.tags$)
+}
+
 const SAMPLE_RECORD_WITH_EXTRAS = {
   ...datasetRecordsFixture()[0],
   extras: {
@@ -167,6 +247,7 @@ const baseProviders = [
   { provide: ElasticsearchService, useClass: ElasticsearchServiceMock },
   { provide: SearchApiService, useClass: SearchApiServiceMock },
   { provide: RecordsApiService, useClass: RecordsApiServiceMock },
+  { provide: TagsApiService, useClass: TagsApiServiceMock },
   { provide: Gn4Converter, useClass: Gn4MetadataMapperMock },
   { provide: PlatformServiceInterface, useClass: PlatformServiceInterfaceMock },
   { provide: Gn4SettingsService, useClass: Gn4SettingsServiceMock },
@@ -178,6 +259,7 @@ describe('Gn4Repository', () => {
   let gn4Helper: ElasticsearchService
   let gn4SearchApi: SearchApiService
   let gn4RecordsApi: RecordsApiService
+  let gn4TagsApi: TagsApiService
   let platformService: PlatformServiceInterface
   let httpTestingController: HttpTestingController
 
@@ -189,6 +271,7 @@ describe('Gn4Repository', () => {
     gn4Helper = TestBed.inject(ElasticsearchService)
     gn4SearchApi = TestBed.inject(SearchApiService)
     gn4RecordsApi = TestBed.inject(RecordsApiService)
+    gn4TagsApi = TestBed.inject(TagsApiService)
     platformService = TestBed.inject(PlatformServiceInterface)
     httpTestingController = TestBed.inject(HttpTestingController)
   })
@@ -327,74 +410,63 @@ describe('Gn4Repository', () => {
     })
   })
 
-  describe('getFeatureCatalog', () => {
+  describe('queryLinkedFeatureCatalog', () => {
     let catalog: DatasetFeatureCatalog
     let metadata: CatalogRecord
     const spySearch = jest.spyOn(SearchApiServiceMock.prototype, 'search')
 
-    describe('when extras feature catalog is defined ', () => {
+    describe('when the record embeds a feature catalog', () => {
       beforeEach(async () => {
         jest.clearAllMocks()
         metadata = datasetRecordsFixture()[0]
-        catalog = await lastValueFrom(repository.getFeatureCatalog(metadata))
+        catalog = await lastValueFrom(
+          repository.queryLinkedFeatureCatalog(metadata)
+        )
       })
 
-      it('should not call the feature catalog API (extras contain the answer) ', () => {
+      it('should not call the feature catalog API (the record contains the answer)', () => {
         expect(spySearch).not.toHaveBeenCalled()
       })
 
-      it('returns the feature catalog with mapped features', () => {
+      it('returns the embedded feature catalog', () => {
         expect(catalog).toEqual({
           featureTypes: [
             {
               name: "Catalogue d'attributs N°1",
-              definition: 'Définition du catalogue d attributs N°1',
+              description: 'Définition du catalogue d attributs N°1',
               attributes: [
                 {
                   code: 'OBJECTID',
                   name: 'OBJECTID',
-                  definition: 'Object identifier',
+                  description: 'Object identifier',
                   type: 'OID',
                 },
                 {
                   code: 'NOM',
                   name: 'Nom',
-                  definition: 'Nom de la rue',
+                  description: 'Nom de la rue',
                   type: 'String (48)',
                   values: [
-                    {
-                      code: 'Pomme',
-                      definition: undefined,
-                      label: 'Les Pommiers',
-                    },
-                    {
-                      code: 'Cotton',
-                      definition: undefined,
-                      label: 'Rue Cotton',
-                    },
-                    {
-                      code: "Passage de l'échiquier",
-                      definition: undefined,
-                      label: undefined,
-                    },
+                    { value: 'Pomme', label: 'Les Pommiers' },
+                    { value: 'Cotton', label: 'Rue Cotton' },
+                    { value: "Passage de l'échiquier" },
                   ],
                 },
                 {
                   code: 'RUE',
                   name: 'Rue',
-                  definition: '',
                   type: 'String (50)',
                 },
               ],
             },
             {
               name: "Catalogue d'attributs N°2",
-              definition: 'Définition du catalogue d attributs N°2',
+              description: 'Définition du catalogue d attributs N°2',
               attributes: [
                 {
                   code: 'UniqueObject',
                   name: 'unique object ',
-                  definition: 'this is the only object of this catalog',
+                  description: 'this is the only object of this catalog',
                   type: 'String (50)',
                 },
               ],
@@ -403,13 +475,15 @@ describe('Gn4Repository', () => {
         })
       })
     })
-    describe('when feature catalog exists, no extras defined', () => {
+    describe('when the feature catalog is linked, not embedded', () => {
       beforeEach(async () => {
         metadata = simpleDatasetRecordWithFcatsFixture()
         spySearch.mockReturnValue(
           of({ hits: { hits: datasetRecordsFixture(), total: { value: 0 } } })
         )
-        catalog = await lastValueFrom(repository.getFeatureCatalog(metadata))
+        catalog = await lastValueFrom(
+          repository.queryLinkedFeatureCatalog(metadata)
+        )
       })
 
       afterEach(() => {
@@ -429,53 +503,40 @@ describe('Gn4Repository', () => {
           featureTypes: [
             {
               name: "Catalogue d'attributs N°1",
-              definition: 'Définition du catalogue d attributs N°1',
+              description: 'Définition du catalogue d attributs N°1',
               attributes: [
                 {
                   code: 'OBJECTID',
                   name: 'OBJECTID',
-                  definition: 'Object identifier',
+                  description: 'Object identifier',
                   type: 'OID',
                 },
                 {
                   code: 'NOM',
                   name: 'Nom',
-                  definition: 'Nom de la rue',
+                  description: 'Nom de la rue',
                   type: 'String (48)',
                   values: [
-                    {
-                      code: 'Pomme',
-                      definition: undefined,
-                      label: 'Les Pommiers',
-                    },
-                    {
-                      code: 'Cotton',
-                      definition: undefined,
-                      label: 'Rue Cotton',
-                    },
-                    {
-                      code: "Passage de l'échiquier",
-                      definition: undefined,
-                      label: undefined,
-                    },
+                    { value: 'Pomme', label: 'Les Pommiers' },
+                    { value: 'Cotton', label: 'Rue Cotton' },
+                    { value: "Passage de l'échiquier" },
                   ],
                 },
                 {
                   code: 'RUE',
                   name: 'Rue',
-                  definition: '',
                   type: 'String (50)',
                 },
               ],
             },
             {
               name: "Catalogue d'attributs N°2",
-              definition: 'Définition du catalogue d attributs N°2',
+              description: 'Définition du catalogue d attributs N°2',
               attributes: [
                 {
                   code: 'UniqueObject',
                   name: 'unique object ',
-                  definition: 'this is the only object of this catalog',
+                  description: 'this is the only object of this catalog',
                   type: 'String (50)',
                 },
               ],
@@ -501,18 +562,22 @@ describe('Gn4Repository', () => {
           })
         )
         repository.getRecord = jest.fn().mockReturnValue(of(metadata))
-        catalog = await lastValueFrom(repository.getFeatureCatalog(metadata))
+        catalog = await lastValueFrom(
+          repository.queryLinkedFeatureCatalog(metadata)
+        )
         expect(catalog).toEqual(null)
       })
     })
 
-    describe('when feature catalog does not exist, nor in extras', () => {
+    describe('when the feature catalog is neither embedded nor linked', () => {
       beforeEach(async () => {
         metadata = {
           ...simpleDatasetRecordFixture(),
           extras: {},
         }
-        catalog = await lastValueFrom(repository.getFeatureCatalog(metadata))
+        catalog = await lastValueFrom(
+          repository.queryLinkedFeatureCatalog(metadata)
+        )
       })
       it('returns null', () => {
         expect(catalog).toEqual(null)
@@ -1387,6 +1452,158 @@ describe('Gn4Repository', () => {
         })
       )
       expect(canEdit).toEqual(false)
+    })
+  })
+
+  describe('setRecordFlag', () => {
+    it('adds the tag when the flag is enabled', () => {
+      repository
+        .setRecordFlag('my-dataset-001', 'IS_REFERENCE_DATASET', true)
+        .subscribe()
+
+      expect(gn4RecordsApi.tagRecord).toHaveBeenCalledWith(
+        'my-dataset-001',
+        [100],
+        false
+      )
+    })
+
+    it('clears the tag when the flag is disabled', () => {
+      repository
+        .setRecordFlag('my-dataset-001', 'IS_REFERENCE_DATASET', false)
+        .subscribe()
+
+      expect(gn4RecordsApi.deleteTags).toHaveBeenCalledWith('my-dataset-001', [
+        100,
+      ])
+    })
+  })
+
+  describe('getRecordFlag', () => {
+    it('returns true when the matching tag is present', async () => {
+      ;(gn4RecordsApi.getRecordTags as jest.Mock).mockReturnValue(
+        of(
+          new Set([
+            {
+              name: 'geonetwork-ui-flag:IS_REFERENCE_DATASET',
+              id: 100,
+              label: {
+                ara: 'Reference datasets',
+                fre: 'Reference datasets',
+                arm: 'Reference datasets',
+                eng: 'Reference datasets',
+              },
+            },
+          ])
+        )
+      )
+
+      const result = await firstValueFrom(
+        repository.getRecordFlag('my-dataset-001', 'IS_REFERENCE_DATASET')
+      )
+
+      expect(result).toBe(true)
+      expect(gn4RecordsApi.getRecordTags).toHaveBeenCalledWith('my-dataset-001')
+    })
+
+    it('returns false when the matching tag is absent', async () => {
+      ;(gn4RecordsApi.getRecordTags as jest.Mock).mockReturnValue(
+        of(
+          new Set([
+            {
+              name: 'registers',
+              id: 12,
+              label: {
+                ara: 'Registers',
+                fre: 'Annuaires',
+                arm: 'Registers',
+                eng: 'Registers',
+              },
+            },
+          ])
+        )
+      )
+
+      const result = await firstValueFrom(
+        repository.getRecordFlag('my-dataset-001', 'IS_REFERENCE_DATASET')
+      )
+
+      expect(result).toBe(false)
+      expect(gn4RecordsApi.getRecordTags).toHaveBeenCalledWith('my-dataset-001')
+    })
+  })
+
+  describe('when the category corresponding to a record flag are not present in GeoNetwork', () => {
+    beforeEach(() => {
+      jest.spyOn(global.console, 'warn')
+      ;(gn4TagsApi.getTags() as BehaviorSubject<any>).next([
+        {
+          name: 'maps',
+          id: 1,
+          label: {
+            ara: 'Maps & graphics',
+            fre: 'Cartes & graphiques',
+            arm: 'Maps & graphics',
+            eng: 'Maps & graphics',
+          },
+        },
+        {
+          name: 'datasets',
+          id: 2,
+          label: {
+            ara: 'Datasets',
+            fre: 'Jeux de données',
+            arm: 'Datasets',
+            eng: 'Datasets',
+          },
+        },
+        {
+          name: 'interactiveResources',
+          id: 3,
+          label: {
+            ara: 'Interactive resources',
+            fre: 'Ressources interactives',
+            arm: 'Interactive resources',
+            eng: 'Interactive resources',
+          },
+        },
+        {
+          name: 'applications',
+          id: 4,
+          label: {
+            ara: 'Applications',
+            fre: 'Applications',
+            arm: 'Applications',
+            eng: 'Applications',
+          },
+        },
+      ])
+    })
+
+    describe('setRecordFlag', () => {
+      it('emits a console warning and does nothing', () => {
+        repository
+          .setRecordFlag('my-dataset-001', 'IS_REFERENCE_DATASET', true)
+          .subscribe()
+
+        expect(gn4RecordsApi.tagRecord).not.toHaveBeenCalled()
+        expect(console.warn).toHaveBeenCalledWith(
+          'The record flag IS_REFERENCE_DATASET is not created on GeoNetwork backend; please create a category with the name geonetwork-ui-flag:IS_REFERENCE_DATASET for this to work.'
+        )
+      })
+    })
+
+    describe('getRecordFlag', () => {
+      it('emits a console warning and return false', async () => {
+        const result = await firstValueFrom(
+          repository.getRecordFlag('my-dataset-001', 'IS_REFERENCE_DATASET')
+        )
+
+        expect(result).toBe(false)
+        expect(console.warn).toHaveBeenCalledWith(
+          'The record flag IS_REFERENCE_DATASET is not created on GeoNetwork backend; please create a category with the name geonetwork-ui-flag:IS_REFERENCE_DATASET for this to work.'
+        )
+      })
     })
   })
 })

@@ -65,6 +65,12 @@ export interface CustomSearchFieldConfig {
   labelKey?: string
 }
 
+export interface GeocodingProviderLabelsConfig {
+  MAIN?: string
+  SECONDARY?: string
+  TERTIARY?: string
+}
+
 export interface SearchConfig {
   RECORD_KIND_QUICK_FILTER?: boolean
   FILTER_GEOMETRY_URL?: string
@@ -76,7 +82,11 @@ export interface SearchConfig {
   LIMIT?: number
   SPATIAL_EXTENT_MAX_FILE_SIZE?: number
   GEOCODING_PROVIDER?: GeocodingProviderName
-  GEOCODING_PROVIDER_OPTIONS?: Record<string, string | number>
+  GEOCODING_PROVIDER_OPTIONS?: Record<
+    string,
+    string | number | boolean | string[]
+  >
+  GEOCODING_PROVIDER_LABELS?: GeocodingProviderLabelsConfig
 }
 
 export interface MetadataQualityConfig {
@@ -94,6 +104,23 @@ export type CustomTranslations = { [translationKey: string]: string }
 export type CustomTranslationsAllLanguages = {
   [lang: string]: CustomTranslations
 }
+
+export interface ConfigIssues {
+  warnings: string[]
+  errors: string[]
+}
+
+export interface AppConfig {
+  global: GlobalConfig | null
+  theme: ThemeConfig | null
+  map: MapConfig | null
+  search: SearchConfig | null
+  metadataQuality: MetadataQualityConfig | null
+  editor: EditorConfig | null
+  translations: CustomTranslationsAllLanguages
+}
+
+export type ConfigSectionName = keyof AppConfig
 
 export interface SearchConfig {
   FILTER_GEOMETRY?: Geometry
