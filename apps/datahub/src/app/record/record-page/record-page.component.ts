@@ -19,6 +19,7 @@ import { TitleService } from '../../router/datahub-title.service'
 import { RecordHeaderComponent } from '../record-header/record-header.component'
 import { RecordMetadataComponent } from '../record-metadata/record-metadata.component'
 import { NotificationsContainerComponent } from '@geonetwork-ui/feature/notifications'
+import { Meta } from '@angular/platform-browser'
 
 @Component({
   selector: 'datahub-record-page',
@@ -37,6 +38,7 @@ import { NotificationsContainerComponent } from '@geonetwork-ui/feature/notifica
 export class RecordPageComponent implements OnInit, OnDestroy {
   mdViewFacade = inject(MdViewFacade)
   titleService = inject(TitleService)
+  meta = inject(Meta)
   subscription: Subscription
   metadataQualityDisplay: boolean
 
@@ -53,6 +55,10 @@ export class RecordPageComponent implements OnInit, OnDestroy {
         tap((metadata) => {
           if (metadata) {
             this.titleService.setTitle(metadata.title)
+            this.meta.updateTag({
+              name: 'description',
+              content: metadata.abstract?.trim(),
+            })
           }
         })
       )
@@ -61,6 +67,7 @@ export class RecordPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     document.documentElement.classList.remove('record-page-active')
+    this.meta.removeTag('name="description"')
     this.subscription.unsubscribe()
   }
 }

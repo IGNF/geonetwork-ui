@@ -39,7 +39,7 @@ export class DatahubTemplatePageTitleStrategy extends TitleStrategy {
       }).subscribe(
         ({ titlePattern, translatedPageTitle, translatedEntityTitle }) => {
           const formattedTitle = (
-            titlePattern || '{pageTitle} | Datahub'
+            titlePattern || '{pageTitle} | cartes.gouv.fr'
           ).replace('{pageTitle}', translatedEntityTitle || translatedPageTitle)
           this.title.setTitle(formattedTitle)
 
