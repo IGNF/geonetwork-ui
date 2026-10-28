@@ -38,9 +38,15 @@ export class DatahubTemplatePageTitleStrategy extends TitleStrategy {
         ),
       }).subscribe(
         ({ titlePattern, translatedPageTitle, translatedEntityTitle }) => {
-          const formattedTitle = (
-            titlePattern || '{pageTitle} | cartes.gouv.fr'
-          ).replace('{pageTitle}', translatedEntityTitle || translatedPageTitle)
+          const resolvedPageTitle = translatedEntityTitle || translatedPageTitle
+          const defaultTitlePattern =
+            resolvedPageTitle === 'Rechercher une donnée'
+              ? '{pageTitle} | cartes.gouv.fr'
+              : '{pageTitle} | Rechercher une donnée | cartes.gouv.fr'
+          const formattedTitle = (titlePattern || defaultTitlePattern).replace(
+            '{pageTitle}',
+            resolvedPageTitle
+          )
           this.title.setTitle(formattedTitle)
 
           if (pageTitle !== 'entityTitle' && !matomoPageViewTracked) {
