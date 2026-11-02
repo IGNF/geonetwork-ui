@@ -1,10 +1,10 @@
 <div id="home-page">
-  <gn-ui-sticky-header [fullHeightPx]="260" [minHeightPx]="150">
-    <ng-template let-expandRatio>
-      <datahub-home-header [expandRatio]="expandRatio"></datahub-home-header>
-    </ng-template>
-  </gn-ui-sticky-header>
-  <main class="px-5">
+  <div class="px-5">
+    <gn-ui-sticky-header [fullHeightPx]="260" [minHeightPx]="150">
+      <ng-template let-expandRatio>
+        <datahub-home-header [expandRatio]="expandRatio"></datahub-home-header>
+      </ng-template>
+    </gn-ui-sticky-header>
     <router-outlet></router-outlet>
-  </main>
+  </div>
 </div>

@@ -1,11 +1,8 @@
 @if (!loading) {
   <div class="w-full">
-    <span
-      data-cy="resultsHitsFound"
-      translate
-      [translateParams]="{ hits: hits }"
-      >results.records.hits.found</span
-    >
+    <p data-cy="resultsHitsFound" translate [translateParams]="{ hits: hits }">
+      results.records.hits.found
+    </p>
     @if (hits === 0) {
       <p
         class="mt-4"

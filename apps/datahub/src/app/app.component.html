@@ -1,3 +1,35 @@
+<div class="fr-skiplinks">
+  <nav role="navigation" aria-label="Accès rapide" class="fr-container">
+    <ul class="fr-skiplinks__list">
+      <li>
+        <a
+          class="fr-link"
+          href="#contenu-principal"
+          (click)="skipTo('contenu-principal', $event)"
+          >Contenu principal</a
+        >
+      </li>
+      <li>
+        <a
+          class="fr-link"
+          href="#navigation-principale"
+          (click)="skipTo('navigation-principale', $event)"
+          >Navigation principale</a
+        >
+      </li>
+      @if (isSearchPage) {
+        <li>
+          <a
+            class="fr-link"
+            href="#recherche"
+            (click)="skipTo('recherche', $event)"
+            >Recherche</a
+          >
+        </li>
+      }
+    </ul>
+  </nav>
+</div>
 <div
   gnUiSearchRouterContainer="mainSearch"
   class="selection:bg-primary-lightest selection:text-primary-darker"
@@ -9,160 +41,177 @@
     [operatorImagePath]="
       'https://data.geopf.fr/annexes/ressources/header/cartes-gouv-logo.svg'
     "
+    [operatorImageAlt]="'Logo de cartes.gouv.fr'"
     [serviceTagline]="'Notre territoire commun'"
     [menu]="[]"
   >
     <ng-template #toolsLinksTemplate>
-      <li>
-        <dsfr-tool-link-menu
-          [outline]="false"
-          [labelMenu]="'Aide'"
-          [iconMenu]="'fr-icon-question-fill'"
-        >
-          <ng-template #linksTemplate>
-            <ul>
-              <dsfr-link
-                [link]="'https://cartes.gouv.fr/aide/fr/'"
-                [linkTarget]="'_blank'"
-                [label]="'Questions fréquentes'"
-                [icon]="'fr-icon-question-mark'"
-                [customClass]="'fr-nav__link'"
-                [iconPosition]="'left'"
-              ></dsfr-link>
-              <dsfr-link
-                [link]="
-                  'https://cartes.gouv.fr/aide/fr/guides-utilisateur/rechercher-une-donnee/'
-                "
-                [linkTarget]="'_blank'"
-                [label]="'Guide d\'utilisation'"
-                [icon]="'fr-icon-book-2-line'"
-                [customClass]="'fr-nav__link'"
-                [iconPosition]="'left'"
-              ></dsfr-link>
-              <dsfr-link
-                [link]="'https://cartes.gouv.fr/aide/fr/niveau-de-service/'"
-                [linkTarget]="'_blank'"
-                [label]="'Niveau de service'"
-                [icon]="'fr-icon-rfid-line'"
-                [customClass]="'fr-nav__link'"
-                [iconPosition]="'left'"
-              ></dsfr-link>
-              <dsfr-link
-                [link]="'https://cartes.gouv.fr/nous-ecrire'"
-                [linkTarget]="'_blank'"
-                [label]="'Nous contacter'"
-                [icon]="'fr-icon-mail-line'"
-                [customClass]="'fr-nav__link'"
-                [iconPosition]="'left'"
-              ></dsfr-link>
-            </ul>
-          </ng-template>
-        </dsfr-tool-link-menu>
-      </li>
-      <li>
-        <dsfr-tool-link-menu
-          [outline]="false"
-          [labelMenu]="'Services'"
-          [iconMenu]="'fr-icon-grid-fill'"
-        >
-          <ng-template #linksTemplate>
-            <ul>
-              <dsfr-link
-                [link]="'https://cartes.gouv.fr/explorer-les-cartes/'"
-                [label]="'Explorer les cartes'"
-                [icon]="'fr-icon-road-map-line'"
-                [customClass]="'fr-nav__link'"
-                [iconPosition]="'left'"
-              ></dsfr-link>
-              <dsfr-link
-                [link]="'https://cartes.gouv.fr/rechercher-une-donnee/search'"
-                [label]="'Rechercher une donnée'"
-                [icon]="'fr-icon-search-line'"
-                [customClass]="'fr-nav__link'"
-                [iconPosition]="'left'"
-              ></dsfr-link>
-              <dsfr-link
-                [link]="'https://cartes.gouv.fr/publier-une-donnee'"
-                [label]="'Publier une donnée'"
-                [icon]="'fr-icon-database-line'"
-                [customClass]="'fr-nav__link'"
-                [iconPosition]="'left'"
-              ></dsfr-link>
-              <!--<li><a class="fr-nav__link" href="https://cartes.gouv.fr/editeur/cartes"> <span
+      <nav
+        id="navigation-principale"
+        tabindex="-1"
+        class="csp-header__actions fr-nav"
+        role="navigation"
+        aria-label="Navigation principale"
+      >
+        <ul>
+          <li>
+            <dsfr-tool-link-menu
+              [outline]="false"
+              [labelMenu]="'Aide'"
+              [iconMenu]="'fr-icon-question-fill'"
+            >
+              <ng-template #linksTemplate>
+                <ul>
+                  <dsfr-link
+                    [link]="'https://cartes.gouv.fr/aide/fr/'"
+                    [linkTarget]="'_blank'"
+                    [label]="'Questions fréquentes'"
+                    [icon]="'fr-icon-question-mark'"
+                    [customClass]="'fr-nav__link'"
+                    [iconPosition]="'left'"
+                  ></dsfr-link>
+                  <dsfr-link
+                    [link]="
+                      'https://cartes.gouv.fr/aide/fr/guides-utilisateur/rechercher-une-donnee/'
+                    "
+                    [linkTarget]="'_blank'"
+                    [label]="'Guide d\'utilisation'"
+                    [icon]="'fr-icon-book-2-line'"
+                    [customClass]="'fr-nav__link'"
+                    [iconPosition]="'left'"
+                  ></dsfr-link>
+                  <dsfr-link
+                    [link]="'https://cartes.gouv.fr/aide/fr/niveau-de-service/'"
+                    [linkTarget]="'_blank'"
+                    [label]="'Niveau de service'"
+                    [icon]="'fr-icon-rfid-line'"
+                    [customClass]="'fr-nav__link'"
+                    [iconPosition]="'left'"
+                  ></dsfr-link>
+                  <dsfr-link
+                    [link]="'https://cartes.gouv.fr/nous-ecrire'"
+                    [linkTarget]="'_blank'"
+                    [label]="'Nous contacter'"
+                    [icon]="'fr-icon-mail-line'"
+                    [customClass]="'fr-nav__link'"
+                    [iconPosition]="'left'"
+                  ></dsfr-link>
+                </ul>
+              </ng-template>
+            </dsfr-tool-link-menu>
+          </li>
+          <li>
+            <dsfr-tool-link-menu
+              [outline]="false"
+              [labelMenu]="'Services'"
+              [iconMenu]="'fr-icon-grid-fill'"
+            >
+              <ng-template #linksTemplate>
+                <ul>
+                  <dsfr-link
+                    [link]="'https://cartes.gouv.fr/explorer-les-cartes/'"
+                    [label]="'Explorer les cartes'"
+                    [icon]="'fr-icon-road-map-line'"
+                    [customClass]="'fr-nav__link'"
+                    [iconPosition]="'left'"
+                  ></dsfr-link>
+                  <dsfr-link
+                    [link]="
+                      'https://cartes.gouv.fr/rechercher-une-donnee/search'
+                    "
+                    [label]="'Rechercher une donnée'"
+                    [icon]="'fr-icon-search-line'"
+                    [customClass]="'fr-nav__link'"
+                    [iconPosition]="'left'"
+                  ></dsfr-link>
+                  <dsfr-link
+                    [link]="'https://cartes.gouv.fr/publier-une-donnee'"
+                    [label]="'Publier une donnée'"
+                    [icon]="'fr-icon-database-line'"
+                    [customClass]="'fr-nav__link'"
+                    [iconPosition]="'left'"
+                  ></dsfr-link>
+                  <!--<li><a class="fr-nav__link" href="https://cartes.gouv.fr/editeur/cartes"> <span
                     class="fr-icon-brush-line fr-link--icon-left" aria-hidden="true"></span>
                   Créer une carte &nbsp; <span
                     class="fr-badge fr-badge--success fr-badge--no-icon fr-badge--sm">Bêta</span></a></li>-->
-              <li style="display: flex">
-                <a
-                  style="margin: 16px 24px"
-                  class="fr-btn bouton-cartes-gouv"
-                  target="_self"
-                  href="https://cartes.gouv.fr/decouvrir"
-                  >Découvrir cartes.gouv.fr</a
-                >
-              </li>
-            </ul>
-          </ng-template>
-        </dsfr-tool-link-menu>
-      </li>
-      <li>
-        <div id="header-auth">
-          <button
-            class="login-btn fr-btn--sm fr-btn--icon-left fr-btn fr-btn--tertiary-no-outline fr-icon-account-circle-fill"
-            type="button"
-            title="Se connecter"
-          >
-            Se connecter
-          </button>
-        </div>
-      </li>
+                  <li style="display: flex">
+                    <a
+                      style="margin: 16px 24px"
+                      class="fr-btn bouton-cartes-gouv"
+                      target="_self"
+                      href="https://cartes.gouv.fr/decouvrir"
+                      >Découvrir cartes.gouv.fr</a
+                    >
+                  </li>
+                </ul>
+              </ng-template>
+            </dsfr-tool-link-menu>
+          </li>
+          <li>
+            <div id="header-auth">
+              <button
+                class="login-btn fr-btn--sm fr-btn--icon-left fr-btn fr-btn--tertiary-no-outline fr-icon-account-circle-fill"
+                type="button"
+                title="Se connecter"
+              >
+                Se connecter
+              </button>
+            </div>
+          </li>
+        </ul>
+      </nav>
     </ng-template>
   </dsfr-header>
-  <router-outlet></router-outlet>
-  <div class="fr-follow">
-    <div class="fr-container">
-      <div class="fr-grid-row">
-        <div class="fr-col-12 fr-col-md-6">
-          <div class="fr-follow__newsletter">
-            <div>
-              <h2 class="fr-h5">Inscrivez-vous à notre lettre d’information</h2>
-              <p class="fr-text--sm">
-                Retrouvez toutes les actualités directement par courriel chaque
-                trimestre.
-              </p>
+  <main id="contenu-principal" role="main" tabindex="0">
+    <router-outlet></router-outlet>
+    <div class="fr-follow">
+      <div class="fr-container">
+        <div class="fr-grid-row">
+          <div class="fr-col-12 fr-col-md-6">
+            <div class="fr-follow__newsletter">
+              <div>
+                <h2 class="fr-h5">
+                  Inscrivez-vous à notre lettre d’information
+                </h2>
+                <p class="fr-text--sm">
+                  Retrouvez toutes les actualités directement par courriel
+                  chaque trimestre.
+                </p>
+              </div>
+              <div>
+                <a
+                  href="https://cartes.gouv.fr/lettre-d-information"
+                  class="fr-btn"
+                  id="newsletter-registration"
+                  data-fr-js-button-actionee="true"
+                  >S’inscrire</a
+                >
+              </div>
             </div>
-            <div>
+          </div>
+          <div class="fr-col-12 fr-col-md-6">
+            <div class="fr-follow__newsletter">
+              <h2 class="fr-h5">Communauté</h2>
+              <p class="fr-text--sm">
+                Rejoignez la communauté Géoplateforme - cartes.gouv.fr pour
+                suivre les actualités et échanger avec les membres.
+              </p>
               <a
-                href="https://cartes.gouv.fr/lettre-d-information"
-                class="fr-btn"
-                id="newsletter-registration"
-                data-fr-js-button-actionee="true"
-                >S’inscrire</a
+                href="https://www.expertises-territoires.fr/jcms/pl1_557493/fr/communaute-geoplateforme-et-cartes-gouv"
+                title="www.expertises-territoires.fr - ouvre une nouvelle fenêtre"
+                rel="noopener external"
+                target="_blank"
+                class="fr-link"
+                data-fr-js-link-actionee="true"
+                >Rejoindre la communauté</a
               >
             </div>
           </div>
         </div>
-        <div class="fr-col-12 fr-col-md-6">
-          <div class="fr-follow__newsletter">
-            <h2 class="fr-h5">Communauté</h2>
-            <p class="fr-text--sm">
-              Rejoignez la communauté Géoplateforme - cartes.gouv.fr pour suivre
-              les actualités et échanger avec les membres.
-            </p>
-            <a
-              href="https://www.expertises-territoires.fr/jcms/pl1_557493/fr/communaute-geoplateforme-et-cartes-gouv"
-              title="www.expertises-territoires.fr - ouvre une nouvelle fenêtre"
-              rel="noopener external"
-              target="_blank"
-              class="fr-link"
-              data-fr-js-link-actionee="true"
-              >Rejoindre la communauté</a
-            >
-          </div>
-        </div>
       </div>
     </div>
-  </div>
+  </main>
   <dsfr-footer
     [presentation]="
       'Cartes.gouv.fr est le service public des cartes et données du territoire français. Porté par l’IGN et ses partenaires, il offre à tous un accès à la référence de la cartographie publique et permet à chacun de créer, d’héberger et de publier ses propres données et représentations.'

@@ -36,13 +36,15 @@
       </a>
 
       <gn-ui-fuzzy-search
+        id="recherche"
         class="text-[18px] pointer-events-auto"
         style="
           --gn-ui-text-input-padding: 1.1em;
           --gn-ui-text-input-border-size: 0px;
         "
         (itemSelected)="onFuzzySearchSelection($event)"
-        [autoFocus]="true"
+        [autoFocus]="false"
+        tabindex="0"
       ></gn-ui-fuzzy-search>
       <div
         class="flex flex-wrap h-0 py-5 gap-3"

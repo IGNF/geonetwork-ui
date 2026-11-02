@@ -37,6 +37,16 @@
   margin-right: 5px;
 }
 
+#contenu-principal {
+  scroll-margin-top: 220px;
+}
+
+@media (min-width: 640px) {
+  #contenu-principal {
+    scroll-margin-top: 80px;
+  }
+}
+
 .fr-follow .fr-grid-row > :not(:first-child) {
   box-shadow: 0 -1px 0 0 var(--border-default-blue-france);
   margin-top: 1.5rem;
@@ -75,6 +85,7 @@
   background-color: var(--background-alt-blue-france);
   padding: 1.5rem 0;
 }
+
 .bouton-cartes-gouv {
   background-color: var(--background-action-high-blue-france) !important;
   color: var(--text-inverted-blue-france) !important;
@@ -82,4 +93,14 @@
 
 .bouton-cartes-gouv:hover {
   background-color: var(--background-action-high-blue-france-hover) !important;
+}
+
+.csp-header__actions > ul {
+  display: flex;
+}
+
+@media (max-width: 61.98em) {
+  .csp-header__actions > ul {
+    flex-direction: column;
+  }
 }

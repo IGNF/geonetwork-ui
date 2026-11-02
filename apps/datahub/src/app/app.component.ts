@@ -12,7 +12,10 @@ import {
   handleScrollOnNavigation,
   ThemeService,
 } from '@geonetwork-ui/util/shared'
-import { SearchRouterContainerDirective } from '@geonetwork-ui/feature/router'
+import {
+  ROUTER_ROUTE_SEARCH,
+  SearchRouterContainerDirective,
+} from '@geonetwork-ui/feature/router'
 import { Router, RouterOutlet } from '@angular/router'
 import { CommonModule, ViewportScroller } from '@angular/common'
 import Keycloak from 'keycloak-js'
@@ -55,6 +58,15 @@ export class AppComponent implements OnInit, AfterViewInit {
   private readonly document = inject(DOCUMENT)
   private readonly dsfrAnalytics = inject(DsfrAnalyticsService)
 
+  get isSearchPage(): boolean {
+    return this.router.isActive(`/${ROUTER_ROUTE_SEARCH}`, {
+      paths: 'exact',
+      queryParams: 'ignored',
+      fragment: 'ignored',
+      matrixParams: 'ignored',
+    })
+  }
+
   @ViewChild('welcomeModal') welcomeModalRef: DsfrModalComponent
 
   ngOnInit(): void {
@@ -82,6 +94,7 @@ export class AppComponent implements OnInit, AfterViewInit {
       .item(0)
     const spanBadge = document.createElement('span')
     spanBadge.classList.add('fr-icon-search-fill')
+    this.renderer.setAttribute(spanBadge, 'aria-hidden', 'true')
     spanBadge.style.scale = '0.5'
     this.renderer.setProperty(title, 'innerText', 'RECHERCHER')
     this.renderer.removeClass(title, 'fr-badge--green-emeraude')
@@ -275,5 +288,22 @@ export class AppComponent implements OnInit, AfterViewInit {
     } catch {
       // Ignore storage failures and keep default behavior.
     }
+  }
+
+  skipTo(targetId: string, event: Event): void {
+    event.preventDefault()
+
+    const target = document.getElementById(targetId)
+    if (!target) {
+      return
+    }
+
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}${window.location.search}#${targetId}`
+    )
+    target.focus({ preventScroll: true })
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 }

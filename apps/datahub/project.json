@@ -57,6 +57,7 @@
           "./node_modules/@gouvfr/dsfr/dist/component/search/search.min.css",
           "./node_modules/@gouvfr/dsfr/dist/component/header/header.min.css",
           "./node_modules/@gouvfr/dsfr/dist/component/footer/footer.min.css",
+          "./node_modules/@gouvfr/dsfr/dist/component/skiplink/skiplink.min.css",
           "tailwind.base.css",
           "apps/datahub/src/styles.css",
           "node_modules/tippy.js/dist/tippy.css",
