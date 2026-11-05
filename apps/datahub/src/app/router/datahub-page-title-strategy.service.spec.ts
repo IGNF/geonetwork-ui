@@ -54,6 +54,16 @@ describe('DatahubTemplatePageTitleStrategy', () => {
   })
 
   describe('updateTitle', () => {
+    it('should set a canonical URL without query parameters or fragment', () => {
+      service.updateTitle({
+        url: '/dataset/123?preview=true#details',
+      } as RouterStateSnapshot)
+
+      expect(
+        document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href
+      ).toBe('https://cartes.gouv.fr/rechercher-une-donnee/dataset/123')
+    })
+
     describe('when pageTitle is undefined', () => {
       beforeEach(() => {
         jest.spyOn(service as any, 'buildTitle').mockReturnValue(undefined)
@@ -177,11 +187,11 @@ describe('DatahubTemplatePageTitleStrategy', () => {
           titleSubject.next(null)
         })
 
-        it('should use default pattern "{pageTitle} | Datahub"', () => {
+        it('should use the default cartes.gouv.fr title pattern', () => {
           service.updateTitle(RouterStateSnapshotMock as RouterStateSnapshot)
 
           expect(titleService.setTitle).toHaveBeenCalledWith(
-            'Search Results | Datahub'
+            'Search Results | Rechercher une donnée | cartes.gouv.fr'
           )
         })
       })
@@ -203,7 +213,7 @@ describe('DatahubTemplatePageTitleStrategy', () => {
           service.updateTitle(RouterStateSnapshotMock as RouterStateSnapshot)
 
           expect(titleService.setTitle).toHaveBeenCalledWith(
-            'Organizations | Datahub'
+            'Organizations | Rechercher une donnée | cartes.gouv.fr'
           )
         })
       })

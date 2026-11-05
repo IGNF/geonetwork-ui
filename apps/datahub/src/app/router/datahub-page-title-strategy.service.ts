@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common'
 import { inject, Injectable } from '@angular/core'
 import { Title } from '@angular/platform-browser'
 import { RouterStateSnapshot, TitleStrategy } from '@angular/router'
@@ -8,6 +9,7 @@ import { TitleService } from './datahub-title.service'
 
 @Injectable()
 export class DatahubTemplatePageTitleStrategy extends TitleStrategy {
+  private readonly document = inject(DOCUMENT)
   private readonly title = inject(Title)
   private translateService = inject(TranslateService)
   private platformService = inject(PlatformServiceInterface)
@@ -18,6 +20,8 @@ export class DatahubTemplatePageTitleStrategy extends TitleStrategy {
   }
 
   override updateTitle(routerState: RouterStateSnapshot) {
+    this.updateCanonicalUrl(routerState.url)
+
     const pageTitle = this.buildTitle(routerState)
     let matomoPageViewTracked = false
 
@@ -70,6 +74,27 @@ export class DatahubTemplatePageTitleStrategy extends TitleStrategy {
     } else {
       this.title.setTitle('Datahub')
     }
+  }
+
+  private updateCanonicalUrl(routeUrl: string) {
+    const canonicalUrl = new URL(
+      routeUrl.replace(/^\/+/, ''),
+      'https://cartes.gouv.fr/rechercher-une-donnee/'
+    )
+    canonicalUrl.search = ''
+    canonicalUrl.hash = ''
+
+    let canonicalLink = this.document.querySelector<HTMLLinkElement>(
+      'link[rel="canonical"]'
+    )
+
+    if (!canonicalLink) {
+      canonicalLink = this.document.createElement('link')
+      canonicalLink.rel = 'canonical'
+      this.document.head.appendChild(canonicalLink)
+    }
+
+    canonicalLink.href = canonicalUrl.href
   }
 
   private trackMatomoPageView(pageTitle: string) {
