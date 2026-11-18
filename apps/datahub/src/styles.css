@@ -102,8 +102,13 @@ a > ng-icon[name='iconoirOpenNewWindow'] {
   color: black;
 }
 
-.fr-badge--sm {
+.fr-badge--sm.fr-badge--blue-cumulus {
   padding: 0 0.375rem 0 0 !important;
+}
+
+.fr-icon-contacts-book-upload-line::before {
+  mask-image: url('assets/img/contacts-book-upload-line.svg');
+  -webkit-mask-image: url('assets/img/contacts-book-upload-line.svg');
 }
 
 .fr-modal > .fr-container,

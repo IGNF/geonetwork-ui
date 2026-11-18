@@ -121,6 +121,6 @@ export class DatahubRouterService {
   }
 
   getDefaultSort(): SortByField {
-    return SortByEnum.RESOURCE_DATE
+    return SortByEnum.VIEW_COUNT
   }
 }

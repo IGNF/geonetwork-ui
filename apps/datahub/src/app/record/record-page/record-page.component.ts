@@ -15,7 +15,17 @@ import {
   getMetadataQualityConfig,
   MetadataQualityConfig,
 } from '@geonetwork-ui/util/app-config'
-import { Subscription, tap } from 'rxjs'
+import { RecordsApiService } from '@geonetwork-ui/data-access/gn4'
+import {
+  catchError,
+  distinctUntilChanged,
+  EMPTY,
+  filter,
+  map,
+  mergeMap,
+  Subscription,
+  tap,
+} from 'rxjs'
 import { TitleService } from '../../router/datahub-title.service'
 import { RecordHeaderComponent } from '../record-header/record-header.component'
 import { RecordMetadataComponent } from '../record-metadata/record-metadata.component'
@@ -41,6 +51,7 @@ export class RecordPageComponent implements OnInit, OnDestroy {
   subscription: Subscription
   metadataQualityDisplay: boolean
   private meta = inject(Meta)
+  private recordsApiService = inject(RecordsApiService)
 
   constructor() {
     document.documentElement.classList.add('record-page-active')
@@ -71,6 +82,23 @@ export class RecordPageComponent implements OnInit, OnDestroy {
           this.meta.removeTag('name="robots"')
         }
       })
+    )
+    // increment the record view count ("popularity" field in the index), used for the view count sort
+    this.subscription.add(
+      this.mdViewFacade.metadata$
+        .pipe(
+          map((metadata) => metadata?.uniqueIdentifier),
+          filter((uuid): uuid is string => !!uuid),
+          distinctUntilChanged(),
+          mergeMap((uuid) =>
+            this.recordsApiService
+              .increaseRecordPopularity(uuid, 'body', false, {
+                httpHeaderAccept: 'text/plain',
+              })
+              .pipe(catchError(() => EMPTY))
+          )
+        )
+        .subscribe()
     )
   }
 

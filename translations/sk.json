@@ -646,6 +646,7 @@
   "results.sortBy.popularity": "Popularita",
   "results.sortBy.qualityScore": "Indikátor dokončenia",
   "results.sortBy.relevancy": "Relevancia",
+  "results.sortBy.viewCount": "Najzobrazovanejšie",
   "reuse.metadata.access": "",
   "search.autocomplete.error": "Návrhy sa nepodarilo načítať:",
   "search.error.couldNotReachApi": "K rozhraniu API sa nepodarilo pripojiť",

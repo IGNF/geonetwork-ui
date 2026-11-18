@@ -89,6 +89,9 @@
 .bouton-cartes-gouv {
   background-color: var(--background-action-high-blue-france) !important;
   color: var(--text-inverted-blue-france) !important;
+  margin: 16px auto !important;
+  width: 80% !important;
+  justify-content: center !important;
 }
 
 .bouton-cartes-gouv:hover {

@@ -13,6 +13,7 @@ const SearchFacadeMock = {
   setFilters: jest.fn(() => this),
   setResultsLayout: jest.fn(() => this),
   setPageSize: jest.fn(() => this),
+  setSortBy: jest.fn(() => this),
 }
 
 describe('SearchPageComponent', () => {

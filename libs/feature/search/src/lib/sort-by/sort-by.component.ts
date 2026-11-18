@@ -36,9 +36,13 @@ export class SortByComponent implements OnInit {
       label: marker('results.sortBy.dateStamp'),
       value: SortByEnum.RESOURCE_DATE,
     },
-    {
+    /*{
       label: marker('results.sortBy.popularity'),
       value: SortByEnum.POPULARITY,
+    },*/
+    {
+      label: marker('results.sortBy.viewCount'),
+      value: SortByEnum.VIEW_COUNT,
     },
     {
       label: marker('results.sortBy.changeDate'),

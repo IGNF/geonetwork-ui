@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { Meta } from '@angular/platform-browser'
 import { MdViewFacade } from '@geonetwork-ui/feature/record'
+import { RecordsApiService } from '@geonetwork-ui/data-access/gn4'
 import { RecordPageComponent } from './record-page.component'
 import { MockBuilder, MockProvider } from 'ng-mocks'
 import { SAMPLE_RECORD } from '@geonetwork-ui/common/fixtures'
@@ -20,6 +21,9 @@ describe('RecordPageComponent', () => {
         MockProvider(MdViewFacade, {
           metadata$: of(SAMPLE_RECORD),
           error$: of(null),
+        }),
+        MockProvider(RecordsApiService, {
+          increaseRecordPopularity: jest.fn(() => of('')) as never,
         }),
         MockProvider(TitleService),
       ],
@@ -45,6 +49,16 @@ describe('RecordPageComponent', () => {
     component.ngOnInit()
 
     expect(titleService.setTitle).toHaveBeenCalledWith(SAMPLE_RECORD.title)
+  })
+  it('should increase the record popularity', () => {
+    const recordsApiService = TestBed.inject(RecordsApiService)
+
+    expect(recordsApiService.increaseRecordPopularity).toHaveBeenCalledWith(
+      SAMPLE_RECORD.uniqueIdentifier,
+      'body',
+      false,
+      { httpHeaderAccept: 'text/plain' }
+    )
   })
   describe('robots meta tag', () => {
     let meta: Meta

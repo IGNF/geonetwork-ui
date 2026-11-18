@@ -37,7 +37,7 @@
   <dsfr-header
     [beta]="'true'"
     [serviceTitle]="'cartes.gouv.fr'"
-    [logoLink]="'https://cartes.gouv.fr'"
+    [logoLink]="'/rechercher-une-donnee/search'"
     [operatorImagePath]="
       'https://data.geopf.fr/annexes/ressources/header/cartes-gouv-logo.svg'
     "
@@ -63,7 +63,7 @@
               <ng-template #linksTemplate>
                 <ul>
                   <dsfr-link
-                    [link]="'https://cartes.gouv.fr/aide/fr/'"
+                    [link]="'/aide/fr/'"
                     [linkTarget]="'_blank'"
                     [label]="'Questions fréquentes'"
                     [icon]="'fr-icon-question-mark'"
@@ -72,7 +72,7 @@
                   ></dsfr-link>
                   <dsfr-link
                     [link]="
-                      'https://cartes.gouv.fr/aide/fr/guides-utilisateur/rechercher-une-donnee/'
+                      '/aide/fr/guides-utilisateur/rechercher-une-donnee/'
                     "
                     [linkTarget]="'_blank'"
                     [label]="'Guide d\'utilisation'"
@@ -81,7 +81,7 @@
                     [iconPosition]="'left'"
                   ></dsfr-link>
                   <dsfr-link
-                    [link]="'https://cartes.gouv.fr/aide/fr/niveau-de-service/'"
+                    [link]="'/aide/fr/niveau-de-service/'"
                     [linkTarget]="'_blank'"
                     [label]="'Niveau de service'"
                     [icon]="'fr-icon-rfid-line'"
@@ -89,7 +89,7 @@
                     [iconPosition]="'left'"
                   ></dsfr-link>
                   <dsfr-link
-                    [link]="'https://cartes.gouv.fr/nous-ecrire'"
+                    [link]="'/nous-ecrire'"
                     [linkTarget]="'_blank'"
                     [label]="'Nous contacter'"
                     [icon]="'fr-icon-mail-line'"
@@ -109,38 +109,71 @@
               <ng-template #linksTemplate>
                 <ul>
                   <dsfr-link
-                    [link]="'https://cartes.gouv.fr/explorer-les-cartes/'"
+                    [link]="'/explorer-les-cartes/'"
                     [label]="'Explorer les cartes'"
                     [icon]="'fr-icon-road-map-line'"
                     [customClass]="'fr-nav__link'"
                     [iconPosition]="'left'"
                   ></dsfr-link>
                   <dsfr-link
-                    [link]="
-                      'https://cartes.gouv.fr/rechercher-une-donnee/search'
-                    "
+                    [link]="'/rechercher-une-donnee/search'"
                     [label]="'Rechercher une donnée'"
                     [icon]="'fr-icon-search-line'"
                     [customClass]="'fr-nav__link'"
                     [iconPosition]="'left'"
                   ></dsfr-link>
                   <dsfr-link
-                    [link]="'https://cartes.gouv.fr/publier-une-donnee'"
+                    [link]="'/publier-une-donnee'"
                     [label]="'Publier une donnée'"
                     [icon]="'fr-icon-database-line'"
                     [customClass]="'fr-nav__link'"
                     [iconPosition]="'left'"
                   ></dsfr-link>
-                  <!--<li><a class="fr-nav__link" href="https://cartes.gouv.fr/editeur/cartes"> <span
-                    class="fr-icon-brush-line fr-link--icon-left" aria-hidden="true"></span>
-                  Créer une carte &nbsp; <span
-                    class="fr-badge fr-badge--success fr-badge--no-icon fr-badge--sm">Bêta</span></a></li>-->
+                  <li>
+                    <a class="fr-nav__link" href="/creer-une-carte">
+                      <span
+                        class="fr-icon-brush-line fr-link--icon-left"
+                        aria-hidden="true"
+                      ></span>
+                      Créer une carte &nbsp;
+                      <span
+                        class="fr-badge fr-badge--success fr-badge--no-icon fr-badge--sm"
+                        >Bêta</span
+                      ></a
+                    >
+                  </li>
+                  <li>
+                    <a class="fr-nav__link" href="/extraire-une-donnee">
+                      <span
+                        class="fr-icon-contacts-book-upload-line fr-link--icon-left"
+                        aria-hidden="true"
+                      ></span>
+                      Extraire une donnée &nbsp;
+                      <span
+                        class="fr-badge fr-badge--success fr-badge--no-icon fr-badge--sm"
+                        >Bêta</span
+                      ></a
+                    >
+                  </li>
+                  <li>
+                    <a class="fr-nav__link" href="/contribuer-aux-donnees">
+                      <span
+                        class="fr-icon-message-2-line fr-link--icon-left"
+                        aria-hidden="true"
+                      ></span>
+                      Contribuer aux données &nbsp;
+                      <span
+                        class="fr-badge fr-badge--success fr-badge--no-icon fr-badge--sm"
+                        >Bêta</span
+                      ></a
+                    >
+                  </li>
                   <li style="display: flex">
                     <a
-                      style="margin: 16px 24px"
+                      style="margin: 16px auto"
                       class="fr-btn bouton-cartes-gouv"
                       target="_self"
-                      href="https://cartes.gouv.fr/decouvrir"
+                      href="/decouvrir"
                       >Découvrir cartes.gouv.fr</a
                     >
                   </li>
@@ -181,7 +214,7 @@
               </div>
               <div>
                 <a
-                  href="https://cartes.gouv.fr/lettre-d-information"
+                  href="/lettre-d-information"
                   class="fr-btn"
                   id="newsletter-registration"
                   data-fr-js-button-actionee="true"
@@ -243,22 +276,22 @@
       },
     ]"
     [mandatoryLinks]="[
-      { label: 'Plan du site', link: 'https://cartes.gouv.fr/plan-du-site' },
+      { label: 'Plan du site', link: '/plan-du-site' },
       {
         label: 'Accessibilité: partiellement conforme',
-        link: 'https://cartes.gouv.fr/accessibilite',
+        link: '/accessibilite',
       },
       {
         label: 'Mentions légales',
-        link: 'https://cartes.gouv.fr/mentions-legales',
+        link: '/mentions-legales',
       },
       {
         label: 'Conditions générales d’utilisation',
-        link: 'https://cartes.gouv.fr/cgu',
+        link: '/cgu',
       },
       {
         label: 'Données personnelles',
-        link: 'https://cartes.gouv.fr/donnees-personnelles',
+        link: '/donnees-personnelles',
       },
     ]"
     [partnerMain]="{
@@ -358,7 +391,7 @@
           (click)="welcomeModal.close()"
         ></dsfr-button>
         <a
-          href="https://cartes.gouv.fr/decouvrir/rechercher-une-donnee/"
+          href="/decouvrir/rechercher-une-donnee/"
           class="fr-btn fr-btn--secondary"
           target="_blank"
           rel="noopener noreferrer"

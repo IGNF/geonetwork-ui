@@ -12,6 +12,7 @@ import {
   SearchFacade,
 } from '@geonetwork-ui/feature/search'
 import { CatalogRecord } from '@geonetwork-ui/common/domain/model/record'
+import { SortByEnum } from '@geonetwork-ui/common/domain/model/search'
 import {
   getMetadataQualityConfig,
   getOptionalSearchConfig,
@@ -51,7 +52,7 @@ export class SearchPageComponent implements OnInit {
 
   ngOnInit() {
     this.searchFacade.setResultsLayout('ROW')
-    this.searchFacade.setSortBy(['desc', '_score'])
+    this.searchFacade.setSortBy(SortByEnum.VIEW_COUNT)
 
     const metadataQualityConfig: MetadataQualityConfig =
       getMetadataQualityConfig() || ({} as MetadataQualityConfig)

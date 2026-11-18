@@ -646,6 +646,7 @@
   "results.sortBy.popularity": "",
   "results.sortBy.qualityScore": "",
   "results.sortBy.relevancy": "",
+  "results.sortBy.viewCount": "",
   "reuse.metadata.access": "",
   "search.autocomplete.error": "",
   "search.error.couldNotReachApi": "",

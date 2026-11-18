@@ -646,6 +646,7 @@
   "results.sortBy.popularity": "Beliebtheit",
   "results.sortBy.qualityScore": "Fertigstellungsanzeige",
   "results.sortBy.relevancy": "Relevanz",
+  "results.sortBy.viewCount": "Meistgesehen",
   "reuse.metadata.access": "Zur Wiederverwendung gelangen",
   "search.autocomplete.error": "Vorschläge konnten nicht abgerufen werden:",
   "search.error.couldNotReachApi": "Die API konnte nicht erreicht werden",

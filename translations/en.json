@@ -648,6 +648,7 @@
   "results.sortBy.popularity": "Popularity",
   "results.sortBy.qualityScore": "Completion score",
   "results.sortBy.relevancy": "Relevancy",
+  "results.sortBy.viewCount": "Most viewed",
   "reuse.metadata.access": "Access the reuse",
   "search.autocomplete.error": "Suggestions could not be fetched:",
   "search.error.couldNotReachApi": "The API could not be reached",

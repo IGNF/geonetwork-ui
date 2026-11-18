@@ -646,6 +646,7 @@
   "results.sortBy.popularity": "Popolarità",
   "results.sortBy.qualityScore": "Indicatore di completamento",
   "results.sortBy.relevancy": "Rilevanza",
+  "results.sortBy.viewCount": "Più consultati",
   "reuse.metadata.access": "Accedere al riutilizzo",
   "search.autocomplete.error": "Impossibile recuperare le suggerimenti",
   "search.error.couldNotReachApi": "Problema di connessione all'API",
