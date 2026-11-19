@@ -32,5 +32,4 @@ done
 
 echo "[INFO] docker-entrypoint-ign.sh ended successfully."
 
-# Start Apache in foreground
-/usr/sbin/apachectl -D FOREGROUND
+exec nginx -g 'daemon off;'
