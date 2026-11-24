@@ -80,8 +80,10 @@ header_foreground_color = '#212029'
 # thumbnail_placeholder = 'assets/img/my_custom_placeholder.png'
 
 # These optional parameters allow changing fonts used in the app
-# main_font = "'My Custom Font', fallback-font"
-# title_font = "'My Custom Title Font', fallback-font-title"
+# Marianne (police du DSFR) est déjà chargée par la feuille de style du DSFR :
+# pas besoin de fonts_stylesheet_url.
+main_font = "Marianne, arial, sans-serif"
+title_font = "Marianne, arial, sans-serif"
 # fonts_stylesheet_url = "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Permanent+Marker&display=swap"
 
 # Use it to set custom location for the favicon; by default, the path `/favicon.ico` will be used
