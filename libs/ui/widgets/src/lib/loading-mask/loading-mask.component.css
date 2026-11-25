@@ -1,0 +1,20 @@
+/* this overrides the spinner color with a CSS variable to match the theme */
+::ng-deep .mat-spinner circle {
+  stroke: var(--color-gray-700);
+  opacity: 0.5;
+}
+
+.backdrop {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+@supports (-webkit-backdrop-filter: blur()) or (backdrop-filter: blur()) {
+  .backdrop {
+    background-color: transparent;
+    backdrop-filter: blur(4px);
+  }
+}
+
+.background {
+  opacity: 0.7;
+}

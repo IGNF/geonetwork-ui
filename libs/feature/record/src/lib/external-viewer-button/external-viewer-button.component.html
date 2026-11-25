@@ -1,0 +1,9 @@
+<gn-ui-button
+  *ngIf="externalViewer"
+  (buttonClick)="openInExternalViewer()"
+  type="secondary"
+  [title]="'record.externalViewer.open' | translate"
+  extraClass="ms-2 !rounded-lg"
+>
+  <mat-icon class="material-symbols-outlined">open_in_new</mat-icon>
+</gn-ui-button>
