@@ -51,6 +51,8 @@ gn-ui-autocomplete .gn-ui-text-input {
 /* Datahub IGN adaptation */
 gn-ui-autocomplete > span {
   background-color: white !important;
+  border-radius: 5px;
+  border: 1px solid var(--color-gray-900) !important;
 }
 
 gn-ui-internal-link-card > a,
@@ -69,7 +71,7 @@ gn-ui-favorite-star {
 
 .gn-ui-btn-outline {
   border: 1px solid !important;
-  border-color: var(--color-gray-300) !important;
+  border-color: var(--color-gray-900) !important;
 }
 
 .gn-ui-btn-outline:hover {
