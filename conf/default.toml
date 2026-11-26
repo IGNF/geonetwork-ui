@@ -304,7 +304,7 @@ name = 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2'
 #     """
 [translations.fr]
 search.filters.title= "Affiner votre recherche"
-datahub.header.title.html="<div>Catalogue de données et de services</div>"
+datahub.header.title.html="<h1>Catalogue de données et de services</h1>"
 datahub.header.datasets="Données et services"
 ogc.unreachable.unknown="Le service associé à cette donnée est en accès restreint, veuillez contacter le producteur de la donnée pour en obtenir l'accès"
 wfs.unreachable.unknown="Le service associé à cette donnée est en accès restreint, veuillez contacter le producteur de la donnée pour en obtenir l'accès"

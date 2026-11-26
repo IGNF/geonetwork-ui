@@ -1,9 +1,18 @@
 @if (!loading) {
-<div class="w-full">
-  <span role="status" data-cy="resultsHitsFound" translate
-    [translateParams]="{ hits: hits }">results.records.hits.found</span>
-  @if (hits === 0) {
-  <p class="mt-4" [innerHtml]="'results.records.hits.empty.help.html' | translate"></p>
-  }
-</div>
+  <div class="w-full">
+    <h3
+      role="status"
+      data-cy="resultsHitsFound"
+      translate
+      [translateParams]="{ hits: hits }"
+    >
+      results.records.hits.found
+    </h3>
+    @if (hits === 0) {
+      <p
+        class="mt-4"
+        [innerHtml]="'results.records.hits.empty.help.html' | translate"
+      ></p>
+    }
+  </div>
 }

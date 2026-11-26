@@ -4,10 +4,6 @@
     'sm:items-center': (searchFacade.resultsHits$ | async) !== 0,
   }"
 >
-  <gn-ui-results-hits-number
-    [loading]="searchFacade.isLoading$ | async"
-    [hits]="searchFacade.resultsHits$ | async"
-  ></gn-ui-results-hits-number>
   @if (displayRecordKindFilter) {
     <gn-ui-results-hits-search-kind
       (selectionChanged)="onSelectionChanged($event)"
@@ -15,4 +11,8 @@
       [selected]="selected$ | async"
     ></gn-ui-results-hits-search-kind>
   }
+  <gn-ui-results-hits-number
+    [loading]="searchFacade.isLoading$ | async"
+    [hits]="searchFacade.resultsHits$ | async"
+  ></gn-ui-results-hits-number>
 </div>

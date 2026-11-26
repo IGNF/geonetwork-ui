@@ -2,6 +2,13 @@
   class="bg-primary text-white p-5 shadow-xl rounded-lg grid grid-cols-6 gap-4 transition-[height] duration-100"
   [ngClass]="{ 'md:bg-white md:text-main': !isOpen }"
 >
+  <h2
+    class="text-xl font-title w-full col-span-6"
+    [class.hidden]="(isMobile$ | async) === true || isOpen"
+    translate
+  >
+    search.filters.title
+  </h2>
   <div
     class="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-7 md:gap-4 md:grid-rows-auto"
     [ngClass]="isOpen ? 'col-span-6 mb-7 md:mb-0' : 'col-span-4 lg:col-span-4'"
@@ -133,7 +140,6 @@
       }
       @if ((isMobile$ | async) === false || isOpen) {
         <gn-ui-sort-by
-          class="overflow-hidden"
           [ngClass]="{ 'block text-white mb-1 md:w-auto w-full': isOpen }"
           [isQualitySortable]="isQualitySortable"
         ></gn-ui-sort-by>
